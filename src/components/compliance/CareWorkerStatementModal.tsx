@@ -50,12 +50,9 @@ export function CareWorkerStatementModal({
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    care_worker_name: "",
-    client_name: "",
     client_address: "",
     report_date: new Date(),
     assigned_employee_id: "",
-    branch_id: "no-branch",
   });
 
   const { toast } = useToast();
@@ -68,21 +65,15 @@ export function CareWorkerStatementModal({
   useEffect(() => {
     if (statement) {
       setFormData({
-        care_worker_name: statement.care_worker_name,
-        client_name: statement.client_name,
         client_address: statement.client_address,
         report_date: new Date(statement.report_date),
         assigned_employee_id: statement.assigned_employee_id || "",
-        branch_id: (statement as any).branch_id || "no-branch",
       });
     } else {
       setFormData({
-        care_worker_name: "",
-        client_name: "",
         client_address: "",
         report_date: new Date(),
         assigned_employee_id: "",
-        branch_id: "no-branch",
       });
     }
   }, [statement, open]);
@@ -112,13 +103,28 @@ export function CareWorkerStatementModal({
     setLoading(true);
 
     try {
+      // Get selected employee's name and branch
+      const selectedEmployee = employees.find(emp => emp.id === formData.assigned_employee_id);
+      const employeeName = selectedEmployee?.name || "";
+      
+      // Get employee's branch
+      let employeeBranchId = null;
+      if (selectedEmployee) {
+        const { data: empData } = await supabase
+          .from('employees')
+          .select('branch_id')
+          .eq('id', selectedEmployee.id)
+          .single();
+        employeeBranchId = empData?.branch_id || null;
+      }
+
       const submitData = {
-        care_worker_name: formData.care_worker_name,
-        client_name: formData.client_name,
+        care_worker_name: employeeName,
+        client_name: employeeName, // Same as care worker name
         client_address: formData.client_address,
         report_date: formData.report_date.toISOString().split('T')[0],
         assigned_employee_id: formData.assigned_employee_id || null,
-        branch_id: formData.branch_id === "no-branch" ? null : formData.branch_id,
+        branch_id: employeeBranchId,
         created_by: user?.id,
       };
 
@@ -171,28 +177,6 @@ export function CareWorkerStatementModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="care_worker_name">Care Worker Name</Label>
-              <Input
-                id="care_worker_name"
-                value={formData.care_worker_name}
-                onChange={(e) => setFormData({ ...formData, care_worker_name: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="client_name">Client Name</Label>
-              <Input
-                id="client_name"
-                value={formData.client_name}
-                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-
           <div>
             <Label htmlFor="client_address">Client Address</Label>
             <Input
@@ -231,10 +215,11 @@ export function CareWorkerStatementModal({
             </div>
 
             <div>
-              <Label htmlFor="assigned_employee">Assign to Employee</Label>
+              <Label htmlFor="assigned_employee">Assign to Employee (Care Worker)</Label>
               <Select
                 value={formData.assigned_employee_id}
                 onValueChange={(value) => setFormData({ ...formData, assigned_employee_id: value })}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select employee" />
@@ -243,26 +228,6 @@ export function CareWorkerStatementModal({
                   {employees.map((employee) => (
                     <SelectItem key={employee.id} value={employee.id}>
                       {employee.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="branch">Branch (Optional)</Label>
-              <Select
-                value={formData.branch_id}
-                onValueChange={(value) => setFormData({ ...formData, branch_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no-branch">No branch</SelectItem>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

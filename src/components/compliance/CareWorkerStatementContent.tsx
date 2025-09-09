@@ -325,11 +325,10 @@ export function CareWorkerStatementContent() {
             <TableHeader>
               <TableRow>
                 <TableHead>Care Worker</TableHead>
-                <TableHead>Client Name</TableHead>
+                <TableHead>Client Address</TableHead>
                 <TableHead>Branch</TableHead>
                 <TableHead>Report Date</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Assigned To</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -340,16 +339,13 @@ export function CareWorkerStatementContent() {
                   <TableCell className="font-medium">
                     {statement.care_worker_name}
                   </TableCell>
-                  <TableCell>{statement.client_name}</TableCell>
+                  <TableCell>{statement.client_address}</TableCell>
                   <TableCell>{statement.branches?.name || 'No branch'}</TableCell>
                   <TableCell>{new Date(statement.report_date).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(statement.status)}>
                       {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {statement.employees?.name || 'Unassigned'}
                   </TableCell>
                   <TableCell>{new Date(statement.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
@@ -415,7 +411,7 @@ export function CareWorkerStatementContent() {
               ))}
               {filteredStatements.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     <div className="flex flex-col items-center gap-2">
                       <FileText className="h-8 w-8 text-muted-foreground" />
                       <p className="text-muted-foreground">No statements found</p>
