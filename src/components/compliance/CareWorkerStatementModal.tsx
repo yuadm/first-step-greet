@@ -55,7 +55,7 @@ export function CareWorkerStatementModal({
     client_address: "",
     report_date: new Date(),
     assigned_employee_id: "",
-    branch_id: "",
+    branch_id: "no-branch",
   });
 
   const { toast } = useToast();
@@ -73,7 +73,7 @@ export function CareWorkerStatementModal({
         client_address: statement.client_address,
         report_date: new Date(statement.report_date),
         assigned_employee_id: statement.assigned_employee_id || "",
-        branch_id: (statement as any).branch_id || "",
+        branch_id: (statement as any).branch_id || "no-branch",
       });
     } else {
       setFormData({
@@ -82,7 +82,7 @@ export function CareWorkerStatementModal({
         client_address: "",
         report_date: new Date(),
         assigned_employee_id: "",
-        branch_id: "",
+        branch_id: "no-branch",
       });
     }
   }, [statement, open]);
@@ -118,7 +118,7 @@ export function CareWorkerStatementModal({
         client_address: formData.client_address,
         report_date: formData.report_date.toISOString().split('T')[0],
         assigned_employee_id: formData.assigned_employee_id || null,
-        branch_id: formData.branch_id || null,
+        branch_id: formData.branch_id === "no-branch" ? null : formData.branch_id,
         created_by: user?.id,
       };
 
@@ -259,7 +259,7 @@ export function CareWorkerStatementModal({
                   <SelectValue placeholder="Select branch" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No branch</SelectItem>
+                  <SelectItem value="no-branch">No branch</SelectItem>
                   {branches.map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       {branch.name}
