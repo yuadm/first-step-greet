@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Eye, FileText, Edit, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Plus, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
+import { usePermissions } from "@/contexts/PermissionsContext";
 import { generateJobApplicationPdf } from "@/lib/job-application-pdf";
 import { ReviewSummary } from "@/components/job-application/ReviewSummary";
 import { DatePickerWithRange, DatePicker } from "@/components/ui/date-picker";
@@ -72,6 +73,7 @@ export function JobApplicationsContent() {
   const [statusOptions, setStatusOptions] = useState<string[]>(['new','reviewing','interviewed','accepted','rejected']);
   const { toast } = useToast();
   const { companySettings } = useCompany();
+  const { isAdmin, getAccessibleBranches } = usePermissions();
   
   useEffect(() => {
     fetchStatusOptions();
