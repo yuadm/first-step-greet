@@ -197,18 +197,6 @@ export function CareWorkerStatementModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {statement && (
-            <div>
-              <Label htmlFor="care_worker_name">Care Worker Name</Label>
-              <Input
-                id="care_worker_name"
-                value={formData.care_worker_name}
-                onChange={(e) => setFormData({ ...formData, care_worker_name: e.target.value })}
-                required
-              />
-            </div>
-          )}
-
           <div>
             <Label htmlFor="client_name">Client Name</Label>
             <Input
@@ -276,28 +264,6 @@ export function CareWorkerStatementModal({
               </Select>
             </div>
           </div>
-
-          {statement && (
-            <div>
-              <Label htmlFor="branch">Branch (Optional)</Label>
-              <Select
-                value={formData.branch_id}
-                onValueChange={(value) => setFormData({ ...formData, branch_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select branch" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no-branch">No branch</SelectItem>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
