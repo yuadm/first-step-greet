@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
+import { usePermissions } from "@/contexts/PermissionsContext";
+import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { Send, Download, Loader2, CheckCircle2 } from 'lucide-react';
 import { generateReferencePDF, generateManualReferencePDF } from '@/lib/reference-pdf';
 
@@ -19,6 +21,12 @@ export function ReferenceButtons({ application, references, onUpdate }: Referenc
   const [sending, setSending] = useState<string | null>(null);
   const [completedReferences, setCompletedReferences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isAdmin } = usePermissions();
+  const { 
+    canSendReferenceRequest, 
+    canDownloadReferencePDF, 
+    canManualReferencePDF 
+  } = usePagePermissions();
 
   useEffect(() => {
     fetchCompletedReferences();
@@ -323,50 +331,58 @@ export function ReferenceButtons({ application, references, onUpdate }: Referenc
             <div className="flex gap-2">
               {completedRef ? (
                 <>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={() => downloadCompletedReference(completedRef)}
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    Download PDF
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => generateBlankPDF('reference1', references.reference1)}
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    Manual PDF
-                  </Button>
+                  {(isAdmin || canDownloadReferencePDF()) && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => downloadCompletedReference(completedRef)}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Download PDF
+                    </Button>
+                  )}
+                  {(isAdmin || canManualReferencePDF()) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => generateBlankPDF('reference1', references.reference1)}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Manual PDF
+                    </Button>
+                  )}
                 </>
               ) : (
                 <>
-                  <Button
-                    size="sm"
-                    onClick={() => sendReferenceEmail('reference1', references.reference1)}
-                    disabled={sending === 'reference1'}
-                  >
-                    {sending === 'reference1' ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-1" />
-                        Send Request
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => generateBlankPDF('reference1', references.reference1)}
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    Manual PDF
-                  </Button>
+                  {(isAdmin || canSendReferenceRequest()) && (
+                    <Button
+                      size="sm"
+                      onClick={() => sendReferenceEmail('reference1', references.reference1)}
+                      disabled={sending === 'reference1'}
+                    >
+                      {sending === 'reference1' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-1" />
+                          Send Request
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {(isAdmin || canManualReferencePDF()) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => generateBlankPDF('reference1', references.reference1)}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Manual PDF
+                    </Button>
+                  )}
                 </>
               )}
             </div>
@@ -400,50 +416,58 @@ export function ReferenceButtons({ application, references, onUpdate }: Referenc
             <div className="flex gap-2">
               {completedRef ? (
                 <>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={() => downloadCompletedReference(completedRef)}
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    Download PDF
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => generateBlankPDF('reference2', references.reference2)}
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    Manual PDF
-                  </Button>
+                  {(isAdmin || canDownloadReferencePDF()) && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => downloadCompletedReference(completedRef)}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Download PDF
+                    </Button>
+                  )}
+                  {(isAdmin || canManualReferencePDF()) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => generateBlankPDF('reference2', references.reference2)}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Manual PDF
+                    </Button>
+                  )}
                 </>
               ) : (
                 <>
-                  <Button
-                    size="sm"
-                    onClick={() => sendReferenceEmail('reference2', references.reference2)}
-                    disabled={sending === 'reference2'}
-                  >
-                    {sending === 'reference2' ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-1" />
-                        Send Request
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => generateBlankPDF('reference2', references.reference2)}
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    Manual PDF
-                  </Button>
+                  {(isAdmin || canSendReferenceRequest()) && (
+                    <Button
+                      size="sm"
+                      onClick={() => sendReferenceEmail('reference2', references.reference2)}
+                      disabled={sending === 'reference2'}
+                    >
+                      {sending === 'reference2' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-1" />
+                          Send Request
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {(isAdmin || canManualReferencePDF()) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => generateBlankPDF('reference2', references.reference2)}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Manual PDF
+                    </Button>
+                  )}
                 </>
               )}
             </div>

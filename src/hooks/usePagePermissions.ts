@@ -47,10 +47,12 @@ export function usePagePermissions() {
 
   // Job Applications permissions
   const canViewJobApplications = () => isAdmin || hasPageAction('job-applications', 'view');
-  const canCreateJobApplications = () => isAdmin || hasPageAction('job-applications', 'create');
-  const canEditJobApplications = () => isAdmin || hasPageAction('job-applications', 'edit');
   const canDeleteJobApplications = () => isAdmin || hasPageAction('job-applications', 'delete');
-  const canReviewJobApplications = () => isAdmin || hasPageAction('job-applications', 'review');
+  const canEditJobApplications = () => isAdmin || hasPageAction('job-applications', 'edit');
+  const canDownloadJobApplicationPDF = () => isAdmin || hasPageAction('job-applications', 'download-pdf');
+  const canSendReferenceRequest = () => isAdmin || hasPageAction('job-applications', 'reference-send-request');
+  const canDownloadReferencePDF = () => isAdmin || hasPageAction('job-applications', 'reference-download-pdf');
+  const canManualReferencePDF = () => isAdmin || hasPageAction('job-applications', 'reference-manual-pdf');
 
   // Settings permissions
   const canViewSettings = () => isAdmin || hasPageAction('settings', 'view');
@@ -105,10 +107,12 @@ export function usePagePermissions() {
 
     // Job Applications
     canViewJobApplications,
-    canCreateJobApplications,
-    canEditJobApplications,
     canDeleteJobApplications,
-    canReviewJobApplications,
+    canEditJobApplications,
+    canDownloadJobApplicationPDF,
+    canSendReferenceRequest,
+    canDownloadReferencePDF,
+    canManualReferencePDF,
 
     // Settings
     canViewSettings,

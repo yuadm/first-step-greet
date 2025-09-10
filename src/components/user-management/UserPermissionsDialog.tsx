@@ -98,7 +98,7 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
       name: 'Job Applications',
       key: 'job-applications',
       path: '/job-applications',
-      actions: ['view', 'create', 'edit', 'delete', 'review']
+      actions: ['view', 'delete', 'edit', 'download-pdf', 'reference-send-request', 'reference-download-pdf', 'reference-manual-pdf']
     },
     {
       name: 'Settings',

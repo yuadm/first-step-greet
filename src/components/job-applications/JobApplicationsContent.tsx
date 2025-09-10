@@ -77,28 +77,10 @@ export function JobApplicationsContent() {
   const { companySettings } = useCompany();
   const { user } = useAuth();
   const { getAccessibleBranches, isAdmin } = usePermissions();
-  const { 
-    canViewJobApplications,
-    canCreateJobApplications,
-    canEditJobApplications,
-    canDeleteJobApplications,
-    canReviewJobApplications
-  } = usePagePermissions();
+  const { hasPageAction } = usePermissions();
 
-  // Debug logging
-  console.log('JobApplicationsContent - Debug Info:', {
-    isAdmin,
-    canViewJobApplications: canViewJobApplications(),
-    canCreateJobApplications: canCreateJobApplications(),
-    canEditJobApplications: canEditJobApplications(),
-    canDeleteJobApplications: canDeleteJobApplications(),
-    canReviewJobApplications: canReviewJobApplications(),
-    accessibleBranches: getAccessibleBranches(),
-    user: user?.id
-  });
-  
   // Check if user has permission to view job applications
-  if (!canViewJobApplications()) {
+  if (!isAdmin && !hasPageAction('job-applications', 'view')) {
     return (
       <div className="p-6">
         <div className="text-center text-muted-foreground">
@@ -151,13 +133,6 @@ export function JobApplicationsContent() {
   };
 
   const fetchApplications = async () => {
-    console.log('JobApplicationsContent - Fetching applications...');
-    console.log('JobApplicationsContent - User permissions:', {
-      canView: canViewJobApplications(),
-      accessibleBranches: getAccessibleBranches(),
-      isAdmin
-    });
-    
     try {
       let query = supabase
         .from('job_applications')
@@ -187,12 +162,6 @@ export function JobApplicationsContent() {
       const { data, error, count } = await query.range(from, toIdx);
 
       if (error) throw error;
-      
-      console.log('JobApplicationsContent - Raw applications data:', data);
-      console.log('JobApplicationsContent - Total count:', count);
-      
-      // TODO: Check if job applications need branch filtering
-      // For now, setting all data without branch filtering
       setApplications(data || []);
       setTotalCount(count || 0);
     } catch (error) {
@@ -504,13 +473,14 @@ Please complete and return this reference as soon as possible.`;
                           </DialogContent>
                         </Dialog>
                         
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                              <Trash2 className="w-4 h-4 mr-1" />
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
+                         {(isAdmin || hasPageAction('job-applications', 'delete')) && (
+                           <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                               <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                 <Trash2 className="w-4 h-4 mr-1" />
+                                 Delete
+                               </Button>
+                             </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Application</AlertDialogTitle>
@@ -528,8 +498,9 @@ Please complete and return this reference as soon as possible.`;
                                 Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                           </AlertDialogContent>
+                         </AlertDialog>
+                         )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -635,6 +606,7 @@ function ApplicationDetails({
   const [editData, setEditData] = useState(application);
   const { toast } = useToast();
   const { companySettings } = useCompany();
+  const { isAdmin, hasPageAction } = usePermissions();
 
   const toJobAppData = () => {
     const pi = application.personal_info || {};
@@ -827,25 +799,29 @@ try {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={downloadApplication}
-            className="flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" />
-            Download PDF
-          </Button>
+          {(isAdmin || hasPageAction('job-applications', 'download-pdf')) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadApplication}
+              className="flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Download PDF
+            </Button>
+          )}
           {isEditing ? (
             <div className="flex gap-2">
               <Button size="sm" onClick={handleSave}>Save</Button>
               <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
             </div>
           ) : (
-            <Button size="sm" onClick={() => setIsEditing(true)}>
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
+            (isAdmin || hasPageAction('job-applications', 'edit')) && (
+              <Button size="sm" onClick={() => setIsEditing(true)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+            )
           )}
         </div>
       </div>
