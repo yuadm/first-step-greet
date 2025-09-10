@@ -69,19 +69,11 @@ export function AddClientComplianceRecordModal({
 
   const fetchClients = async () => {
     try {
-      const accessibleBranches = getAccessibleBranches();
-      
-      let query = supabase
+      // Fetch clients
+      const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
-        .select('id, name, branch_id')
+        .select('id, name')
         .order('name');
-
-      // Filter by accessible branches for non-admin users
-      if (!isAdmin && accessibleBranches.length > 0) {
-        query = query.in('branch_id', accessibleBranches);
-      }
-      
-      const { data: clientsData, error: clientsError } = await query;
       
       if (clientsError) throw clientsError;
 

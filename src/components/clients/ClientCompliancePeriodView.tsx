@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
-import { usePermissions } from "@/contexts/PermissionsContext";
 import ClientSpotCheckFormDialog, { ClientSpotCheckFormData } from "./ClientSpotCheckFormDialog";
 import { ClientSpotCheckViewDialog } from "./ClientSpotCheckViewDialog";
 import { ClientDeleteConfirmDialog } from "./ClientDeleteConfirmDialog";
@@ -93,7 +92,6 @@ export function ClientCompliancePeriodView({
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const { companySettings } = useCompany();
-  const { getAccessibleBranches, isAdmin } = usePermissions();
 
   useEffect(() => {
     fetchData();
@@ -103,10 +101,8 @@ export function ClientCompliancePeriodView({
     try {
       setLoading(true);
       
-      // Fetch clients with branch filtering
-      const accessibleBranches = getAccessibleBranches();
-      
-      let clientQuery = supabase
+      // Fetch clients instead of employees
+      const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
         .select(`
           *,
@@ -115,13 +111,6 @@ export function ClientCompliancePeriodView({
           )
         `)
         .order('name');
-
-      // Filter by accessible branches for non-admin users
-      if (!isAdmin && accessibleBranches.length > 0) {
-        clientQuery = clientQuery.in('branch_id', accessibleBranches);
-      }
-
-      const { data: clientsData, error: clientsError } = await clientQuery;
 
       if (clientsError) throw clientsError;
 
