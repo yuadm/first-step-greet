@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface Employee {
   id: string;
   name: string;
+  branch_id?: string;
 }
 
 interface CareWorkerStatement {
@@ -50,9 +51,12 @@ export function CareWorkerStatementModal({
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    care_worker_name: "",
+    client_name: "",
     client_address: "",
     report_date: new Date(),
     assigned_employee_id: "",
+    branch_id: "",
   });
 
   const { toast } = useToast();
@@ -65,15 +69,21 @@ export function CareWorkerStatementModal({
   useEffect(() => {
     if (statement) {
       setFormData({
+        care_worker_name: statement.care_worker_name,
+        client_name: statement.client_name,
         client_address: statement.client_address,
         report_date: new Date(statement.report_date),
         assigned_employee_id: statement.assigned_employee_id || "",
+        branch_id: "",
       });
     } else {
       setFormData({
+        care_worker_name: "",
+        client_name: "",
         client_address: "",
         report_date: new Date(),
         assigned_employee_id: "",
+        branch_id: "",
       });
     }
   }, [statement, open]);
@@ -82,7 +92,7 @@ export function CareWorkerStatementModal({
     try {
       const { data, error } = await supabase
         .from('employees')
-        .select('id, name')
+        .select('id, name, branch_id')
         .eq('is_active', true)
         .order('name');
 
@@ -96,6 +106,16 @@ export function CareWorkerStatementModal({
         variant: "destructive",
       });
     }
+  };
+
+  const handleEmployeeChange = (employeeId: string) => {
+    const selectedEmployee = employees.find(emp => emp.id === employeeId);
+    setFormData({ 
+      ...formData, 
+      assigned_employee_id: employeeId,
+      care_worker_name: statement ? formData.care_worker_name : (selectedEmployee?.name || ""),
+      branch_id: selectedEmployee?.branch_id || ""
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,12 +139,12 @@ export function CareWorkerStatementModal({
       }
 
       const submitData = {
-        care_worker_name: employeeName,
-        client_name: employeeName, // Same as care worker name
+        care_worker_name: formData.care_worker_name || employeeName,
+        client_name: formData.client_name,
         client_address: formData.client_address,
         report_date: formData.report_date.toISOString().split('T')[0],
         assigned_employee_id: formData.assigned_employee_id || null,
-        branch_id: employeeBranchId,
+        branch_id: formData.branch_id || employeeBranchId,
         created_by: user?.id,
       };
 
@@ -177,6 +197,28 @@ export function CareWorkerStatementModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {statement && (
+            <div>
+              <Label htmlFor="care_worker_name">Care Worker Name</Label>
+              <Input
+                id="care_worker_name"
+                value={formData.care_worker_name}
+                onChange={(e) => setFormData({ ...formData, care_worker_name: e.target.value })}
+                required
+              />
+            </div>
+          )}
+
+          <div>
+            <Label htmlFor="client_name">Client Name</Label>
+            <Input
+              id="client_name"
+              value={formData.client_name}
+              onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+              required
+            />
+          </div>
+
           <div>
             <Label htmlFor="client_address">Client Address</Label>
             <Input
@@ -215,10 +257,10 @@ export function CareWorkerStatementModal({
             </div>
 
             <div>
-              <Label htmlFor="assigned_employee">Assign to Employee (Care Worker)</Label>
+              <Label htmlFor="assigned_employee">Assign to Employee</Label>
               <Select
                 value={formData.assigned_employee_id}
-                onValueChange={(value) => setFormData({ ...formData, assigned_employee_id: value })}
+                onValueChange={handleEmployeeChange}
                 required
               >
                 <SelectTrigger>
@@ -234,6 +276,28 @@ export function CareWorkerStatementModal({
               </Select>
             </div>
           </div>
+
+          {statement && (
+            <div>
+              <Label htmlFor="branch">Branch (Optional)</Label>
+              <Select
+                value={formData.branch_id}
+                onValueChange={(value) => setFormData({ ...formData, branch_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no-branch">No branch</SelectItem>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
