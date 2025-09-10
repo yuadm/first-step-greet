@@ -85,6 +85,8 @@ export function ClientCompliancePeriodView({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<'name' | 'branch' | 'status' | 'completion_date'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSpotCheckRecord, setSelectedSpotCheckRecord] = useState<any>(null);
@@ -600,6 +602,27 @@ export function ClientCompliancePeriodView({
     });
   }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, sortField, sortDirection]);
 
+  // Pagination calculations
+  const totalItems = filteredAndSortedClients.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedClients = filteredAndSortedClients.slice(startIndex, endIndex);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedBranch, selectedPeriod]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1);
+  };
+
   const getUniqueBranches = () => {
     const branches = clients.map(client => ({
       id: client.branch_id || 'unassigned',
@@ -767,9 +790,9 @@ export function ClientCompliancePeriodView({
                           <TableHead className="font-semibold">Notes</TableHead>
                           <TableHead className="font-semibold">Actions</TableHead>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredAndSortedClients.map((client) => {
+                       </TableHeader>
+                       <TableBody>
+                         {paginatedClients.map((client) => {
                           const record = getClientRecordForPeriod(client.id, selectedPeriod);
                           const status = record?.status || 'pending';
                           const isCompleted = status === 'completed';
@@ -941,7 +964,7 @@ export function ClientCompliancePeriodView({
                            );
                          })}
                        
-                         {filteredAndSortedClients.length === 0 && (
+                         {paginatedClients.length === 0 && (
                            <TableRow>
                              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                No clients found
@@ -949,8 +972,65 @@ export function ClientCompliancePeriodView({
                            </TableRow>
                          )}
                        </TableBody>
-                     </Table>
-                   </CardContent>
+                      </Table>
+                      
+                      {/* Pagination */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Items per page:</span>
+                            <select
+                              value={itemsPerPage}
+                              onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                              className="border border-border rounded px-2 py-1 text-sm bg-background"
+                            >
+                              <option value={10}>10</option>
+                              <option value={25}>25</option>
+                              <option value={50}>50</option>
+                              <option value={100}>100</option>
+                            </select>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              disabled={currentPage === 1}
+                            >
+                              Previous
+                            </Button>
+                            
+                            <div className="flex items-center gap-1">
+                              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                <Button
+                                  key={page}
+                                  variant={currentPage === page ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => handlePageChange(page)}
+                                  className={currentPage === page ? "bg-primary text-primary-foreground" : ""}
+                                >
+                                  {page}
+                                </Button>
+                              ))}
+                            </div>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              disabled={currentPage === totalPages}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                          
+                          <div className="text-sm text-muted-foreground">
+                            Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} clients
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
                  </Card>
                </div>
              </div>

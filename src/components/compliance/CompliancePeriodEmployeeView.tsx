@@ -70,6 +70,8 @@ export function CompliancePeriodEmployeeView({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [open, setOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const { toast } = useToast();
   const { companySettings } = useCompany();
 
@@ -220,6 +222,27 @@ export function CompliancePeriodEmployeeView({
   const dueCount = filteredEmployeeStatusList.filter(item => item.status === 'due').length;
   const pendingCount = filteredEmployeeStatusList.filter(item => item.status === 'pending').length;
 
+  // Pagination calculations
+  const totalItems = filteredEmployeeStatusList.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedEmployeeStatusList = filteredEmployeeStatusList.slice(startIndex, endIndex);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1);
+  };
+
   useEffect(() => {
     fetchData();
   }, [open]);
@@ -309,7 +332,7 @@ export function CompliancePeriodEmployeeView({
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-3">
                     <Users className="w-6 h-6" />
-                    Employee Status ({filteredEmployeeStatusList.length} of {employees.length} employees)
+                    Employee Status ({totalItems} of {employees.length} employees)
                   </CardTitle>
                   
                   {/* Search */}
@@ -336,7 +359,7 @@ export function CompliancePeriodEmployeeView({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEmployeeStatusList.map((item) => (
+                    {paginatedEmployeeStatusList.map((item) => (
                       <TableRow key={item.employee.id} className={getStatusColor(item.status)}>
                         <TableCell className="font-medium">
                           {item.employee.name}
@@ -463,7 +486,64 @@ export function CompliancePeriodEmployeeView({
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                 </Table>
+                
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Items per page:</span>
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                        className="border border-border rounded px-2 py-1 text-sm bg-background"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button
+                            key={page}
+                            variant={currentPage === page ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(page)}
+                            className={currentPage === page ? "bg-primary text-primary-foreground" : ""}
+                          >
+                            {page}
+                          </Button>
+                        ))}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} employees
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
