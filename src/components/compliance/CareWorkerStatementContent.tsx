@@ -325,6 +325,7 @@ export function CareWorkerStatementContent() {
             <TableHeader>
               <TableRow>
                 <TableHead>Care Worker</TableHead>
+                <TableHead>Client Name</TableHead>
                 <TableHead>Client Address</TableHead>
                 <TableHead>Branch</TableHead>
                 <TableHead>Report Date</TableHead>
@@ -339,6 +340,7 @@ export function CareWorkerStatementContent() {
                   <TableCell className="font-medium">
                     {statement.care_worker_name}
                   </TableCell>
+                  <TableCell>{statement.client_name}</TableCell>
                   <TableCell>{statement.client_address}</TableCell>
                   <TableCell>{statement.branches?.name || 'No branch'}</TableCell>
                   <TableCell>{new Date(statement.report_date).toLocaleDateString()}</TableCell>
@@ -411,7 +413,7 @@ export function CareWorkerStatementContent() {
               ))}
               {filteredStatements.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     <div className="flex flex-col items-center gap-2">
                       <FileText className="h-8 w-8 text-muted-foreground" />
                       <p className="text-muted-foreground">No statements found</p>
