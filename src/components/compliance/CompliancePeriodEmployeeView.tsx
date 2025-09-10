@@ -76,7 +76,7 @@ export function CompliancePeriodEmployeeView({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const { toast } = useToast();
-  const { canEditCompliance, canDeleteCompliance, canCreateCompliance } = usePagePermissions();
+  const { canEditCompliance, canDeleteCompliance, canCreateCompliance, canViewCompliance } = usePagePermissions();
   const { companySettings } = useCompany();
 
   const fetchData = async () => {
@@ -470,7 +470,7 @@ export function CompliancePeriodEmployeeView({
                                 return item.record?.notes || '-';
                               })()}
                             </div>
-                            {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && (
+                            {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && canViewCompliance() && (
                               <>
                                 <Button
                                   variant="ghost"
