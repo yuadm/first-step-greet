@@ -15,6 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { generateJobApplicationPdf } from "@/lib/job-application-pdf";
 import { ReviewSummary } from "@/components/job-application/ReviewSummary";
+import { usePermissions } from "@/contexts/PermissionsContext";
+import { usePagePermissions } from "@/hooks/usePagePermissions";
+import { useAuth } from "@/contexts/AuthContext";
 import { DatePickerWithRange, DatePicker } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -72,7 +75,39 @@ export function JobApplicationsContent() {
   const [statusOptions, setStatusOptions] = useState<string[]>(['new','reviewing','interviewed','accepted','rejected']);
   const { toast } = useToast();
   const { companySettings } = useCompany();
+  const { user } = useAuth();
+  const { getAccessibleBranches, isAdmin } = usePermissions();
+  const { 
+    canViewJobApplications,
+    canCreateJobApplications,
+    canEditJobApplications,
+    canDeleteJobApplications,
+    canReviewJobApplications
+  } = usePagePermissions();
+
+  // Debug logging
+  console.log('JobApplicationsContent - Debug Info:', {
+    isAdmin,
+    canViewJobApplications: canViewJobApplications(),
+    canCreateJobApplications: canCreateJobApplications(),
+    canEditJobApplications: canEditJobApplications(),
+    canDeleteJobApplications: canDeleteJobApplications(),
+    canReviewJobApplications: canReviewJobApplications(),
+    accessibleBranches: getAccessibleBranches(),
+    user: user?.id
+  });
   
+  // Check if user has permission to view job applications
+  if (!canViewJobApplications()) {
+    return (
+      <div className="p-6">
+        <div className="text-center text-muted-foreground">
+          You don't have permission to view job applications.
+        </div>
+      </div>
+    );
+  }
+
   useEffect(() => {
     fetchStatusOptions();
   }, []);
@@ -116,6 +151,13 @@ export function JobApplicationsContent() {
   };
 
   const fetchApplications = async () => {
+    console.log('JobApplicationsContent - Fetching applications...');
+    console.log('JobApplicationsContent - User permissions:', {
+      canView: canViewJobApplications(),
+      accessibleBranches: getAccessibleBranches(),
+      isAdmin
+    });
+    
     try {
       let query = supabase
         .from('job_applications')
@@ -145,6 +187,12 @@ export function JobApplicationsContent() {
       const { data, error, count } = await query.range(from, toIdx);
 
       if (error) throw error;
+      
+      console.log('JobApplicationsContent - Raw applications data:', data);
+      console.log('JobApplicationsContent - Total count:', count);
+      
+      // TODO: Check if job applications need branch filtering
+      // For now, setting all data without branch filtering
       setApplications(data || []);
       setTotalCount(count || 0);
     } catch (error) {
