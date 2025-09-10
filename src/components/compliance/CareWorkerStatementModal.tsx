@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface Employee {
   id: string;
@@ -61,6 +62,7 @@ export function CareWorkerStatementModal({
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const { isAdmin, getAccessibleBranches } = usePermissions();
 
   useEffect(() => {
     fetchEmployees();
@@ -97,7 +99,18 @@ export function CareWorkerStatementModal({
         .order('name');
 
       if (error) throw error;
-      setEmployees(data || []);
+      
+      // Filter employees by accessible branches for non-admin users
+      let filteredEmployees = data || [];
+      const accessibleBranches = getAccessibleBranches();
+      
+      if (!isAdmin && accessibleBranches.length > 0) {
+        filteredEmployees = (data || []).filter(employee => 
+          employee.branch_id && accessibleBranches.includes(employee.branch_id)
+        );
+      }
+      
+      setEmployees(filteredEmployees);
     } catch (error) {
       console.error('Error fetching employees:', error);
       toast({
