@@ -117,6 +117,8 @@ export function ComplianceTypeContent() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [completedByUsers, setCompletedByUsers] = useState<{ [key: string]: { name: string; created_at: string } }>({});
 
 // Spot check edit state
@@ -738,6 +740,35 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
     return filteredAndSortedEmployees;
   };
 
+  // Pagination calculations
+  const totalItems = filteredAndSortedEmployees.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedEmployees = filteredAndSortedEmployees.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  const currentSearchTerm = searchTerm;
+  const currentFilteredStatus = filteredStatus;
+  const currentBranchFilter = branchFilter;
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [currentSearchTerm, currentFilteredStatus, currentBranchFilter]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1);
+  };
+
+  const getPaginatedEmployeeList = () => {
+    return paginatedEmployees;
+  };
+
   // Filter employee status list based on user permissions for stats calculation
   const filteredEmployeeStatusForStats = useMemo(() => {
     const accessibleBranches = getAccessibleBranches();
@@ -965,9 +996,9 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-3">
-                    <Users className="w-6 h-6" />
-                    Employee Compliance Status
-                  </CardTitle>
+                     <Users className="w-6 h-6" />
+                     Employee Compliance Status ({totalItems} employees)
+                   </CardTitle>
                   <div className="flex items-center gap-4">
                     {/* Search */}
                     <div className="relative">
@@ -1011,7 +1042,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">{getFilteredEmployeeList().length === 0 ? (
+              <CardContent className="p-0">{totalItems === 0 ? (
                 <div className="p-12 text-center">
                   <Users className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
                   <h3 className="text-lg font-semibold mb-2">
@@ -1036,8 +1067,9 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                     </Button>
                   )}
                 </div>
-              ) : (
-                <Table>
+               ) : (
+                 <>
+                 <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead 
@@ -1080,8 +1112,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {getFilteredEmployeeList().map((item) => (
+                     <TableBody>
+                       {getPaginatedEmployeeList().map((item) => (
                         <TableRow key={item.employee.id} className={getStatusColor(item.status)}>
                           <TableCell className="font-medium">
                             {item.employee.name}
@@ -1359,8 +1391,66 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                         </TableRow>
                       ))}
                      </TableBody>
-                   </Table>
-                )}
+                 </Table>
+                 
+                 {/* Pagination */}
+                 {totalPages > 1 && (
+                   <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
+                     <div className="flex items-center gap-2">
+                       <span className="text-sm text-muted-foreground">Items per page:</span>
+                       <select
+                         value={itemsPerPage}
+                         onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                         className="border border-border rounded px-2 py-1 text-sm bg-background"
+                       >
+                         <option value={10}>10</option>
+                         <option value={25}>25</option>
+                         <option value={50}>50</option>
+                         <option value={100}>100</option>
+                       </select>
+                     </div>
+                     
+                     <div className="flex items-center gap-2">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handlePageChange(currentPage - 1)}
+                         disabled={currentPage === 1}
+                       >
+                         Previous
+                       </Button>
+                       
+                       <div className="flex items-center gap-1">
+                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                           <Button
+                             key={page}
+                             variant={currentPage === page ? "default" : "outline"}
+                             size="sm"
+                             onClick={() => handlePageChange(page)}
+                             className={currentPage === page ? "bg-primary text-primary-foreground" : ""}
+                           >
+                             {page}
+                           </Button>
+                         ))}
+                       </div>
+                       
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         onClick={() => handlePageChange(currentPage + 1)}
+                         disabled={currentPage === totalPages}
+                       >
+                         Next
+                       </Button>
+                     </div>
+                     
+                     <div className="text-sm text-muted-foreground">
+                       Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} employees
+                     </div>
+                   </div>
+                  )}
+                 </>
+              )}
               </CardContent>
             </Card>
           </div>
