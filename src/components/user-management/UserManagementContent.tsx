@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
-import { Plus, Users, Crown, User, Search, Filter, RefreshCw } from "lucide-react";
+import { UserCog, Plus, Shield, Users, Trash2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
-import { UserCard } from "./UserCard";
-import { CreateUserDialog } from "./CreateUserDialog";
-import { ModernPermissionsDialog } from "./ModernPermissionsDialog";
+import { UserRoleSelect } from "./UserRoleSelect";
+import { UserPermissionsDialog } from "./UserPermissionsDialog";
 
 interface UserWithRole {
   id: string;
@@ -24,19 +26,18 @@ interface UserWithRole {
 export function UserManagementContent() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
   const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState("user");
+  const [creating, setCreating] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
-  const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [creating, setCreating] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
-  
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, userRole } = useAuth();
   const { canCreateUsers, canEditUsers, canDeleteUsers } = usePagePermissions();
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export function UserManagementContent() {
     try {
       setLoading(true);
       
+      // Get all user roles with emails
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*')
@@ -54,6 +56,7 @@ export function UserManagementContent() {
 
       if (rolesError) throw rolesError;
 
+      // Combine role data with email data
       const usersWithRoles: UserWithRole[] = (userRoles || []).map((userRole: any) => ({
         id: userRole.user_id,
         email: userRole.email || 
@@ -75,8 +78,8 @@ export function UserManagementContent() {
     }
   };
 
-  const createUser = async (email: string, password: string, role: string) => {
-    if (!email || !password) {
+  const createUser = async () => {
+    if (!newUserEmail || !newUserPassword) {
       toast({
         title: "Missing information",
         description: "Please fill in all fields",
@@ -87,8 +90,13 @@ export function UserManagementContent() {
 
     setCreating(true);
     try {
+      // Use the edge function to create user with admin privileges
       const { data, error } = await supabase.functions.invoke('create-admin-user', {
-        body: { email, password, role }
+        body: {
+          email: newUserEmail,
+          password: newUserPassword,
+          role: newUserRole
+        }
       });
 
       if (error) throw error;
@@ -96,10 +104,13 @@ export function UserManagementContent() {
       if (data.success) {
         toast({
           title: "User created successfully",
-          description: `${email} has been added with ${role} role`,
+          description: `${newUserEmail} has been added with ${newUserRole} role`,
         });
         
         setCreateUserOpen(false);
+        setNewUserEmail("");
+        setNewUserPassword("");
+        setNewUserRole("user");
         fetchUsers();
       } else {
         throw new Error(data.error || 'Failed to create user');
@@ -149,7 +160,9 @@ export function UserManagementContent() {
           'Authorization': `Bearer ${session?.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId })
+        body: JSON.stringify({
+          userId: userId
+        })
       });
 
       const result = await response.json();
@@ -212,7 +225,7 @@ export function UserManagementContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: selectedUser?.id,
+          userId: selectedUserId,
           password: newPassword
         })
       });
@@ -229,7 +242,7 @@ export function UserManagementContent() {
       });
       
       setResetPasswordOpen(false);
-      setSelectedUser(null);
+      setSelectedUserId("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: any) {
@@ -244,35 +257,65 @@ export function UserManagementContent() {
     }
   };
 
+  const openResetPasswordDialog = (userId: string) => {
+    setSelectedUserId(userId);
+    setResetPasswordOpen(true);
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role.toLowerCase()) {
+      case 'admin':
+        return 'bg-destructive text-destructive-foreground';
+      case 'manager':
+        return 'bg-warning text-warning-foreground';
+      case 'hr':
+        return 'bg-primary text-primary-foreground';
+      default:
+        return 'bg-muted text-muted-foreground';
+    }
+  };
+
   const isCurrentUser = (userId: string) => {
     return userId === currentUser?.id;
   };
 
-  // Filter users based on search and role
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.split('@')[0].toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
-
-  const userStats = {
-    total: users.length,
-    admins: users.filter(u => u.role === 'admin').length,
-    users: users.filter(u => u.role === 'user').length,
+  const rolePermissions = {
+    admin: [
+      "Full system access",
+      "User management", 
+      "System settings",
+      "All branches",
+      "Reports & analytics"
+    ],
+    manager: [
+      "Employee management",
+      "Leave approvals",
+      "Branch access", 
+      "Reports viewing",
+      "Compliance tracking"
+    ],
+    hr: [
+      "Employee records",
+      "Document tracking",
+      "Compliance management",
+      "Leave management", 
+      "Reports generation"
+    ],
+    user: [
+      "View own data",
+      "Submit leave requests",
+      "Update personal info",
+      "View documents",
+      "Basic reporting"
+    ]
   };
 
   if (loading) {
     return (
-      <div className="space-y-8 animate-pulse">
+      <div className="space-y-6 animate-pulse">
         <div className="h-8 bg-muted rounded-lg w-64"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-muted rounded-xl"></div>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-48 bg-muted rounded-xl"></div>
           ))}
         </div>
@@ -289,43 +332,87 @@ export function UserManagementContent() {
             User Management
           </h1>
           <p className="text-lg text-muted-foreground">
-            Manage users, roles, and permissions across your organization
+            Manage user roles, permissions, and access control
           </p>
         </div>
         
         <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            onClick={fetchUsers}
-            className="hover:bg-muted/50"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-          
           {canCreateUsers() && (
-            <Button 
-              onClick={() => setCreateUserOpen(true)}
-              className="bg-gradient-primary hover:opacity-90"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add User
-            </Button>
+            <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-primary hover:opacity-90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New User</DialogTitle>
+                  <DialogDescription>
+                    Add a new user to the system and assign their role.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="user@example.com"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter password"
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select value={newUserRole} onValueChange={setNewUserRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCreateUserOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={createUser} disabled={creating}>
+                      {creating ? "Creating..." : "Create User"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up">
-        <Card className="card-premium border-primary/20 bg-gradient-to-br from-primary-soft to-card">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-slide-up">
+        <Card className="card-premium">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                <p className="text-3xl font-bold text-primary">{userStats.total}</p>
-                <p className="text-sm text-muted-foreground mt-1">Active accounts</p>
+                <p className="text-2xl font-bold">{users.length}</p>
               </div>
-              <Users className="w-10 h-10 text-primary" />
+              <Users className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -334,126 +421,139 @@ export function UserManagementContent() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Administrators</p>
-                <p className="text-3xl font-bold text-destructive">{userStats.admins}</p>
-                <p className="text-sm text-muted-foreground mt-1">Full access</p>
+                <p className="text-sm font-medium text-muted-foreground">Admins</p>
+                <p className="text-2xl font-bold text-destructive">
+                  {users.filter(u => u.role === 'admin').length}
+                </p>
               </div>
-              <Crown className="w-10 h-10 text-destructive" />
+              <Shield className="w-8 h-8 text-destructive" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="card-premium border-muted/20">
+
+        <Card className="card-premium border-primary/20 bg-gradient-to-br from-primary-soft to-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Regular Users</p>
-                <p className="text-3xl font-bold">{userStats.users}</p>
-                <p className="text-sm text-muted-foreground mt-1">Limited access</p>
+                <p className="text-sm font-medium text-muted-foreground">Normal Users</p>
+                <p className="text-2xl font-bold text-primary">
+                  {users.filter(u => u.role === 'user').length}
+                </p>
               </div>
-              <User className="w-10 h-10 text-muted-foreground" />
+              <Users className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 animate-fade-in">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search users by name or email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Filter by role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="admin">Administrators</SelectItem>
-            <SelectItem value="user">Users</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Users Table */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-foreground">Active Users</h2>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
+                          <UserCog className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {user.email.split('@')[0]}
+                            {isCurrentUser(user.id) && (
+                              <Badge variant="outline" className="ml-2">You</Badge>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Badge className={getRoleBadgeColor(user.role)}>
+                        {user.role.toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {canEditUsers() && (
+                          <UserRoleSelect
+                            value={user.role}
+                            onValueChange={(newRole) => updateUserRole(user.id, newRole)}
+                            disabled={isCurrentUser(user.id)}
+                          />
+                        )}
+                        {canEditUsers() && (
+                          <UserPermissionsDialog
+                            user={user}
+                            onSuccess={fetchUsers}
+                          />
+                        )}
+                        {canEditUsers() && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openResetPasswordDialog(user.id)}
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDeleteUsers() && !isCurrentUser(user.id) && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete User</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this user? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteUser(user.id)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Users Grid */}
-      {filteredUsers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up">
-          {filteredUsers.map((user) => (
-            <UserCard
-              key={user.id}
-              user={user}
-              isCurrentUser={isCurrentUser(user.id)}
-              onEditPermissions={() => {
-                setSelectedUser(user);
-                setPermissionsDialogOpen(true);
-              }}
-              onResetPassword={() => {
-                setSelectedUser(user);
-                setResetPasswordOpen(true);
-              }}
-              onDeleteUser={() => deleteUser(user.id)}
-              onRoleChange={(role) => updateUserRole(user.id, role)}
-              canEdit={canEditUsers()}
-              canDelete={canDeleteUsers()}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16 animate-fade-in">
-          <Users className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">
-            {searchQuery || roleFilter !== "all" ? "No users found" : "No users yet"}
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            {searchQuery || roleFilter !== "all" 
-              ? "Try adjusting your search or filter criteria"
-              : "Get started by adding your first user with appropriate roles"
-            }
-          </p>
-          {canCreateUsers() && !searchQuery && roleFilter === "all" && (
-            <Button 
-              onClick={() => setCreateUserOpen(true)}
-              className="bg-gradient-primary hover:opacity-90"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add First User
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Dialogs */}
-      <CreateUserDialog
-        open={createUserOpen}
-        onOpenChange={setCreateUserOpen}
-        onCreateUser={createUser}
-        creating={creating}
-      />
-
-      {selectedUser && (
-        <ModernPermissionsDialog
-          user={selectedUser}
-          open={permissionsDialogOpen}
-          onOpenChange={(open) => {
-            setPermissionsDialogOpen(open);
-            if (!open) setSelectedUser(null);
-          }}
-          onSuccess={fetchUsers}
-        />
-      )}
-
-      {/* Password Reset Dialog */}
+      {/* Admin Password Reset Dialog */}
       <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset Password for {selectedUser?.email}</DialogTitle>
+            <DialogTitle>Reset User Password</DialogTitle>
             <DialogDescription>
               Set a new password for this user. They will be able to sign in with the new password immediately.
             </DialogDescription>
@@ -479,12 +579,12 @@ export function UserManagementContent() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t">
+            <div className="flex justify-end gap-3">
               <Button
                 variant="outline"
                 onClick={() => {
                   setResetPasswordOpen(false);
-                  setSelectedUser(null);
+                  setSelectedUserId("");
                   setNewPassword("");
                   setConfirmPassword("");
                 }}
@@ -498,6 +598,26 @@ export function UserManagementContent() {
           </div>
         </DialogContent>
       </Dialog>
+
+
+      {users.length === 0 && !loading && (
+        <div className="text-center py-12 animate-fade-in">
+          <UserCog className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No users found</h3>
+          <p className="text-muted-foreground mb-4">
+            Get started by adding your first user with appropriate roles.
+          </p>
+          {canCreateUsers() && (
+            <Button 
+              className="bg-gradient-primary hover:opacity-90"
+              onClick={() => setCreateUserOpen(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add User
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
