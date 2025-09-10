@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search, Edit, Trash2 } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,10 +22,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { useCompany } from "@/contexts/CompanyContext";
-import { EditComplianceRecordModal } from "./EditComplianceRecordModal";
-import { AddComplianceRecordModal } from "./AddComplianceRecordModal";
 
 interface Employee {
   id: string;
@@ -76,7 +73,6 @@ export function CompliancePeriodEmployeeView({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const { toast } = useToast();
-  const { canEditCompliance, canDeleteCompliance, canCreateCompliance, canViewCompliance } = usePagePermissions();
   const { companySettings } = useCompany();
 
   const fetchData = async () => {
@@ -247,44 +243,6 @@ export function CompliancePeriodEmployeeView({
     setCurrentPage(1);
   };
 
-  const handleDelete = async (recordId: string, employeeName: string) => {
-    if (!canDeleteCompliance()) {
-      toast({
-        title: "Access denied",
-        description: "You don't have permission to delete compliance records.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete the compliance record for ${employeeName}?`)) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('compliance_period_records')
-        .delete()
-        .eq('id', recordId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Record deleted",
-        description: `Compliance record for ${employeeName} has been deleted.`,
-      });
-
-      fetchData();
-    } catch (error) {
-      console.error('Error deleting record:', error);
-      toast({
-        title: "Error deleting record",
-        description: "Could not delete the compliance record. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   useEffect(() => {
     fetchData();
   }, [open]);
@@ -393,12 +351,11 @@ export function CompliancePeriodEmployeeView({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                       <TableHead>Employee</TableHead>
-                       <TableHead>Branch</TableHead>
-                       <TableHead>Status</TableHead>
-                       <TableHead>Completion Date</TableHead>
-                       <TableHead>Notes</TableHead>
-                       <TableHead>Actions</TableHead>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Branch</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Completion Date</TableHead>
+                      <TableHead>Notes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -470,7 +427,7 @@ export function CompliancePeriodEmployeeView({
                                 return item.record?.notes || '-';
                               })()}
                             </div>
-                            {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && canViewCompliance() && (
+                            {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && (
                               <>
                                 <Button
                                   variant="ghost"
@@ -523,59 +480,9 @@ export function CompliancePeriodEmployeeView({
                                   <Download className="h-3 w-3" />
                                 </Button>
                               </>
-                             )}
-                           </div>
-                         </TableCell>
-                         <TableCell>
-                           <div className="flex items-center gap-2">
-                             {/* Add Record Button */}
-                             {!item.record && canCreateCompliance() && (
-                               <AddComplianceRecordModal
-                                 employeeId={item.employee.id}
-                                 employeeName={item.employee.name}
-                                 complianceTypeId={complianceTypeId}
-                                 complianceTypeName={complianceTypeName}
-                                 frequency={frequency}
-                                 periodIdentifier={periodIdentifier}
-                                 onRecordAdded={fetchData}
-                                 trigger={
-                                   <Button variant="outline" size="sm">
-                                     Add Record
-                                   </Button>
-                                 }
-                               />
-                             )}
-                             
-                             {/* Edit Record Button */}
-                             {item.record && canEditCompliance() && (
-                               <EditComplianceRecordModal
-                                 record={item.record}
-                                 employeeName={item.employee.name}
-                                 complianceTypeName={complianceTypeName}
-                                 frequency={frequency}
-                                 onRecordUpdated={fetchData}
-                                 trigger={
-                                   <Button variant="ghost" size="sm" title="Edit Record">
-                                     <Edit className="w-4 h-4" />
-                                   </Button>
-                                 }
-                               />
-                             )}
-                             
-                             {/* Delete Record Button */}
-                             {item.record && canDeleteCompliance() && (
-                               <Button
-                                 variant="ghost"
-                                 size="sm"
-                                 onClick={() => handleDelete(item.record!.id, item.employee.name)}
-                                 title="Delete Record"
-                                 className="text-destructive hover:text-destructive"
-                               >
-                                 <Trash2 className="w-4 h-4" />
-                               </Button>
-                             )}
-                           </div>
-                         </TableCell>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

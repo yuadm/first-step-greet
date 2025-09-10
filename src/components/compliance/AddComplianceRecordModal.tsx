@@ -21,7 +21,6 @@ import { format, isValid } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/PermissionsContext";
-import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { useCompany } from "@/contexts/CompanyContext";
 import SpotCheckFormDialog, { SpotCheckFormData } from "@/components/compliance/SpotCheckFormDialog";
 import SupervisionFormDialog, { SupervisionFormData } from "@/components/compliance/SupervisionFormDialog";
@@ -70,7 +69,6 @@ const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurr
   const [branches, setBranches] = useState<Array<{id: string, name: string}>>([]);
   const { toast } = useToast();
   const { getAccessibleBranches, isAdmin } = usePermissions();
-  const { canCreateCompliance } = usePagePermissions();
   const { companySettings } = useCompany();
 
   // Fetch employees if not provided
@@ -366,17 +364,12 @@ const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurr
     }
   };
 
-  const defaultTrigger = canCreateCompliance() ? (
+  const defaultTrigger = (
     <Button>
       Add Compliance Record
     </Button>
-  ) : null;
+  );
 
-
-  // Don't render if user doesn't have create permissions and no custom trigger provided
-  if (!canCreateCompliance() && !trigger) {
-    return null;
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

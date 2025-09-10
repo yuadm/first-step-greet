@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { useCompany } from "@/contexts/CompanyContext";
 import AnnualAppraisalFormDialog, { type AnnualAppraisalFormData } from "./AnnualAppraisalFormDialog";
 import { downloadAnnualAppraisalPDF } from "@/lib/annual-appraisal-pdf";
@@ -97,7 +96,6 @@ export function EditComplianceRecordModal({
   });
   const [annualOpen, setAnnualOpen] = useState(false);
   const { toast } = useToast();
-  const { canEditCompliance } = usePagePermissions();
   const { companySettings } = useCompany();
 
   // Calculate valid date range based on period and frequency
@@ -243,21 +241,8 @@ export function EditComplianceRecordModal({
 
   // Handle trigger click directly instead of nesting dialogs
   const handleTriggerClick = () => {
-    if (!canEditCompliance()) {
-      toast({
-        title: "Access denied",
-        description: "You don't have permission to edit compliance records.",
-        variant: "destructive",
-      });
-      return;
-    }
     setIsOpen(true);
   };
-
-  // Don't render if user doesn't have edit permissions and no custom trigger provided
-  if (!canEditCompliance()) {
-    return null;
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
