@@ -196,13 +196,13 @@ export async function generateMedicationCompetencyPdf(
       // Header background with gradient effect (simulated with multiple rectangles)
       for (let i = 0; i < 8; i++) {
         const intensity = 0.2 + (i * 0.1);
-        drawRectangle(0, yPosition - 120 + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
+        drawRectangle(0, yPosition - 140 + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
       }
 
       // Main header background
-      drawRectangle(0, yPosition - 120, pageWidth, 120, colors.primary);
+      drawRectangle(0, yPosition - 140, pageWidth, 140, colors.primary);
 
-      // Company logo
+      // Company logo and info
       if (logoImage) {
         const logoSize = 50;
         page.drawImage(logoImage, {
@@ -217,27 +217,26 @@ export async function generateMedicationCompetencyPdf(
       if (company?.name) {
         drawText(company.name, margin + (logoImage ? 120 : 0), yPosition - 30, {
           color: colors.white,
-          size: 18,
+          size: 14,
           bold: true
         });
       }
 
-      // Compliance type name (main title)
-      const complianceTypeName = data.questionnaireName || 'MEDICATION COMPETENCY ASSESSMENT';
-      drawText(complianceTypeName.toUpperCase(), margin + (logoImage ? 120 : 0), yPosition - 55, {
+      // Main title
+      drawText('MEDICATION COMPETENCY ASSESSMENT', margin, yPosition - 65, {
         color: colors.white,
-        size: 22,
+        size: 20,
         bold: true
       });
 
-      // Frequency/Professional certification subtitle
-      drawText('Professional Healthcare Certification', margin + (logoImage ? 120 : 0), yPosition - 75, {
+      // Subtitle
+      drawText('Professional Healthcare Certification', margin, yPosition - 85, {
         color: rgb(0.9, 0.9, 0.9),
         size: 11
       });
 
       // Assessment info box
-      const infoBoxY = yPosition - 110;
+      const infoBoxY = yPosition - 130;
       drawRectangle(pageWidth - 220, infoBoxY, 180, 35, rgb(0.9, 0.9, 1.0));
       
       drawText('Assessment ID:', pageWidth - 210, infoBoxY + 20, {
@@ -260,7 +259,7 @@ export async function generateMedicationCompetencyPdf(
         size: 8
       });
 
-      yPosition -= 140;
+      yPosition -= 160;
     };
 
     // Employee information card
