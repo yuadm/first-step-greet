@@ -56,8 +56,8 @@ interface MedicationCompetencyFormProps {
 const competencyFramework: Omit<CompetencyItem, 'competent' | 'comments'>[] = [
   {
     id: 'infection-control-precautions',
-    performanceCriteria: 'Routinely applies standard precautions for infection control and any other relevant health and safety measures. Washes hands before assisting with medicines. Wears gloves when helping with creams',
-    examples: 'Direct observation / discussion'
+    performanceCriteria: 'Routinely applies standard precautions for infection control and any other relevant health and safety measures',
+    examples: 'Washes hands before assisting with medicines. Wears gloves when helping with creams'
   },
   {
     id: 'check-mar-records',
@@ -71,8 +71,8 @@ const competencyFramework: Omit<CompetencyItem, 'competent' | 'comments'>[] = [
   },
   {
     id: 'read-mar-accurately',
-    performanceCriteria: 'Reads the medication administration record accurately, referring any illegible directions to the line manager before it is administered. Further information can be found in the medication Information leaflet.',
-    examples: 'Specific incidents / possible questions / discussion'
+    performanceCriteria: 'Reads the medication administration record accurately, referring any illegible directions to the line manager before it is administered.',
+    examples: 'Specific incidents / possible questions / discussion. Further information can be found in the medication Information leaflet.'
   },
   {
     id: 'check-recent-medication',
@@ -86,7 +86,7 @@ const competencyFramework: Omit<CompetencyItem, 'competent' | 'comments'>[] = [
   },
   {
     id: 'six-rights-check',
-    performanceCriteria: 'Checks the identity of the individual who is to receive the medication before it is administered, and selects, checks, and prepares correctly the medication according to the medication administration record. (The six rights) - The right person, The right medicine, The right dose, The right time, The right route, The right to refuse',
+    performanceCriteria: 'Checks the identity of the individual who is to receive the medication before it is administered, and selects, checks, and prepares correctly the medication according to the medication administration record. (The six rights) • The right person • The right medicine • The right dose • The right time • The right route • The right to refuse',
     examples: 'Confidently and accurately: 1. Checks the individual\'s name matches that on the pack and on the administration record. 2. Selects the medication, checking that the name on the pack matches that on the administration record. 3. Selects the correct dose, according to the pack and the administration record. 4. Selects the correct timing of the dose according to that on the pack and on the administration record 5. Selects the correct route of administration. 6. Is aware of the person\'s right to refuse to take medication.'
   },
   {
@@ -106,7 +106,7 @@ const competencyFramework: Omit<CompetencyItem, 'competent' | 'comments'>[] = [
   },
   {
     id: 'safely-assist-medication',
-    performanceCriteria: 'Safely assists with the medication. Following the written instructions and in line with legislation and local policies. In a way which minimizes pain, discomfort and trauma to the individual',
+    performanceCriteria: 'Safely assists with the medication. • Following the written instructions and in line with legislation and local policies • In a way which minimizes pain, discomfort and trauma to the individual',
     examples: 'Direct observation / discussion with individual.'
   },
   {
