@@ -249,30 +249,6 @@ export async function generateMedicationCompetencyPdf(
         size: 14
       });
 
-      // Assessment info box (moved to bottom right)
-      const infoBoxY = yPosition - 170;
-      drawRectangle(pageWidth - 220, infoBoxY, 180, 35, rgb(0.9, 0.9, 1.0));
-      
-      drawText('Assessment ID:', pageWidth - 210, infoBoxY + 20, {
-        color: colors.text,
-        size: 8,
-        bold: true
-      });
-      drawText(data.periodIdentifier, pageWidth - 130, infoBoxY + 20, {
-        color: colors.text,
-        size: 8
-      });
-      
-      drawText('Generated:', pageWidth - 210, infoBoxY + 8, {
-        color: colors.text,
-        size: 8,
-        bold: true
-      });
-      drawText(format(new Date(), 'MMM dd, yyyy'), pageWidth - 130, infoBoxY + 8, {
-        color: colors.text,
-        size: 8
-      });
-
       yPosition -= 200;
     };
 
@@ -318,56 +294,6 @@ export async function generateMedicationCompetencyPdf(
       yPosition = cardY - 20;
     };
 
-    // Competency results summary
-    const drawCompetencySummary = () => {
-      checkPageSpace(80);
-      
-      const competentCount = data.responses.filter(r => r.answer === 'yes').length;
-      const totalCount = data.responses.length;
-      const percentage = Math.round((competentCount / totalCount) * 100);
-      
-      // Summary card
-      const summaryHeight = 60;
-      const summaryY = yPosition - summaryHeight;
-      
-      drawRectangle(margin, summaryY, contentWidth, summaryHeight, colors.background);
-      
-      // Progress indicator
-      const progressWidth = 300;
-      const progressHeight = 8;
-      const progressX = margin + 20;
-      const progressY = summaryY + 25;
-      
-      // Progress background
-      drawRectangle(progressX, progressY, progressWidth, progressHeight, rgb(0.9, 0.9, 0.9));
-      
-      // Progress fill
-      const fillWidth = (progressWidth * percentage) / 100;
-      const progressColor = percentage >= 80 ? colors.success : percentage >= 60 ? colors.warning : colors.accent;
-      drawRectangle(progressX, progressY, fillWidth, progressHeight, progressColor);
-      
-      // Summary text
-      drawText('📊 COMPETENCY SUMMARY', margin + 20, summaryY + 45, {
-        bold: true,
-        size: 12,
-        color: colors.primary
-      });
-      
-      drawText(`${competentCount}/${totalCount} competencies demonstrated (${percentage}%)`, 
-        progressX + progressWidth + 20, summaryY + 45, { size: 11 });
-      
-      // Overall result
-      const resultText = percentage >= 80 ? 'COMPETENT' : percentage >= 60 ? 'REQUIRES REVIEW' : 'ADDITIONAL TRAINING REQUIRED';
-      const resultColor = percentage >= 80 ? colors.success : percentage >= 60 ? colors.warning : colors.accent;
-      
-      drawText(resultText, margin + 20, summaryY + 10, {
-        bold: true,
-        size: 10,
-        color: resultColor
-      });
-
-      yPosition = summaryY - 20;
-    };
 
     // Individual competency assessments
     const drawCompetencyAssessments = () => {
@@ -388,6 +314,8 @@ export async function generateMedicationCompetencyPdf(
         return acc;
       }, {} as Record<string, CompetencyResponse[]>);
 
+      let questionNumber = 1;
+
       Object.entries(sections).forEach(([sectionName, responses]) => {
         checkPageSpace(40);
         
@@ -400,7 +328,7 @@ export async function generateMedicationCompetencyPdf(
         });
         yPosition -= 30;
 
-        responses.forEach((response, index) => {
+        responses.forEach((response) => {
           // Calculate required height for this item
           const questionLines = wrapText(response.question, contentWidth - 100, regularFont, 10);
           const examplesText = response.helpText || 'Direct observation / discussion';
@@ -424,16 +352,19 @@ export async function generateMedicationCompetencyPdf(
           
           drawRectangle(margin, itemY, contentWidth, requiredHeight, bgColor);
           
-          // Status indicator
-          const statusIcon = response.answer === 'yes' ? '✅' : 
-                           response.answer === 'not-yet' ? '⚠️' : '❓';
+          // Question number instead of status icon
+          const questionNumberText = `${questionNumber}.`;
           const statusColor = response.answer === 'yes' ? colors.success : 
                             response.answer === 'not-yet' ? colors.warning : 
                             colors.textLight;
           
           let currentY = itemY + requiredHeight - 10;
           
-          drawText(statusIcon, margin + 10, currentY, { size: 12 });
+          drawText(questionNumberText, margin + 10, currentY, { 
+            size: 12, 
+            bold: true,
+            color: colors.text
+          });
           
           // Question text
           questionLines.forEach((line, lineIndex) => {
@@ -492,6 +423,7 @@ export async function generateMedicationCompetencyPdf(
           }
           
           yPosition = itemY - 10;
+          questionNumber++;
         });
         
         yPosition -= 10;
@@ -545,36 +477,11 @@ export async function generateMedicationCompetencyPdf(
       }
     };
 
-    // Footer
-    const drawFooter = () => {
-      const footerY = 30;
-      drawRectangle(0, 0, pageWidth, footerY, colors.primary);
-      
-      drawText('Confidential Medical Document - Generated by Compliance Management System', 
-        margin, 18, {
-          color: colors.white,
-          size: 8
-        });
-      
-      drawText(`Page ${pdfDoc.getPageCount()} • ${format(new Date(), 'PPP')}`, 
-        pageWidth - 200, 18, {
-          color: colors.white,
-          size: 8
-        });
-    };
-
     // Generate the PDF content
     drawModernHeader();
     drawEmployeeCard();
-    drawCompetencySummary();
     drawCompetencyAssessments();
     drawSignatureSection();
-    
-    // Add footer to all pages
-    for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-      page = pdfDoc.getPage(i);
-      drawFooter();
-    }
 
     // Save and download the PDF
     const pdfBytes = await pdfDoc.save();
