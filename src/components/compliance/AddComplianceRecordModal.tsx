@@ -25,6 +25,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import SpotCheckFormDialog, { SpotCheckFormData } from "@/components/compliance/SpotCheckFormDialog";
 import SupervisionFormDialog, { SupervisionFormData } from "@/components/compliance/SupervisionFormDialog";
 import AnnualAppraisalFormDialog, { AnnualAppraisalFormData } from "@/components/compliance/AnnualAppraisalFormDialog";
+import { MedicationCompetencyForm } from "@/components/compliance/MedicationCompetencyForm";
 import { generateSpotCheckPdf } from "@/lib/spot-check-pdf";
 import { generateSupervisionPdf } from "@/lib/supervision-pdf";
 import { downloadAnnualAppraisalPDF } from "@/lib/annual-appraisal-pdf";
@@ -54,7 +55,7 @@ export function AddComplianceRecordModal({
   const [isLoading, setIsLoading] = useState(false);
   const [completionDate, setCompletionDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState('');
-const [recordType, setRecordType] = useState<'date' | 'new' | 'spotcheck' | 'supervision' | 'annualappraisal'>('date');
+const [recordType, setRecordType] = useState<'date' | 'new' | 'spotcheck' | 'supervision' | 'annualappraisal' | 'medication_competency'>('date');
 const [newText, setNewText] = useState('');
 const [spotcheckOpen, setSpotcheckOpen] = useState(false);
 const [spotcheckData, setSpotcheckData] = useState<SpotCheckFormData | null>(null);
@@ -62,6 +63,7 @@ const [supervisionOpen, setSupervisionOpen] = useState(false);
 const [supervisionData, setSupervisionData] = useState<SupervisionFormData | null>(null);
 const [annualOpen, setAnnualOpen] = useState(false);
 const [annualData, setAnnualData] = useState<AnnualAppraisalFormData | null>(null);
+const [medicationCompetencyOpen, setMedicationCompetencyOpen] = useState(false);
 const [selectedEmployeeId, setSelectedEmployeeId] = useState(employeeId || '');
 const [selectedEmployeeName, setSelectedEmployeeName] = useState(employeeName || '');
 const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurrentPeriodIdentifier(frequency));
@@ -276,6 +278,8 @@ const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurr
         });
         return;
       }
+    } else if (recordType === 'medication_competency') {
+      // Medication competency form doesn't need validation here as it handles its own validation
     }
 
     setIsLoading(true);
@@ -317,14 +321,17 @@ const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurr
               ? (spotcheckData?.date || format(new Date(), 'yyyy-MM-dd'))
               : recordType === 'supervision'
                 ? (supervisionData?.dateOfSupervision || format(new Date(), 'yyyy-MM-dd'))
-                : recordType === 'annualappraisal'
-                  ? (annualData?.appraisal_date || format(new Date(), 'yyyy-MM-dd'))
+              : recordType === 'annualappraisal'
+                ? (annualData?.appraisal_date || format(new Date(), 'yyyy-MM-dd'))
+                : recordType === 'medication_competency'
+                  ? format(new Date(), 'yyyy-MM-dd')
                   : newText,
         completion_method:
           recordType === 'date' ? 'date_entry' : 
           recordType === 'spotcheck' ? 'spotcheck' : 
           recordType === 'supervision' ? 'supervision' : 
-          recordType === 'annualappraisal' ? 'annual_appraisal' : 'text_entry',
+          recordType === 'annualappraisal' ? 'annual_appraisal' : 
+          recordType === 'medication_competency' ? 'medication_competency' : 'text_entry',
         notes: recordType === 'supervision' 
           ? JSON.stringify({ ...(supervisionData as any), freeTextNotes: notes.trim() || '' }) 
           : recordType === 'annualappraisal'
@@ -487,6 +494,19 @@ const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurr
                   Complete Annual Appraisal
                 </Button>
               )}
+              {complianceTypeName?.toLowerCase().includes('medication') && (
+                <Button
+                  type="button"
+                  variant={recordType === 'medication_competency' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setRecordType('medication_competency');
+                    setMedicationCompetencyOpen(true);
+                  }}
+                  className="w-full col-span-1 sm:col-span-2"
+                >
+                  Complete Medication Competency
+                </Button>
+              )}
             </div>
           </div>
 
@@ -624,6 +644,29 @@ const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurr
           setAnnualOpen(false);
         }}
       />
+      {medicationCompetencyOpen && (
+        <Dialog open={medicationCompetencyOpen} onOpenChange={setMedicationCompetencyOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Medication Competency Assessment</DialogTitle>
+              <DialogDescription>
+                Complete the medication administration competency assessment for {selectedEmployeeName}
+              </DialogDescription>
+            </DialogHeader>
+            <MedicationCompetencyForm
+              complianceTypeId={complianceTypeId}
+              employeeId={selectedEmployeeId}
+              employeeName={selectedEmployeeName}
+              periodIdentifier={selectedPeriod}
+              onComplete={() => {
+                setMedicationCompetencyOpen(false);
+                onRecordAdded();
+                setIsOpen(false);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }
