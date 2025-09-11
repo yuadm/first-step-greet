@@ -50,6 +50,7 @@ import { EditComplianceRecordModal } from "./EditComplianceRecordModal";
 import { format } from "date-fns";
 import { generateSpotCheckPdf } from "@/lib/spot-check-pdf";
 import { generateSupervisionPdf } from "@/lib/supervision-pdf";
+import { generateQuestionnairePDF } from "@/lib/questionnaire-pdf";
 import SpotCheckFormDialog, { SpotCheckFormData } from "./SpotCheckFormDialog";
 import SupervisionFormDialog, { SupervisionFormData } from "./SupervisionFormDialog";
 
@@ -1232,10 +1233,39 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
       >
         <Download className="w-4 h-4" />
       </Button>
-    )}
-    {item.record.completion_method === 'supervision' && item.record.status !== 'completed' && (
-      <Badge className="bg-warning/10 text-warning border-warning/20">Not completed</Badge>
-    )}
+                    )}
+                    {item.record.completion_method === 'questionnaire' && item.record.status === 'completed' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="hover-scale"
+                        onClick={async () => {
+                          try {
+                            await generateQuestionnairePDF(
+                              item.record!.id,
+                              item.employee.name,
+                              complianceType?.name || '',
+                              {
+                                name: companySettings?.name,
+                                logo: companySettings?.logo
+                              }
+                            );
+                          } catch (error) {
+                            console.error('Error generating questionnaire PDF:', error);
+                            toast({
+                              title: "Error generating PDF",
+                              description: "Could not generate questionnaire PDF.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {item.record.completion_method === 'supervision' && item.record.status !== 'completed' && (
+                      <Badge className="bg-warning/10 text-warning border-warning/20">Not completed</Badge>
+                    )}
     {/* View Dialog */}
                                   <Dialog>
                                     <DialogTrigger asChild>
