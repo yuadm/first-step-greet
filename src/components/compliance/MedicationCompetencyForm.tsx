@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ChevronDown, ChevronRight, Check, Shield, Users, Heart, FileText, Clock, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronRight, Upload, Check, Shield, Users, Heart, FileText, Clock, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -29,6 +29,8 @@ interface MedicationCompetencyData {
   
   // Compliance actions
   procedureAcknowledged: boolean;
+  certificateUploaded: boolean;
+  certificateFile?: File;
   checklistCompleted: boolean;
   
   // Competency checklist
@@ -161,6 +163,7 @@ export function MedicationCompetencyForm({
     employeeId,
     employeeName: employeeName || "",
     procedureAcknowledged: false,
+    certificateUploaded: false,
     checklistCompleted: false,
     competencyItems: competencyFramework.map(item => ({
       ...item,
@@ -195,12 +198,53 @@ export function MedicationCompetencyForm({
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload a PDF, JPEG, or PNG file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "File size must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        certificateFile: file,
+        certificateUploaded: true
+      }));
+      
+      toast({
+        title: "Certificate uploaded",
+        description: `File "${file.name}" has been selected for upload`,
+      });
+    }
+  };
+
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
     // Validate compliance actions
     if (!formData.procedureAcknowledged) {
       errors.procedureAcknowledged = "You must acknowledge reading the procedure";
+    }
+    
+    if (!formData.certificateUploaded) {
+      errors.certificateUploaded = "Training certificate upload is required";
     }
 
     // Validate competency checklist
@@ -253,6 +297,20 @@ export function MedicationCompetencyForm({
 
     setIsLoading(true);
     try {
+      // Upload certificate file if provided
+      let certificateUrl = null;
+      if (formData.certificateFile) {
+        const fileExt = formData.certificateFile.name.split('.').pop();
+        const fileName = `${employeeId || 'temp'}-medication-cert-${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('compliance-documents')
+          .upload(fileName, formData.certificateFile);
+        
+        if (uploadError) throw uploadError;
+        certificateUrl = uploadData.path;
+      }
+
       // Create compliance record
       const { error: recordError } = await supabase
         .from('compliance_period_records')
@@ -269,7 +327,8 @@ export function MedicationCompetencyForm({
               confirmed: formData.acknowledgementConfirmed,
               signature: formData.signature,
               date: formData.signatureDate
-            }
+            },
+            certificateUrl
           })
         });
 
@@ -515,6 +574,32 @@ export function MedicationCompetencyForm({
                 <p className="text-red-500 text-sm">{formErrors.procedureAcknowledged}</p>
               )}
             </div>
+          </div>
+
+          {/* Upload Certificate */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium">Upload Medication Training Certificate</Label>
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-3">
+                Upload your medication training certificate (PDF, JPEG, PNG - Max 5MB)
+              </p>
+              <Input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={handleFileUpload}
+                className="max-w-xs mx-auto"
+              />
+              {formData.certificateUploaded && (
+                <div className="mt-3 flex items-center justify-center gap-2 text-green-600">
+                  <Check className="h-4 w-4" />
+                  <span className="text-sm">Certificate uploaded successfully</span>
+                </div>
+              )}
+            </div>
+            {formErrors.certificateUploaded && (
+              <p className="text-red-500 text-sm">{formErrors.certificateUploaded}</p>
+            )}
           </div>
 
           {/* Competency Checklist Status */}

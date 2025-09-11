@@ -23,7 +23,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
-import { usePagePermissions } from "@/hooks/usePagePermissions";
 
 interface Employee {
   id: string;
@@ -74,7 +73,6 @@ export function CompliancePeriodEmployeeView({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const { toast } = useToast();
-  const { canViewCompliance } = usePagePermissions();
   const { companySettings } = useCompany();
 
   const fetchData = async () => {
@@ -482,39 +480,6 @@ export function CompliancePeriodEmployeeView({
                                   <Download className="h-3 w-3" />
                                 </Button>
                               </>
-                            )}
-                            {item.record?.completion_method === 'questionnaire' && item.record?.status === 'completed' && canViewCompliance() && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (item.record?.id) {
-                                    import('@/lib/questionnaire-pdf').then(({ generateQuestionnairePDF }) => {
-                                      generateQuestionnairePDF(
-                                        item.record!.id,
-                                        item.employee.name,
-                                        complianceTypeName,
-                                        {
-                                          name: companySettings?.name || 'Company',
-                                          logo: companySettings?.logo
-                                        }
-                                      ).catch((error) => {
-                                        console.error('Error generating PDF:', error);
-                                        toast({
-                                          title: "Error",
-                                          description: "Failed to generate PDF. Please try again.",
-                                          variant: "destructive",
-                                        });
-                                      });
-                                    });
-                                  }
-                                }}
-                                className="h-6 w-6 p-0"
-                                title="Download PDF"
-                              >
-                                <Download className="h-3 w-3" />
-                              </Button>
                             )}
                           </div>
                         </TableCell>
