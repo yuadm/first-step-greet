@@ -581,6 +581,61 @@ const handleDownloadSpotCheck = async (employeeId: string, period: string) => {
   }
 };
 
+const handleDownloadMedicationCompetency = async (record: any, employeeName: string) => {
+  try {
+    if (!record.notes) {
+      toast({ 
+        title: 'No questionnaire data found', 
+        description: 'This medication competency record does not have questionnaire data.',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    const parsedData = JSON.parse(record.notes);
+    
+    // Transform the data to match our PDF generator interface
+    const competencyData = {
+      employeeId: record.employee_id,
+      employeeName: employeeName,
+      periodIdentifier: record.period_identifier,
+      assessmentDate: record.completion_date,
+      questionnaire: {
+        medicationKnowledge: parsedData.competencyItems?.medicationKnowledge || 'Not assessed',
+        safePractices: parsedData.competencyItems?.safePractices || 'Not assessed',
+        documentation: parsedData.competencyItems?.documentation || 'Not assessed',
+        emergencyProcedures: parsedData.competencyItems?.emergencyProcedures || 'Not assessed',
+        errorReporting: parsedData.competencyItems?.errorReporting || 'Not assessed',
+        patientRights: parsedData.competencyItems?.patientRights || 'Not assessed',
+        confidentiality: parsedData.competencyItems?.confidentiality || 'Not assessed',
+        additionalComments: parsedData.competencyItems?.additionalComments || ''
+      },
+      confirmed: parsedData.acknowledgement?.confirmed || false,
+      completedAt: record.created_at
+    };
+
+    // Import and call the PDF generator
+    const { generateMedicationCompetencyPdf } = await import('@/lib/medication-competency-pdf');
+    await generateMedicationCompetencyPdf(competencyData, {
+      name: companySettings?.name,
+      logo: companySettings?.logo
+    });
+
+    toast({
+      title: "PDF Downloaded",
+      description: `Medication competency assessment for ${employeeName} has been downloaded.`,
+    });
+
+  } catch (error) {
+    console.error('Error generating medication competency PDF:', error);
+    toast({
+      title: "Download failed",
+      description: "Could not download the medication competency PDF. Please try again.",
+      variant: "destructive",
+    });
+  }
+};
+
 const handleDownloadSupervision = async (record: ComplianceRecord) => {
   try {
     if (!record.notes) {
@@ -1229,6 +1284,16 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
             }
           }
         }}
+      >
+        <Download className="w-4 h-4" />
+      </Button>
+    )}
+    {item.record.completion_method === 'medication_competency' && item.record.status === 'completed' && item.record.notes && (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="hover-scale"
+        onClick={() => handleDownloadMedicationCompetency(item.record, item.employee.name)}
       >
         <Download className="w-4 h-4" />
       </Button>

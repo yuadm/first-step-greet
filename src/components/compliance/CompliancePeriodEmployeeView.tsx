@@ -481,6 +481,59 @@ export function CompliancePeriodEmployeeView({
                                 </Button>
                               </>
                             )}
+                            {item.record?.completion_method === 'medication_competency' && item.record?.status === 'completed' && item.record?.notes && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (item.record?.notes) {
+                                    try {
+                                      const parsedData = JSON.parse(item.record.notes);
+                                      
+                                      // Transform the data to match our PDF generator interface
+                                      const competencyData = {
+                                        employeeId: item.record.employee_id,
+                                        employeeName: item.employee.name,
+                                        periodIdentifier: item.record.period_identifier,
+                                        assessmentDate: item.record.completion_date,
+                                        questionnaire: {
+                                          medicationKnowledge: parsedData.competencyItems?.medicationKnowledge || 'Not assessed',
+                                          safePractices: parsedData.competencyItems?.safePractices || 'Not assessed',
+                                          documentation: parsedData.competencyItems?.documentation || 'Not assessed',
+                                          emergencyProcedures: parsedData.competencyItems?.emergencyProcedures || 'Not assessed',
+                                          errorReporting: parsedData.competencyItems?.errorReporting || 'Not assessed',
+                                          patientRights: parsedData.competencyItems?.patientRights || 'Not assessed',
+                                          confidentiality: parsedData.competencyItems?.confidentiality || 'Not assessed',
+                                          additionalComments: parsedData.competencyItems?.additionalComments || ''
+                                        },
+                                        confirmed: parsedData.acknowledgement?.confirmed || false,
+                                        completedAt: item.record.created_at
+                                      };
+
+                                      // Import the PDF generator
+                                      import('@/lib/medication-competency-pdf').then(({ generateMedicationCompetencyPdf }) => {
+                                        generateMedicationCompetencyPdf(competencyData, {
+                                          name: companySettings?.name || 'Company',
+                                          logo: companySettings?.logo
+                                        });
+                                      });
+                                    } catch (error) {
+                                      console.error('Error generating medication competency PDF:', error);
+                                      toast({
+                                        title: "Download failed",
+                                        description: "Could not download the medication competency PDF.",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }
+                                }}
+                                className="h-6 w-6 p-0"
+                                title="Download Medication Competency PDF"
+                              >
+                                <Download className="h-3 w-3" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
