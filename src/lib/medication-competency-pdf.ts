@@ -196,47 +196,61 @@ export async function generateMedicationCompetencyPdf(
       // Header background with gradient effect (simulated with multiple rectangles)
       for (let i = 0; i < 8; i++) {
         const intensity = 0.2 + (i * 0.1);
-        drawRectangle(0, yPosition - 140 + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
+        drawRectangle(0, yPosition - 180 + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
       }
 
       // Main header background
-      drawRectangle(0, yPosition - 140, pageWidth, 140, colors.primary);
+      drawRectangle(0, yPosition - 180, pageWidth, 180, colors.primary);
 
-      // Company logo and info
+      let headerY = yPosition - 40;
+
+      // Centered company logo
       if (logoImage) {
-        const logoSize = 50;
+        const logoSize = 60;
+        const logoX = (pageWidth - logoSize * 1.5) / 2;
         page.drawImage(logoImage, {
-          x: margin,
-          y: yPosition - 80,
-          width: logoSize * 2,
+          x: logoX,
+          y: headerY - logoSize,
+          width: logoSize * 1.5,
           height: logoSize,
         });
+        headerY -= logoSize + 15;
       }
 
-      // Company name
+      // Centered company name
       if (company?.name) {
-        drawText(company.name, margin + (logoImage ? 120 : 0), yPosition - 30, {
+        const companyNameWidth = boldFont.widthOfTextAtSize(company.name, 18);
+        const companyX = (pageWidth - companyNameWidth) / 2;
+        drawText(company.name, companyX, headerY, {
           color: colors.white,
-          size: 14,
+          size: 18,
           bold: true
         });
+        headerY -= 25;
       }
 
-      // Main title
-      drawText('MEDICATION COMPETENCY ASSESSMENT', margin, yPosition - 65, {
+      // Centered compliance type name
+      const complianceName = 'MEDICATION COMPETENCY';
+      const complianceNameWidth = boldFont.widthOfTextAtSize(complianceName, 22);
+      const complianceX = (pageWidth - complianceNameWidth) / 2;
+      drawText(complianceName, complianceX, headerY, {
         color: colors.white,
-        size: 20,
+        size: 22,
         bold: true
       });
+      headerY -= 30;
 
-      // Subtitle
-      drawText('Professional Healthcare Certification', margin, yPosition - 85, {
+      // Centered frequency period
+      const frequencyText = `Assessment Period: ${data.periodIdentifier}`;
+      const frequencyWidth = regularFont.widthOfTextAtSize(frequencyText, 14);
+      const frequencyX = (pageWidth - frequencyWidth) / 2;
+      drawText(frequencyText, frequencyX, headerY, {
         color: rgb(0.9, 0.9, 0.9),
-        size: 11
+        size: 14
       });
 
-      // Assessment info box
-      const infoBoxY = yPosition - 130;
+      // Assessment info box (moved to bottom right)
+      const infoBoxY = yPosition - 170;
       drawRectangle(pageWidth - 220, infoBoxY, 180, 35, rgb(0.9, 0.9, 1.0));
       
       drawText('Assessment ID:', pageWidth - 210, infoBoxY + 20, {
@@ -259,7 +273,7 @@ export async function generateMedicationCompetencyPdf(
         size: 8
       });
 
-      yPosition -= 160;
+      yPosition -= 200;
     };
 
     // Employee information card
