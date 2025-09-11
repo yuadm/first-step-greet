@@ -583,7 +583,11 @@ const handleDownloadSpotCheck = async (employeeId: string, period: string) => {
 
 const handleDownloadMedicationCompetency = async (record: any, employeeName: string) => {
   try {
-    if (!record.notes) {
+    const parsedData = record.form_data
+      ? record.form_data
+      : (record.notes ? JSON.parse(record.notes) : null);
+
+    if (!parsedData) {
       toast({ 
         title: 'No questionnaire data found', 
         description: 'This medication competency record does not have questionnaire data.',
@@ -592,8 +596,6 @@ const handleDownloadMedicationCompetency = async (record: any, employeeName: str
       return;
     }
 
-    const parsedData = JSON.parse(record.notes);
-    
     // Transform legacy data to new format
       const items = parsedData.competencyItems;
       const responses = Array.isArray(items)
@@ -1213,6 +1215,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                           </TableCell>
                           <TableCell className="max-w-xs">
                              <div className="truncate" title={(() => {
+                               if (!item.record) return '';
+                               if (item.record?.completion_method === 'medication_competency') return '';
                                if (!item.record?.notes) return '';
                                if (item.record?.completion_method === 'supervision' || item.record?.completion_method === 'annual_appraisal') {
                                  try {
@@ -1226,6 +1230,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                return item.record?.notes || '';
                              })()}>
                                {(() => {
+                                 if (!item.record) return '-';
+                                 if (item.record?.completion_method === 'medication_competency') return '-';
                                  if (!item.record?.notes) return '-';
                                  if (item.record?.completion_method === 'supervision' || item.record?.completion_method === 'annual_appraisal') {
                                    try {
@@ -1310,7 +1316,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
         <Download className="w-4 h-4" />
       </Button>
     )}
-    {item.record.completion_method === 'medication_competency' && item.record.status === 'completed' && item.record.notes && (
+    {item.record.completion_method === 'medication_competency' && item.record.status === 'completed' && (item.record.form_data || item.record.notes) && (
       <Button
         variant="ghost"
         size="sm"
@@ -1384,20 +1390,18 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                             </div>
                                           </div>
                                         )}
-                                        {item.record.notes && (
+                                        {(item.record.completion_method === 'medication_competency' ? (item.record.form_data || item.record.notes) : item.record.notes) && (
                                           <div>
                                             <h4 className="font-semibold text-sm text-muted-foreground mb-2">
                                               {item.record.completion_method === 'medication_competency' ? 'Assessment Details' : 'Notes'}
                                             </h4>
                                             {(() => {
-                                              if (!item.record?.notes) return null;
-                                              
                                               if (item.record?.completion_method === 'medication_competency') {
                                                 try {
-                                                  const parsedData = JSON.parse(item.record.notes);
+                                                  const parsedData = item.record.form_data || JSON.parse(item.record.notes);
                                                   const competencyItems = parsedData.competencyItems || [];
                                                   const acknowledgement = parsedData.acknowledgement || {};
-                                                  
+
                                                   return (
                                                     <div className="space-y-4">
                                                       {/* Competency Items */}

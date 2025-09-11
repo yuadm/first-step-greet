@@ -846,6 +846,7 @@ export type Database = {
           compliance_type_id: string
           created_at: string
           employee_id: string
+          form_data: Json | null
           grace_period_end: string | null
           id: string
           is_overdue: boolean | null
@@ -864,6 +865,7 @@ export type Database = {
           compliance_type_id: string
           created_at?: string
           employee_id: string
+          form_data?: Json | null
           grace_period_end?: string | null
           id?: string
           is_overdue?: boolean | null
@@ -882,6 +884,7 @@ export type Database = {
           compliance_type_id?: string
           created_at?: string
           employee_id?: string
+          form_data?: Json | null
           grace_period_end?: string | null
           id?: string
           is_overdue?: boolean | null

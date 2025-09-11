@@ -35,7 +35,8 @@ interface ComplianceRecord {
   employee_id: string;
   period_identifier: string;
   completion_date: string;
-  notes: string;
+  notes: string | null;
+  form_data?: any | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -481,73 +482,72 @@ export function CompliancePeriodEmployeeView({
                                 </Button>
                               </>
                             )}
-                            {item.record?.completion_method === 'medication_competency' && item.record?.status === 'completed' && item.record?.notes && (
+                            {item.record?.completion_method === 'medication_competency' && item.record?.status === 'completed' && ((item.record?.form_data) || item.record?.notes) && (
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (item.record?.notes) {
-                                    try {
-                                      const parsedData = JSON.parse(item.record.notes);
-                                      
-                                      // Transform legacy data to new format
-                                      const items = parsedData.competencyItems;
-                                      const responses = Array.isArray(items)
-                                        ? items.map((item: any) => ({
-                                            question: item?.performanceCriteria || item?.id || 'Competency Item',
-                                            answer: item?.competent === 'yes' ? 'yes' : item?.competent === 'not-yet' ? 'not-yet' : 'yes',
-                                            comment: item?.comments || 'No comment provided',
-                                            section: 'Competency Assessment',
-                                            helpText: item?.examples || 'Direct observation / discussion'
-                                          }))
-                                        : items && typeof items === 'object'
-                                        ? Object.values(items).map((value: any) => ({
-                                            question: value?.performanceCriteria || value?.id || 'Competency Item',
-                                            answer: value?.competent === 'yes' ? 'yes' : value?.competent === 'not-yet' ? 'not-yet' : 'yes',
-                                            comment: value?.comments || 'No comment provided',
-                                            section: 'Competency Assessment',
-                                            helpText: value?.examples || 'Direct observation / discussion'
-                                          }))
-                                        : [];
-
-                                      // Add signature if available
-                                      if (parsedData.acknowledgement?.signature) {
-                                        responses.push({
-                                          question: 'Employee Signature',
-                                          answer: 'yes',
-                                          comment: parsedData.acknowledgement.signature,
-                                          section: 'Acknowledgement',
-                                          helpText: 'Employee acknowledgement'
-                                        });
-                                      }
-                                      
-                                      const competencyData = {
-                                        employeeId: item.record.employee_id,
-                                        employeeName: item.employee.name,
-                                        periodIdentifier: item.record.period_identifier,
-                                        assessmentDate: item.record.completion_date,
-                                        responses: responses,
-                                        signature: parsedData.acknowledgement?.signature || '',
-                                        completedAt: item.record.created_at,
-                                        questionnaireName: 'Medication Competency Assessment'
-                                      };
-
-                                      // Import the PDF generator
-                                      import('@/lib/medication-competency-pdf').then(({ generateMedicationCompetencyPdf }) => {
-                                        generateMedicationCompetencyPdf(competencyData, {
-                                          name: companySettings?.name || 'Company',
-                                          logo: companySettings?.logo
-                                        });
-                                      });
-                                    } catch (error) {
-                                      console.error('Error generating medication competency PDF:', error);
-                                      toast({
-                                        title: "Download failed",
-                                        description: "Could not download the medication competency PDF.",
-                                        variant: "destructive",
+                                  try {
+                                    const parsedData = item.record.form_data || (item.record?.notes ? JSON.parse(item.record.notes) : null);
+                                    if (!parsedData) return;
+                                    
+                                    // Transform legacy data to new format
+                                    const items = parsedData.competencyItems;
+                                    const responses = Array.isArray(items)
+                                      ? items.map((item: any) => ({
+                                          question: item?.performanceCriteria || item?.id || 'Competency Item',
+                                          answer: item?.competent === 'yes' ? 'yes' : item?.competent === 'not-yet' ? 'not-yet' : 'yes',
+                                          comment: item?.comments || 'No comment provided',
+                                          section: 'Competency Assessment',
+                                          helpText: item?.examples || 'Direct observation / discussion'
+                                        }))
+                                      : items && typeof items === 'object'
+                                      ? Object.values(items).map((value: any) => ({
+                                          question: value?.performanceCriteria || value?.id || 'Competency Item',
+                                          answer: value?.competent === 'yes' ? 'yes' : value?.competent === 'not-yet' ? 'not-yet' : 'yes',
+                                          comment: value?.comments || 'No comment provided',
+                                          section: 'Competency Assessment',
+                                          helpText: value?.examples || 'Direct observation / discussion'
+                                        }))
+                                      : [];
+  
+                                    // Add signature if available
+                                    if (parsedData.acknowledgement?.signature) {
+                                      responses.push({
+                                        question: 'Employee Signature',
+                                        answer: 'yes',
+                                        comment: parsedData.acknowledgement.signature,
+                                        section: 'Acknowledgement',
+                                        helpText: 'Employee acknowledgement'
                                       });
                                     }
+                                    
+                                    const competencyData = {
+                                      employeeId: item.record.employee_id,
+                                      employeeName: item.employee.name,
+                                      periodIdentifier: item.record.period_identifier,
+                                      assessmentDate: item.record.completion_date,
+                                      responses: responses,
+                                      signature: parsedData.acknowledgement?.signature || '',
+                                      completedAt: item.record.created_at,
+                                      questionnaireName: 'Medication Competency Assessment'
+                                    };
+  
+                                    // Import the PDF generator
+                                    import('@/lib/medication-competency-pdf').then(({ generateMedicationCompetencyPdf }) => {
+                                      generateMedicationCompetencyPdf(competencyData, {
+                                        name: companySettings?.name || 'Company',
+                                        logo: companySettings?.logo
+                                      });
+                                    });
+                                  } catch (error) {
+                                    console.error('Error generating medication competency PDF:', error);
+                                    toast({
+                                      title: "Download failed",
+                                      description: "Could not download the medication competency PDF.",
+                                      variant: "destructive",
+                                    });
                                   }
                                 }}
                                 className="h-6 w-6 p-0"

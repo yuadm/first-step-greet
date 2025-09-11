@@ -263,14 +263,15 @@ export function MedicationCompetencyForm({
           completion_date: format(new Date(), 'yyyy-MM-dd'),
           completion_method: 'medication_competency',
           status: 'completed',
-          notes: JSON.stringify({
+          form_data: JSON.parse(JSON.stringify({
             competencyItems: formData.competencyItems,
             acknowledgement: {
               confirmed: formData.acknowledgementConfirmed,
               signature: formData.signature,
               date: formData.signatureDate
             }
-          })
+          })),
+          notes: null
         });
 
       if (recordError) throw recordError;
