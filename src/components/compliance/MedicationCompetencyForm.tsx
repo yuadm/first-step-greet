@@ -55,69 +55,99 @@ interface MedicationCompetencyFormProps {
 
 const competencyFramework: Omit<CompetencyItem, 'competent' | 'comments'>[] = [
   {
-    id: 'infection-control',
-    performanceCriteria: 'Apply infection control measures (handwashing, gloves)',
-    examples: 'Demonstrates proper hand hygiene before and after medication assistance. Uses gloves appropriately when handling medications or creams.'
+    id: 'infection-control-precautions',
+    performanceCriteria: 'Routinely applies standard precautions for infection control and any other relevant health and safety measures. Washes hands before assisting with medicines. Wears gloves when helping with creams',
+    examples: 'Direct observation / discussion'
   },
   {
-    id: 'mar-accuracy',
-    performanceCriteria: 'Check medication administration records (MAR) are accurate',
-    examples: 'Reviews MAR sheets for completeness, legibility, and accuracy. Identifies any missing information or unclear instructions.'
+    id: 'check-mar-records',
+    performanceCriteria: 'Checks all medication administration records are available, up to date, legible and understood.',
+    examples: 'Direct observation / discussion'
   },
   {
     id: 'report-discrepancies',
-    performanceCriteria: 'Report discrepancies or unclear instructions to line manager',
-    examples: 'Recognizes when to escalate concerns. Communicates effectively with supervisors about medication issues.'
+    performanceCriteria: 'Reports any discrepancies, ambiguities, or omissions to the line manager.',
+    examples: 'Specific incidents / possible questions / discussion'
   },
   {
-    id: 'check-timing',
-    performanceCriteria: 'Confirm medication has not been taken recently and check dose timing',
-    examples: 'Reviews timing schedules and checks with service user about recent doses. Understands medication intervals and scheduling.'
+    id: 'read-mar-accurately',
+    performanceCriteria: 'Reads the medication administration record accurately, referring any illegible directions to the line manager before it is administered. Further information can be found in the medication Information leaflet.',
+    examples: 'Specific incidents / possible questions / discussion'
   },
   {
-    id: 'consent-dignity',
-    performanceCriteria: 'Obtain consent, provide support, and maintain dignity',
-    examples: 'Explains medication purpose and seeks permission. Maintains privacy and shows respect during assistance.'
+    id: 'check-recent-medication',
+    performanceCriteria: 'Checks that the individual has not taken any medication recently, and is aware of the appropriate timing of doses',
+    examples: 'Checks the administration record, confirms with the individual.'
   },
   {
-    id: 'six-rights',
-    performanceCriteria: 'Confirm the Six Rights of Medication',
-    examples: 'Checks right person, medicine, dose, time, route, and respects right to refuse. Demonstrates understanding of each element.'
+    id: 'obtain-consent-support',
+    performanceCriteria: 'Obtains the individual\'s consent and offers information, support and reassurance throughout, in a manner which encourages their co-operation, and which is appropriate to their needs and concerns.',
+    examples: 'Direct observation / discussion with individual'
   },
   {
-    id: 'encourage-independence',
-    performanceCriteria: 'Assist the individual while encouraging self-management',
-    examples: 'Supports service user independence where possible. Provides appropriate level of assistance without taking over unnecessarily.'
+    id: 'six-rights-check',
+    performanceCriteria: 'Checks the identity of the individual who is to receive the medication before it is administered, and selects, checks, and prepares correctly the medication according to the medication administration record. (The six rights) - The right person, The right medicine, The right dose, The right time, The right route, The right to refuse',
+    examples: 'Confidently and accurately: 1. Checks the individual\'s name matches that on the pack and on the administration record. 2. Selects the medication, checking that the name on the pack matches that on the administration record. 3. Selects the correct dose, according to the pack and the administration record. 4. Selects the correct timing of the dose according to that on the pack and on the administration record 5. Selects the correct route of administration. 6. Is aware of the person\'s right to refuse to take medication.'
   },
   {
-    id: 'privacy-dignity',
-    performanceCriteria: 'Ensure privacy and dignity during administration',
-    examples: 'Maintains confidentiality and creates appropriate environment for medication assistance.'
+    id: 'encourage-self-management',
+    performanceCriteria: 'Assists the individual to be as self-managing as possible. Refers any problems or queries to the line manager',
+    examples: 'Direct observation / discussion with individual'
   },
   {
-    id: 'prepare-administer',
-    performanceCriteria: 'Prepare and administer medication according to care plan',
-    examples: 'Follows care plan instructions precisely. Uses correct techniques for different medication types and routes.'
+    id: 'preserve-privacy-dignity',
+    performanceCriteria: 'Ensure the persons privacy and dignity is preserved at all times.',
+    examples: 'Direct observation / discussion with individual'
+  },
+  {
+    id: 'select-route-prepare',
+    performanceCriteria: 'Selects the route for the administration of medication according to the care plan and the drug and prepares the individual appropriately.',
+    examples: 'Offers a full glass of water with tablets and capsules. Ensures individual is sitting upright for oral medicines. Notes any special instructions, e.g. do not crush, allow to dissolve under the tongue etc.'
+  },
+  {
+    id: 'safely-assist-medication',
+    performanceCriteria: 'Safely assists with the medication. Following the written instructions and in line with legislation and local policies. In a way which minimizes pain, discomfort and trauma to the individual',
+    examples: 'Direct observation / discussion with individual.'
+  },
+  {
+    id: 'report-immediate-problems',
+    performanceCriteria: 'Reports any immediate problems appropriately',
+    examples: 'May include refusal, inability to take medication etc.'
+  },
+  {
+    id: 'confirm-medication-taken',
+    performanceCriteria: 'Checks and confirms that the individual actually takes the medication',
+    examples: 'Direct observation'
+  },
+  {
+    id: 'monitor-adverse-effects',
+    performanceCriteria: 'Monitors the individual\'s condition throughout, recognises any obvious adverse effects and takes the appropriate action without delay',
+    examples: 'Adverse effects may include swelling, skin rash, fainting / giddiness, constipation, drowsiness. Checks medication information leaflet.'
   },
   {
     id: 'accurate-documentation',
-    performanceCriteria: 'Accurately document assistance, refusals, and issues',
-    examples: 'Completes MAR sheets correctly. Records refusals, concerns, and any incidents appropriately.'
+    performanceCriteria: 'Clearly and accurately enters relevant information in the correct records.',
+    examples: 'Accurately documents assistance given, doses refused or missed for other reasons'
   },
   {
-    id: 'storage-monitoring',
-    performanceCriteria: 'Store, monitor, and rotate stock securely',
-    examples: 'Maintains proper storage conditions (temperature, security). Uses FIFO (first in, first out) principles for stock rotation.'
+    id: 'maintain-medication-security',
+    performanceCriteria: 'Maintains security of medication throughout the process and returns it to the correct place for storage',
+    examples: 'Awareness of other people in the household, grandchildren, visitors etc. Attention to instructions to store in a fridge, etc.'
   },
   {
-    id: 'disposal',
-    performanceCriteria: 'Dispose of expired or unused medication correctly',
-    examples: 'Follows disposal procedures for different medication types. Obtains appropriate permissions and uses correct disposal methods.'
+    id: 'monitor-rotate-stocks',
+    performanceCriteria: 'Monitors and rotates stocks of medication, paying attention to appropriate storage conditions, and reports any discrepancies in stocks immediately to the relevant person (line manager)',
+    examples: 'Ensures one pack of a medicine is used before starting the next.'
   },
   {
-    id: 'confidentiality',
-    performanceCriteria: 'Maintain confidentiality of medication records',
-    examples: 'Protects sensitive information and follows data protection guidelines. Only shares information with authorized personnel.'
+    id: 'dispose-expired-medication',
+    performanceCriteria: 'Disposes of out of date and part-used medication in accordance with legal and local requirements, with the permission of the client',
+    examples: 'Direct observation / discussion'
+  },
+  {
+    id: 'return-records-confidentiality',
+    performanceCriteria: 'Returns medication administration records to the agreed place for storage and always maintains the confidentiality of information relating to the individual',
+    examples: 'Direct observation'
   }
 ];
 
