@@ -180,29 +180,39 @@ export async function generateMedicationCompetencyPdf(
       yPosition = pageHeight - 20;
     };
 
-    // Modern header with gradient effect simulation
+    // Modern header with solid background
     const drawModernHeader = () => {
-      // Header background with gradient effect (simulated with multiple rectangles)
-      for (let i = 0; i < 8; i++) {
-        const intensity = 0.2 + (i * 0.1);
-        drawRectangle(0, yPosition - 180 + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
-      }
+      // Solid header background - no gradient, no white section
+      drawRectangle(0, yPosition - 140, pageWidth, 140, colors.primary);
 
-      // Main header background
-      drawRectangle(0, yPosition - 180, pageWidth, 180, colors.primary);
+      let headerY = yPosition - 30;
 
-      let headerY = yPosition - 40;
-
-      // Centered company logo
+      // Centered company logo with circular background
       if (logoImage) {
-        const logoSize = 60;
-        const logoX = (pageWidth - logoSize * 1.5) / 2;
+        const logoSize = 50;
+        const logoX = (pageWidth - logoSize) / 2;
+        
+        // Draw circular background for logo using rectangle approximation
+        const circleRadius = logoSize / 2;
+        const circleX = logoX + circleRadius;
+        const circleY = headerY - circleRadius;
+        
+        // Draw white circle background using small rectangles to approximate circle
+        for (let i = 0; i < 20; i++) {
+          const angle = (i / 20) * 2 * Math.PI;
+          const x = circleX + Math.cos(angle) * circleRadius;
+          const y = circleY + Math.sin(angle) * circleRadius;
+          drawRectangle(x - 1, y - 1, 2, 2, colors.white);
+        }
+        
+        // Draw logo
         page.drawImage(logoImage, {
           x: logoX,
           y: headerY - logoSize,
-          width: logoSize * 1.5,
+          width: logoSize,
           height: logoSize,
         });
+        
         headerY -= logoSize + 15;
       }
 
@@ -238,7 +248,7 @@ export async function generateMedicationCompetencyPdf(
         size: 14
       });
 
-      yPosition -= 200;
+      yPosition -= 160;
     };
 
     // Employee information card
