@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { CompliancePeriodEmployeeView } from "./CompliancePeriodEmployeeView";
 import { useToast } from "@/hooks/use-toast";
+import { usePagePermissions } from "@/hooks/usePagePermissions";
 
 interface CompliancePeriodViewProps {
   complianceTypeId: string;
@@ -35,6 +36,7 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
   const [employees, setEmployees] = useState<any[]>([]);
   const [records, setRecords] = useState<any[]>([]);
   const { toast } = useToast();
+  const { canDownloadComplianceRecord } = usePagePermissions();
 
   useEffect(() => {
     fetchData();
@@ -378,8 +380,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
                 )}
 
                 {/* Download Button */}
-                {showDownload && (
-                  <Button 
+                {showDownload && canDownloadComplianceRecord() && (
+                  <Button
                     variant="outline" 
                     size="sm" 
                     className="w-full"

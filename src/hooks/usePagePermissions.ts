@@ -36,6 +36,13 @@ export function usePagePermissions() {
   const canEditCompliance = () => isAdmin || hasPageAction('compliance', 'edit');
   const canDeleteCompliance = () => isAdmin || hasPageAction('compliance', 'delete');
   
+  // Specific compliance action permissions
+  const canAddComplianceRecord = () => isAdmin || hasPageAction('compliance', 'add-record');
+  const canViewComplianceRecord = () => isAdmin || hasPageAction('compliance', 'view-record');
+  const canEditComplianceRecord = () => isAdmin || hasPageAction('compliance', 'edit-record');
+  const canDeleteComplianceRecord = () => isAdmin || hasPageAction('compliance', 'delete-record');
+  const canDownloadComplianceRecord = () => isAdmin || hasPageAction('compliance', 'download-record');
+  
   // Specific compliance tab permissions
   const canViewComplianceTypes = () => isAdmin || hasPageAction('compliance-types', 'view');
   const canViewCareWorkerStatements = () => isAdmin || hasPageAction('care-worker-statements', 'view');
@@ -97,6 +104,11 @@ export function usePagePermissions() {
     canCreateCompliance,
     canEditCompliance,
     canDeleteCompliance,
+    canAddComplianceRecord,
+    canViewComplianceRecord,
+    canEditComplianceRecord,
+    canDeleteComplianceRecord,
+    canDownloadComplianceRecord,
     canViewComplianceTypes,
     canViewCareWorkerStatements,
 
