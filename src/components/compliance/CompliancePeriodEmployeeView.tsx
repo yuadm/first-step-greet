@@ -491,24 +491,35 @@ export function CompliancePeriodEmployeeView({
                                     try {
                                       const parsedData = JSON.parse(item.record.notes);
                                       
-                                      // Transform the data to match our PDF generator interface
+                                      // Transform legacy data to new format
+                                      const responses = parsedData.competencyItems ? 
+                                        Object.entries(parsedData.competencyItems).map(([key, value]: [string, any]) => ({
+                                          question: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+                                          answer: value?.competent === 'yes' ? 'yes' : 
+                                                 value?.competent === 'not-yet' ? 'not-yet' : 'yes',
+                                          comment: value?.comments || value || 'No comment provided',
+                                          section: 'Competency Assessment'
+                                        })) : [];
+
+                                      // Add signature if available
+                                      if (parsedData.acknowledgement?.signature) {
+                                        responses.push({
+                                          question: 'Employee Signature',
+                                          answer: 'yes',
+                                          comment: parsedData.acknowledgement.signature,
+                                          section: 'Acknowledgement'
+                                        });
+                                      }
+                                      
                                       const competencyData = {
                                         employeeId: item.record.employee_id,
                                         employeeName: item.employee.name,
                                         periodIdentifier: item.record.period_identifier,
                                         assessmentDate: item.record.completion_date,
-                                        questionnaire: {
-                                          medicationKnowledge: parsedData.competencyItems?.medicationKnowledge || 'Not assessed',
-                                          safePractices: parsedData.competencyItems?.safePractices || 'Not assessed',
-                                          documentation: parsedData.competencyItems?.documentation || 'Not assessed',
-                                          emergencyProcedures: parsedData.competencyItems?.emergencyProcedures || 'Not assessed',
-                                          errorReporting: parsedData.competencyItems?.errorReporting || 'Not assessed',
-                                          patientRights: parsedData.competencyItems?.patientRights || 'Not assessed',
-                                          confidentiality: parsedData.competencyItems?.confidentiality || 'Not assessed',
-                                          additionalComments: parsedData.competencyItems?.additionalComments || ''
-                                        },
-                                        confirmed: parsedData.acknowledgement?.confirmed || false,
-                                        completedAt: item.record.created_at
+                                        responses: responses,
+                                        signature: parsedData.acknowledgement?.signature || '',
+                                        completedAt: item.record.created_at,
+                                        questionnaireName: 'Medication Competency Assessment'
                                       };
 
                                       // Import the PDF generator
