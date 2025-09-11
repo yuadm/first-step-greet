@@ -182,28 +182,38 @@ export async function generateMedicationCompetencyPdf(
 
     // Modern header with gradient effect simulation
     const drawModernHeader = () => {
-      // Header background with gradient effect (simulated with multiple rectangles)
-      for (let i = 0; i < 8; i++) {
-        const intensity = 0.2 + (i * 0.1);
-        drawRectangle(0, yPosition - 180 + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
-      }
-
       // Main header background
-      drawRectangle(0, yPosition - 180, pageWidth, 180, colors.primary);
+      drawRectangle(0, yPosition - 140, pageWidth, 140, colors.primary);
 
-      let headerY = yPosition - 40;
+      let headerY = yPosition - 30;
 
-      // Centered company logo
+      // Centered company logo with circular background
       if (logoImage) {
         const logoSize = 60;
-        const logoX = (pageWidth - logoSize * 1.5) / 2;
+        const logoX = (pageWidth - logoSize) / 2;
+        const logoY = headerY - logoSize;
+        
+        // Draw circular background for logo
+        const circleRadius = logoSize / 2 + 5;
+        const circleX = logoX + logoSize / 2;
+        const circleY = logoY + logoSize / 2;
+        
+        // Draw white circle background
+        page.drawCircle({
+          x: circleX,
+          y: circleY,
+          size: circleRadius,
+          color: colors.white,
+        });
+        
+        // Draw logo centered in the circle
         page.drawImage(logoImage, {
           x: logoX,
-          y: headerY - logoSize,
-          width: logoSize * 1.5,
+          y: logoY,
+          width: logoSize,
           height: logoSize,
         });
-        headerY -= logoSize + 15;
+        headerY -= logoSize + 20;
       }
 
       // Centered company name
@@ -238,7 +248,7 @@ export async function generateMedicationCompetencyPdf(
         size: 14
       });
 
-      yPosition -= 200;
+      yPosition -= 160;
     };
 
     // Employee information card
