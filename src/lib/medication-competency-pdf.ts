@@ -382,38 +382,58 @@ export async function generateMedicationCompetencyPdf(
           
           // Question text
           const questionLines = wrapText(response.question, contentWidth - 100, regularFont, 10);
+          let currentY = itemY + itemHeight - 15;
           questionLines.forEach((line, lineIndex) => {
-            drawText(line, margin + 30, itemY + itemHeight - 15 - (lineIndex * 12), {
+            drawText(line, margin + 30, currentY - (lineIndex * 12), {
               size: 10,
               bold: true,
               color: colors.text
             });
           });
           
+          // Move Y position after question
+          currentY -= (questionLines.length * 12) + 5;
+          
+          // Examples/Evidence text (if available from helpText or a default)
+          const examplesText = response.helpText || 'Direct observation / discussion';
+          if (examplesText) {
+            const exampleLines = wrapText(examplesText, contentWidth - 100, regularFont, 8);
+            exampleLines.forEach((line, lineIndex) => {
+              drawText(line, margin + 30, currentY - (lineIndex * 10), {
+                size: 8,
+                color: colors.textLight,
+                bold: false
+              });
+            });
+            currentY -= (exampleLines.length * 10) + 8;
+          }
+          
           // Answer
-          drawText('Assessment:', margin + 30, itemY + itemHeight - 40, {
+          drawText('Assessment:', margin + 30, currentY, {
             size: 9,
             bold: true,
             color: colors.textLight
           });
           drawText(response.answer === 'yes' ? 'Competent' : 
                   response.answer === 'not-yet' ? 'Not Yet Competent' : 
-                  'Not Assessed', margin + 100, itemY + itemHeight - 40, {
+                  'Not Assessed', margin + 100, currentY, {
             size: 9,
             color: statusColor,
             bold: true
           });
           
+          currentY -= 14;
+          
           // Comment
           if (response.comment) {
-            drawText('Comments:', margin + 30, itemY + itemHeight - 54, {
+            drawText('Comments:', margin + 30, currentY, {
               size: 9,
               bold: true,
               color: colors.textLight
             });
             const commentLines = wrapText(response.comment, contentWidth - 120, regularFont, 9);
             commentLines.forEach((line, lineIndex) => {
-              drawText(line, margin + 100, itemY + itemHeight - 54 - (lineIndex * 11), {
+              drawText(line, margin + 100, currentY - (lineIndex * 11), {
                 size: 9,
                 color: colors.text
               });

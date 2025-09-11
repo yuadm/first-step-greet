@@ -498,14 +498,16 @@ export function CompliancePeriodEmployeeView({
                                             question: item?.performanceCriteria || item?.id || 'Competency Item',
                                             answer: item?.competent === 'yes' ? 'yes' : item?.competent === 'not-yet' ? 'not-yet' : 'yes',
                                             comment: item?.comments || 'No comment provided',
-                                            section: 'Competency Assessment'
+                                            section: 'Competency Assessment',
+                                            helpText: item?.examples || 'Direct observation / discussion'
                                           }))
                                         : items && typeof items === 'object'
                                         ? Object.values(items).map((value: any) => ({
                                             question: value?.performanceCriteria || value?.id || 'Competency Item',
                                             answer: value?.competent === 'yes' ? 'yes' : value?.competent === 'not-yet' ? 'not-yet' : 'yes',
                                             comment: value?.comments || 'No comment provided',
-                                            section: 'Competency Assessment'
+                                            section: 'Competency Assessment',
+                                            helpText: value?.examples || 'Direct observation / discussion'
                                           }))
                                         : [];
 
@@ -515,7 +517,8 @@ export function CompliancePeriodEmployeeView({
                                           question: 'Employee Signature',
                                           answer: 'yes',
                                           comment: parsedData.acknowledgement.signature,
-                                          section: 'Acknowledgement'
+                                          section: 'Acknowledgement',
+                                          helpText: 'Employee acknowledgement'
                                         });
                                       }
                                       

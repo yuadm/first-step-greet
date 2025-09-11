@@ -601,26 +601,29 @@ const handleDownloadMedicationCompetency = async (record: any, employeeName: str
           question: item?.performanceCriteria || item?.id || 'Competency Item',
           answer: item?.competent === 'yes' ? 'yes' : item?.competent === 'not-yet' ? 'not-yet' : 'yes',
           comment: item?.comments || 'No comment provided',
-          section: 'Competency Assessment'
+          section: 'Competency Assessment',
+          helpText: item?.examples || 'Direct observation / discussion'
         }))
         : items && typeof items === 'object'
         ? Object.values(items).map((value: any) => ({
           question: value?.performanceCriteria || value?.id || 'Competency Item',
           answer: value?.competent === 'yes' ? 'yes' : value?.competent === 'not-yet' ? 'not-yet' : 'yes',
           comment: value?.comments || 'No comment provided',
-          section: 'Competency Assessment'
+          section: 'Competency Assessment',
+          helpText: value?.examples || 'Direct observation / discussion'
         }))
         : [];
 
     // Add signature if available
-    if (parsedData.acknowledgement?.signature) {
-      responses.push({
-        question: 'Employee Signature',
-        answer: 'yes',
-        comment: parsedData.acknowledgement.signature,
-        section: 'Acknowledgement'
-      });
-    }
+      if (parsedData.acknowledgement?.signature) {
+        responses.push({
+          question: 'Employee Signature',
+          answer: 'yes',
+          comment: parsedData.acknowledgement.signature,
+          section: 'Acknowledgement',
+          helpText: 'Employee acknowledgement'
+        });
+      }
     
     const competencyData = {
       employeeId: record.employee_id,
