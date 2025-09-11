@@ -492,14 +492,22 @@ export function CompliancePeriodEmployeeView({
                                       const parsedData = JSON.parse(item.record.notes);
                                       
                                       // Transform legacy data to new format
-                                      const responses = parsedData.competencyItems ? 
-                                        Object.entries(parsedData.competencyItems).map(([key, value]: [string, any]) => ({
-                                          question: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-                                          answer: value?.competent === 'yes' ? 'yes' : 
-                                                 value?.competent === 'not-yet' ? 'not-yet' : 'yes',
-                                          comment: value?.comments || value || 'No comment provided',
-                                          section: 'Competency Assessment'
-                                        })) : [];
+                                      const items = parsedData.competencyItems;
+                                      const responses = Array.isArray(items)
+                                        ? items.map((item: any) => ({
+                                            question: item?.performanceCriteria || item?.id || 'Competency Item',
+                                            answer: item?.competent === 'yes' ? 'yes' : item?.competent === 'not-yet' ? 'not-yet' : 'yes',
+                                            comment: item?.comments || 'No comment provided',
+                                            section: 'Competency Assessment'
+                                          }))
+                                        : items && typeof items === 'object'
+                                        ? Object.values(items).map((value: any) => ({
+                                            question: value?.performanceCriteria || value?.id || 'Competency Item',
+                                            answer: value?.competent === 'yes' ? 'yes' : value?.competent === 'not-yet' ? 'not-yet' : 'yes',
+                                            comment: value?.comments || 'No comment provided',
+                                            section: 'Competency Assessment'
+                                          }))
+                                        : [];
 
                                       // Add signature if available
                                       if (parsedData.acknowledgement?.signature) {
