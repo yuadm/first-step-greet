@@ -174,21 +174,10 @@ export async function generateMedicationCompetencyPdf(
       return lines;
     };
 
-    // Page header (for subsequent pages)
+    // Page header (for subsequent pages) - removed per user request
     const drawPageHeader = () => {
-      if (page !== pdfDoc.getPage(0)) {
-        drawRectangle(0, pageHeight - 25, pageWidth, 25, colors.primary);
-        drawText('Medication Competency Assessment', margin, pageHeight - 18, {
-          color: colors.white,
-          size: 10,
-          bold: true
-        });
-        drawText(`${data.employeeName} - ${data.periodIdentifier}`, pageWidth - margin - 200, pageHeight - 18, {
-          color: colors.white,
-          size: 9
-        });
-        yPosition = pageHeight - 40;
-      }
+      // Header removed - no longer drawing page headers
+      yPosition = pageHeight - 20;
     };
 
     // Modern header with gradient effect simulation
