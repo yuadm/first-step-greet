@@ -359,17 +359,28 @@ export async function generateMedicationCompetencyPdf(
         yPosition -= 30;
 
         responses.forEach((response, index) => {
-          const itemHeight = 70;
-          checkPageSpace(itemHeight);
+          // Calculate required height for this item
+          const questionLines = wrapText(response.question, contentWidth - 100, regularFont, 10);
+          const examplesText = response.helpText || 'Direct observation / discussion';
+          const exampleLines = wrapText(examplesText, contentWidth - 100, regularFont, 8);
+          const commentLines = response.comment ? wrapText(response.comment, contentWidth - 120, regularFont, 9) : [];
           
-          const itemY = yPosition - itemHeight;
+          const requiredHeight = 25 + // base height
+            (questionLines.length * 12) + // question text
+            (exampleLines.length * 10) + 5 + // examples text + spacing
+            20 + // assessment label + answer
+            (commentLines.length * 11) + 15; // comments + spacing
+          
+          checkPageSpace(requiredHeight);
+          
+          const itemY = yPosition - requiredHeight;
           
           // Competency item background
           const bgColor = response.answer === 'yes' ? rgb(0.95, 1, 0.95) : 
                          response.answer === 'not-yet' ? rgb(1, 0.97, 0.95) : 
                          rgb(0.98, 0.98, 0.98);
           
-          drawRectangle(margin, itemY, contentWidth, itemHeight, bgColor);
+          drawRectangle(margin, itemY, contentWidth, requiredHeight, bgColor);
           
           // Status indicator
           const statusIcon = response.answer === 'yes' ? '✅' : 
@@ -378,11 +389,11 @@ export async function generateMedicationCompetencyPdf(
                             response.answer === 'not-yet' ? colors.warning : 
                             colors.textLight;
           
-          drawText(statusIcon, margin + 10, itemY + itemHeight - 15, { size: 12 });
+          let currentY = itemY + requiredHeight - 10;
+          
+          drawText(statusIcon, margin + 10, currentY, { size: 12 });
           
           // Question text
-          const questionLines = wrapText(response.question, contentWidth - 100, regularFont, 10);
-          let currentY = itemY + itemHeight - 15;
           questionLines.forEach((line, lineIndex) => {
             drawText(line, margin + 30, currentY - (lineIndex * 12), {
               size: 10,
@@ -394,10 +405,8 @@ export async function generateMedicationCompetencyPdf(
           // Move Y position after question
           currentY -= (questionLines.length * 12) + 5;
           
-          // Examples/Evidence text (if available from helpText or a default)
-          const examplesText = response.helpText || 'Direct observation / discussion';
+          // Examples/Evidence text
           if (examplesText) {
-            const exampleLines = wrapText(examplesText, contentWidth - 100, regularFont, 8);
             exampleLines.forEach((line, lineIndex) => {
               drawText(line, margin + 30, currentY - (lineIndex * 10), {
                 size: 8,
@@ -408,12 +417,13 @@ export async function generateMedicationCompetencyPdf(
             currentY -= (exampleLines.length * 10) + 8;
           }
           
-          // Answer
+          // Assessment label and answer
           drawText('Assessment:', margin + 30, currentY, {
             size: 9,
             bold: true,
             color: colors.textLight
           });
+          
           drawText(response.answer === 'yes' ? 'Competent' : 
                   response.answer === 'not-yet' ? 'Not Yet Competent' : 
                   'Not Assessed', margin + 100, currentY, {
@@ -424,14 +434,13 @@ export async function generateMedicationCompetencyPdf(
           
           currentY -= 14;
           
-          // Comment
+          // Comments
           if (response.comment) {
             drawText('Comments:', margin + 30, currentY, {
               size: 9,
               bold: true,
               color: colors.textLight
             });
-            const commentLines = wrapText(response.comment, contentWidth - 120, regularFont, 9);
             commentLines.forEach((line, lineIndex) => {
               drawText(line, margin + 100, currentY - (lineIndex * 11), {
                 size: 9,
