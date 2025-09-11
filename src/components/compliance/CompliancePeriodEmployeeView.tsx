@@ -384,6 +384,21 @@ export function CompliancePeriodEmployeeView({
                           <div className="flex items-center gap-2">
                             <div className="truncate" title={(() => {
                               if (!item.record?.notes) return '';
+                              
+                              // Handle medication competency form
+                              if (item.record?.completion_method === 'medication_competency') {
+                                try {
+                                  const j = JSON.parse(item.record.notes);
+                                  // Get comments from all competency items
+                                  const comments = j.competencyItems?.map((item: any) => item.comments?.trim()).filter(Boolean) || [];
+                                  const signature = j.acknowledgement?.signature || '';
+                                  const combinedText = [...comments, signature].filter(Boolean).join('; ');
+                                  return combinedText || '';
+                                } catch {
+                                  return '';
+                                }
+                              }
+                              
                               if (item.record?.completion_method === 'supervision') {
                                 try {
                                   const j = JSON.parse(item.record.notes);
@@ -406,6 +421,21 @@ export function CompliancePeriodEmployeeView({
                             })()}>
                               {(() => {
                                 if (!item.record?.notes) return '-';
+                                
+                                // Handle medication competency form
+                                if (item.record?.completion_method === 'medication_competency') {
+                                  try {
+                                    const j = JSON.parse(item.record.notes);
+                                    // Get comments from all competency items
+                                    const comments = j.competencyItems?.map((item: any) => item.comments?.trim()).filter(Boolean) || [];
+                                    const signature = j.acknowledgement?.signature || '';
+                                    const combinedText = [...comments, signature].filter(Boolean).join('; ');
+                                    return combinedText || 'Completed without notes';
+                                  } catch {
+                                    return 'Invalid data format';
+                                  }
+                                }
+                                
                                 if (item.record?.completion_method === 'supervision') {
                                   try {
                                     const j = JSON.parse(item.record.notes);
