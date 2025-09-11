@@ -68,25 +68,18 @@ export async function generateMedicationCompetencyPdf(
     const margin = 40;
     const contentWidth = pageWidth - (margin * 2);
 
-    // Premium color palette - modern medical luxury theme
+    // Color palette - modern medical theme
     const colors = {
-      primary: rgb(0.1, 0.3, 0.6),         // Deep medical blue
-      secondary: rgb(0.05, 0.5, 0.35),     // Emerald medical green
-      accent: rgb(0.85, 0.25, 0.15),       // Crimson red
-      gold: rgb(0.9, 0.75, 0.2),           // Medical certification gold
-      platinum: rgb(0.85, 0.85, 0.92),     // Platinum silver
-      text: rgb(0.15, 0.15, 0.15),         // Rich charcoal
-      textLight: rgb(0.45, 0.45, 0.45),    // Sophisticated gray
-      background: rgb(0.98, 0.99, 1.0),    // Pure white-blue
-      cardBg: rgb(0.96, 0.98, 1.0),        // Subtle card background
-      success: rgb(0.1, 0.65, 0.3),        // Professional green
-      warning: rgb(0.9, 0.55, 0.1),        // Amber warning
-      border: rgb(0.82, 0.85, 0.88),       // Elegant border
-      white: rgb(1, 1, 1),
-      gradient1: rgb(0.08, 0.25, 0.55),    // Gradient start
-      gradient2: rgb(0.12, 0.35, 0.65),    // Gradient mid
-      gradient3: rgb(0.16, 0.45, 0.75),    // Gradient end
-      shadow: rgb(0.9, 0.9, 0.95)          // Subtle shadow
+      primary: rgb(0.2, 0.4, 0.7),      // Medical blue
+      secondary: rgb(0.1, 0.6, 0.4),     // Medical green
+      accent: rgb(0.8, 0.2, 0.2),        // Alert red
+      text: rgb(0.2, 0.2, 0.2),          // Dark gray
+      textLight: rgb(0.5, 0.5, 0.5),     // Medium gray
+      background: rgb(0.97, 0.98, 0.99), // Light blue-gray
+      success: rgb(0.2, 0.7, 0.3),       // Success green
+      warning: rgb(0.9, 0.6, 0.1),       // Warning orange
+      border: rgb(0.85, 0.85, 0.85),     // Light border
+      white: rgb(1, 1, 1)
     };
 
     // Helper functions
@@ -198,590 +191,363 @@ export async function generateMedicationCompetencyPdf(
       }
     };
 
-    // Luxurious header with sophisticated gradient
+    // Modern header with gradient effect simulation
     const drawModernHeader = () => {
-      // Premium gradient background (sophisticated multi-layer effect)
-      for (let i = 0; i < 20; i++) {
-        const ratio = i / 19;
-        const r = 0.08 + (0.16 - 0.08) * ratio;
-        const g = 0.25 + (0.45 - 0.25) * ratio;
-        const b = 0.55 + (0.75 - 0.55) * ratio;
-        drawRectangle(0, yPosition - 160 + (i * 3), pageWidth, 3, rgb(r, g, b));
+      // Header background with gradient effect (simulated with multiple rectangles)
+      for (let i = 0; i < 8; i++) {
+        const intensity = 0.2 + (i * 0.1);
+        drawRectangle(0, yPosition - 120 + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
       }
 
-      // Elegant overlay with subtle transparency effect
-      drawRectangle(0, yPosition - 160, pageWidth, 160, colors.primary);
-      
-      // Luxury accent stripe
-      drawRectangle(0, yPosition - 165, pageWidth, 5, colors.gold);
+      // Main header background
+      drawRectangle(0, yPosition - 120, pageWidth, 120, colors.primary);
 
-      // Decorative elements
-      drawRectangle(margin, yPosition - 20, contentWidth, 2, colors.gold);
-      
-      // Premium logo placement with shadow effect
+      // Company logo
       if (logoImage) {
-        // Shadow effect
-        const logoSize = 60;
-        drawRectangle(margin + 2, yPosition - 92, logoSize * 2, logoSize, colors.shadow);
+        const logoSize = 50;
         page.drawImage(logoImage, {
           x: margin,
-          y: yPosition - 90,
+          y: yPosition - 80,
           width: logoSize * 2,
           height: logoSize,
         });
       }
 
-      // Company branding with elegant typography
+      // Company name
       if (company?.name) {
-        drawText(company.name.toUpperCase(), margin + (logoImage ? 140 : 0), yPosition - 35, {
-          color: colors.gold,
-          size: 16,
+        drawText(company.name, margin + (logoImage ? 120 : 0), yPosition - 30, {
+          color: colors.white,
+          size: 18,
           bold: true
         });
-        drawText('Healthcare Excellence Division', margin + (logoImage ? 140 : 0), yPosition - 52, {
-          color: colors.platinum,
-          size: 10
-        });
       }
 
-      // Prestigious main title with embossed effect
-      drawText('MEDICATION COMPETENCY', margin, yPosition - 85, {
+      // Compliance type name (main title)
+      const complianceTypeName = data.questionnaireName || 'MEDICATION COMPETENCY ASSESSMENT';
+      drawText(complianceTypeName.toUpperCase(), margin + (logoImage ? 120 : 0), yPosition - 55, {
         color: colors.white,
-        size: 24,
-        bold: true
-      });
-      drawText('CERTIFICATION ASSESSMENT', margin, yPosition - 105, {
-        color: colors.gold,
-        size: 18,
+        size: 22,
         bold: true
       });
 
-      // Professional subtitle with sophistication
-      drawText('Advanced Clinical Skills Evaluation & Professional Development Framework', 
-        margin, yPosition - 125, {
-          color: colors.platinum,
-          size: 11
-        });
-
-      // Luxury information panel with premium styling
-      const infoBoxY = yPosition - 155;
-      // Shadow for depth
-      drawRectangle(pageWidth - 248, infoBoxY - 2, 210, 47, colors.shadow);
-      // Main panel with gradient-like effect
-      drawRectangle(pageWidth - 250, infoBoxY, 210, 45, colors.white);
-      drawRectangle(pageWidth - 250, infoBoxY + 40, 210, 5, colors.gold);
-      
-      // Premium typography for info panel
-      drawText('ASSESSMENT CERTIFICATE', pageWidth - 240, infoBoxY + 30, {
-        color: colors.primary,
-        size: 9,
-        bold: true
+      // Frequency/Professional certification subtitle
+      drawText('Professional Healthcare Certification', margin + (logoImage ? 120 : 0), yPosition - 75, {
+        color: rgb(0.9, 0.9, 0.9),
+        size: 11
       });
+
+      // Assessment info box
+      const infoBoxY = yPosition - 110;
+      drawRectangle(pageWidth - 220, infoBoxY, 180, 35, rgb(0.9, 0.9, 1.0));
       
-      drawText('ID:', pageWidth - 240, infoBoxY + 18, {
+      drawText('Assessment ID:', pageWidth - 210, infoBoxY + 20, {
         color: colors.text,
-        size: 9,
-        bold: true
-      });
-      drawText(data.periodIdentifier, pageWidth - 210, infoBoxY + 18, {
-        color: colors.primary,
-        size: 9,
-        bold: true
-      });
-      
-      drawText('Issued:', pageWidth - 240, infoBoxY + 6, {
-        color: colors.text,
-        size: 9,
-        bold: true
-      });
-      drawText(format(new Date(), 'MMM dd, yyyy'), pageWidth - 200, infoBoxY + 6, {
-        color: colors.text,
-        size: 9
-      });
-
-      yPosition -= 180;
-    };
-
-    // Luxurious employee information card
-    const drawEmployeeCard = () => {
-      checkPageSpace(130);
-      
-      const cardHeight = 120;
-      const cardY = yPosition - cardHeight;
-      
-      // Premium card design with shadow and gradient
-      drawRectangle(margin + 2, cardY - 2, contentWidth, cardHeight, colors.shadow);
-      drawRectangle(margin, cardY, contentWidth, cardHeight, colors.white);
-      
-      // Elegant header with gold accent
-      drawRectangle(margin, cardY + cardHeight - 30, contentWidth, 30, colors.primary);
-      drawRectangle(margin, cardY + cardHeight - 5, contentWidth, 5, colors.gold);
-      
-      // Professional icon and title
-      drawText('👨‍⚕️ HEALTHCARE PROFESSIONAL PROFILE', margin + 15, cardY + cardHeight - 20, {
-        color: colors.white,
-        size: 13,
-        bold: true
-      });
-
-      // Elegant employee details with improved spacing
-      const detailsY = cardY + cardHeight - 50;
-      
-      // Primary information row
-      drawText('Professional Name:', margin + 20, detailsY, { bold: true, size: 11, color: colors.text });
-      drawText(data.employeeName, margin + 150, detailsY, { 
-        size: 12, 
-        color: colors.primary, 
-        bold: true 
-      });
-      
-      drawText('Assessment Date:', margin + 20, detailsY - 20, { bold: true, size: 11, color: colors.text });
-      drawText(data.assessmentDate, margin + 150, detailsY - 20, { size: 11 });
-      
-      // Secondary information with professional styling
-      if (data.supervisor) {
-        drawText('Clinical Supervisor:', margin + 20, detailsY - 40, { bold: true, size: 11, color: colors.text });
-        drawText(data.supervisor, margin + 150, detailsY - 40, { size: 11, color: colors.secondary });
-      }
-      
-      // Right column information
-      if (data.branch) {
-        drawText('Healthcare Division:', margin + 320, detailsY, { bold: true, size: 11, color: colors.text });
-        drawText(data.branch, margin + 450, detailsY, { size: 11, color: colors.secondary });
-      }
-      
-      drawText('Certification Date:', margin + 320, detailsY - 20, { bold: true, size: 11, color: colors.text });
-      drawText(format(new Date(data.completedAt), 'MMM dd, yyyy HH:mm'), margin + 450, detailsY - 20, { 
-        size: 11,
-        color: colors.primary 
-      });
-
-      // Professional certification stamp effect
-      drawRectangle(margin + contentWidth - 80, cardY + 15, 70, 25, colors.gold);
-      drawText('CERTIFIED', margin + contentWidth - 75, cardY + 25, {
-        color: colors.white,
         size: 8,
         bold: true
       });
+      drawText(data.periodIdentifier, pageWidth - 130, infoBoxY + 20, {
+        color: colors.text,
+        size: 8
+      });
+      
+      drawText('Generated:', pageWidth - 210, infoBoxY + 8, {
+        color: colors.text,
+        size: 8,
+        bold: true
+      });
+      drawText(format(new Date(), 'MMM dd, yyyy'), pageWidth - 130, infoBoxY + 8, {
+        color: colors.text,
+        size: 8
+      });
 
-      yPosition = cardY - 25;
+      yPosition -= 140;
     };
 
-    // Premium competency analytics dashboard
+    // Employee information card
+    const drawEmployeeCard = () => {
+      checkPageSpace(120);
+      
+      const cardHeight = 100;
+      const cardY = yPosition - cardHeight;
+      
+      // Card background
+      drawRectangle(margin, cardY, contentWidth, cardHeight, colors.background);
+      
+      // Card header
+      drawRectangle(margin, cardY + cardHeight - 25, contentWidth, 25, colors.secondary);
+      drawText('👤 EMPLOYEE INFORMATION', margin + 15, cardY + cardHeight - 17, {
+        color: colors.white,
+        size: 12,
+        bold: true
+      });
+
+      // Employee details
+      const detailsY = cardY + cardHeight - 45;
+      drawText('Name:', margin + 20, detailsY, { bold: true, size: 11 });
+      drawText(data.employeeName, margin + 100, detailsY, { size: 11, color: colors.primary });
+      
+      drawText('Assessment Date:', margin + 20, detailsY - 18, { bold: true, size: 11 });
+      drawText(data.assessmentDate, margin + 150, detailsY - 18, { size: 11 });
+      
+      if (data.supervisor) {
+        drawText('Supervisor:', margin + 20, detailsY - 36, { bold: true, size: 11 });
+        drawText(data.supervisor, margin + 100, detailsY - 36, { size: 11 });
+      }
+      
+      if (data.branch) {
+        drawText('Branch:', margin + 300, detailsY, { bold: true, size: 11 });
+        drawText(data.branch, margin + 350, detailsY, { size: 11 });
+      }
+      
+      drawText('Completed:', margin + 300, detailsY - 18, { bold: true, size: 11 });
+      drawText(format(new Date(data.completedAt), 'MMM dd, yyyy HH:mm'), margin + 370, detailsY - 18, { size: 11 });
+
+      yPosition = cardY - 20;
+    };
+
+    // Competency results summary
     const drawCompetencySummary = () => {
-      checkPageSpace(100);
+      checkPageSpace(80);
       
       const competentCount = data.responses.filter(r => r.answer === 'yes').length;
       const totalCount = data.responses.length;
       const percentage = Math.round((competentCount / totalCount) * 100);
       
-      // Luxury analytics card with sophisticated design
-      const summaryHeight = 85;
+      // Summary card
+      const summaryHeight = 60;
       const summaryY = yPosition - summaryHeight;
       
-      // Card with shadow and elegant border
-      drawRectangle(margin + 2, summaryY - 2, contentWidth, summaryHeight, colors.shadow);
-      drawRectangle(margin, summaryY, contentWidth, summaryHeight, colors.white);
-      drawRectangle(margin, summaryY + summaryHeight - 3, contentWidth, 3, colors.gold);
+      drawRectangle(margin, summaryY, contentWidth, summaryHeight, colors.background);
       
-      // Premium analytics section header
-      drawText('📈 CLINICAL COMPETENCY ANALYTICS', margin + 20, summaryY + 65, {
+      // Progress indicator
+      const progressWidth = 300;
+      const progressHeight = 8;
+      const progressX = margin + 20;
+      const progressY = summaryY + 25;
+      
+      // Progress background
+      drawRectangle(progressX, progressY, progressWidth, progressHeight, rgb(0.9, 0.9, 0.9));
+      
+      // Progress fill
+      const fillWidth = (progressWidth * percentage) / 100;
+      const progressColor = percentage >= 80 ? colors.success : percentage >= 60 ? colors.warning : colors.accent;
+      drawRectangle(progressX, progressY, fillWidth, progressHeight, progressColor);
+      
+      // Summary text
+      drawText('📊 COMPETENCY SUMMARY', margin + 20, summaryY + 45, {
+        bold: true,
+        size: 12,
+        color: colors.primary
+      });
+      
+      drawText(`${competentCount}/${totalCount} competencies demonstrated (${percentage}%)`, 
+        progressX + progressWidth + 20, summaryY + 45, { size: 11 });
+      
+      // Overall result
+      const resultText = percentage >= 80 ? 'COMPETENT' : percentage >= 60 ? 'REQUIRES REVIEW' : 'ADDITIONAL TRAINING REQUIRED';
+      const resultColor = percentage >= 80 ? colors.success : percentage >= 60 ? colors.warning : colors.accent;
+      
+      drawText(resultText, margin + 20, summaryY + 10, {
+        bold: true,
+        size: 10,
+        color: resultColor
+      });
+
+      yPosition = summaryY - 20;
+    };
+
+    // Individual competency assessments
+    const drawCompetencyAssessments = () => {
+      checkPageSpace(40);
+      
+      drawText('🎯 DETAILED COMPETENCY ASSESSMENT', margin, yPosition, {
         bold: true,
         size: 14,
         color: colors.primary
       });
-      
-      // Sophisticated progress visualization
-      const progressWidth = 320;
-      const progressHeight = 12;
-      const progressX = margin + 20;
-      const progressY = summaryY + 35;
-      
-      // Multi-layered progress bar with premium styling
-      drawRectangle(progressX - 2, progressY - 2, progressWidth + 4, progressHeight + 4, colors.border);
-      drawRectangle(progressX, progressY, progressWidth, progressHeight, colors.platinum);
-      
-      // Gradient progress fill
-      const fillWidth = (progressWidth * percentage) / 100;
-      const progressColor = percentage >= 90 ? colors.success : 
-                           percentage >= 80 ? colors.gold : 
-                           percentage >= 70 ? colors.warning : colors.accent;
-      
-      // Elegant solid progress fill
-      drawRectangle(progressX, progressY, fillWidth, progressHeight, progressColor);
-      
-      // Performance metrics with professional styling
-      drawText(`${competentCount}/${totalCount} Core Competencies Achieved`, 
-        progressX + progressWidth + 25, summaryY + 65, { 
-          size: 12, 
-          bold: true,
-          color: colors.text 
-        });
-      
-      drawText(`Performance Score: ${percentage}%`, 
-        progressX + progressWidth + 25, summaryY + 48, { 
-          size: 11,
-          color: colors.primary 
-        });
-      
-      // Professional certification status with premium badge
-      const resultText = percentage >= 90 ? 'EXPERT LEVEL COMPETENT' : 
-                        percentage >= 80 ? 'PROFESSIONALLY COMPETENT' : 
-                        percentage >= 70 ? 'COMPETENT - REQUIRES REVIEW' : 
-                        'ADDITIONAL TRAINING REQUIRED';
-      const resultColor = percentage >= 90 ? colors.success : 
-                         percentage >= 80 ? colors.gold : 
-                         percentage >= 70 ? colors.warning : colors.accent;
-      
-      // Status badge with elegant styling
-      const badgeWidth = 200;
-      const badgeX = margin + 20;
-      const badgeY = summaryY + 12;
-      drawRectangle(badgeX, badgeY, badgeWidth, 18, resultColor);
-      drawRectangle(badgeX, badgeY + 15, badgeWidth, 3, colors.gold);
-      
-      drawText(resultText, badgeX + 8, badgeY + 8, {
-        bold: true,
-        size: 9,
-        color: colors.white
-      });
+      yPosition -= 25;
 
-      // Professional certification seal
-      const sealX = margin + contentWidth - 60;
-      const sealY = summaryY + 15;
-      drawRectangle(sealX, sealY, 50, 50, colors.gold);
-      drawText('CERT', sealX + 12, sealY + 30, {
-        bold: true,
-        size: 10,
-        color: colors.white
-      });
-      drawText(`${percentage}%`, sealX + 15, sealY + 18, {
-        bold: true,
-        size: 8,
-        color: colors.white
-      });
-
-      yPosition = summaryY - 25;
-    };
-
-    // Premium competency assessment documentation
-    const drawCompetencyAssessments = () => {
-      checkPageSpace(50);
-      
-      // Sophisticated section title with premium styling
-      drawRectangle(margin, yPosition - 5, contentWidth, 35, colors.primary);
-      drawRectangle(margin, yPosition - 8, contentWidth, 3, colors.gold);
-      
-      drawText('🏆 COMPREHENSIVE CLINICAL COMPETENCY EVALUATION', margin + 15, yPosition + 10, {
-        bold: true,
-        size: 15,
-        color: colors.white
-      });
-      
-      drawText('Advanced Skills Assessment & Professional Development Matrix', margin + 15, yPosition - 8, {
-        size: 10,
-        color: colors.platinum
-      });
-      
-      yPosition -= 45;
-
-      // Group responses by section with enhanced organization
+      // Group responses by section
       const sections = data.responses.reduce((acc, response) => {
-        const section = response.section || 'Core Clinical Competencies';
+        const section = response.section || 'General';
         if (!acc[section]) acc[section] = [];
         acc[section].push(response);
         return acc;
       }, {} as Record<string, CompetencyResponse[]>);
 
       Object.entries(sections).forEach(([sectionName, responses]) => {
-        checkPageSpace(50);
+        checkPageSpace(40);
         
-        // Luxury section header with professional gradient effect
-        drawRectangle(margin + 2, yPosition - 27, contentWidth, 25, colors.shadow);
-        drawRectangle(margin, yPosition - 25, contentWidth, 25, colors.secondary);
-        drawRectangle(margin, yPosition - 5, contentWidth, 3, colors.gold);
-        
-        drawText(`⭐ ${sectionName.toUpperCase()}`, margin + 15, yPosition - 15, {
+        // Section header
+        drawRectangle(margin, yPosition - 20, contentWidth, 20, colors.secondary);
+        drawText(sectionName.toUpperCase(), margin + 10, yPosition - 13, {
           color: colors.white,
-          size: 12,
+          size: 10,
           bold: true
         });
-        
-        // Section competency count
-        const sectionCompetent = responses.filter(r => r.answer === 'yes').length;
-        drawText(`${sectionCompetent}/${responses.length} Competencies Achieved`, 
-          margin + contentWidth - 200, yPosition - 15, {
-            color: colors.platinum,
-            size: 10,
-            bold: true
-          });
-        
-        yPosition -= 35;
+        yPosition -= 30;
 
         responses.forEach((response, index) => {
-          // Calculate required height for this premium item
-          const questionLines = wrapText(response.question, contentWidth - 120, regularFont, 11);
-          const examplesText = response.helpText || 'Clinical observation and professional assessment';
-          const exampleLines = wrapText(examplesText, contentWidth - 120, regularFont, 9);
-          const commentLines = response.comment ? wrapText(response.comment, contentWidth - 140, regularFont, 10) : [];
+          // Calculate required height for this item
+          const questionLines = wrapText(response.question, contentWidth - 100, regularFont, 10);
+          const examplesText = response.helpText || 'Direct observation / discussion';
+          const exampleLines = wrapText(examplesText, contentWidth - 100, regularFont, 8);
+          const commentLines = response.comment ? wrapText(response.comment, contentWidth - 120, regularFont, 9) : [];
           
-          const requiredHeight = 35 + // base height with premium spacing
-            (questionLines.length * 14) + // question text with improved spacing
-            (exampleLines.length * 11) + 8 + // examples text + spacing
-            25 + // assessment section
-            (commentLines.length * 12) + 20; // comments + luxury spacing
+          const requiredHeight = 25 + // base height
+            (questionLines.length * 12) + // question text
+            (exampleLines.length * 10) + 5 + // examples text + spacing
+            20 + // assessment label + answer
+            (commentLines.length * 11) + 15; // comments + spacing
           
           checkPageSpace(requiredHeight);
           
           const itemY = yPosition - requiredHeight;
           
-          // Premium competency card design
-          const bgColor = response.answer === 'yes' ? rgb(0.94, 0.99, 0.94) : 
-                         response.answer === 'not-yet' ? rgb(1, 0.96, 0.93) : 
-                         rgb(0.97, 0.97, 0.99);
+          // Competency item background
+          const bgColor = response.answer === 'yes' ? rgb(0.95, 1, 0.95) : 
+                         response.answer === 'not-yet' ? rgb(1, 0.97, 0.95) : 
+                         rgb(0.98, 0.98, 0.98);
           
-          // Card with shadow and elegant border
-          drawRectangle(margin + 2, itemY - 2, contentWidth, requiredHeight, colors.shadow);
           drawRectangle(margin, itemY, contentWidth, requiredHeight, bgColor);
           
-          // Premium status indicator with sophisticated styling
-          const statusIcon = response.answer === 'yes' ? '🏆' : 
-                           response.answer === 'not-yet' ? '⏳' : '📋';
+          // Status indicator
+          const statusIcon = response.answer === 'yes' ? '✅' : 
+                           response.answer === 'not-yet' ? '⚠️' : '❓';
           const statusColor = response.answer === 'yes' ? colors.success : 
                             response.answer === 'not-yet' ? colors.warning : 
                             colors.textLight;
           
-          // Professional status badge
-          const badgeWidth = 120;
-          const badgeX = margin + contentWidth - badgeWidth - 10;
-          const badgeY = itemY + requiredHeight - 20;
+          let currentY = itemY + requiredHeight - 10;
           
-          drawRectangle(badgeX, badgeY, badgeWidth, 15, statusColor);
-          drawRectangle(badgeX, badgeY + 12, badgeWidth, 3, colors.gold);
+          drawText(statusIcon, margin + 10, currentY, { size: 12 });
           
-          const statusText = response.answer === 'yes' ? 'COMPETENT ✓' : 
-                            response.answer === 'not-yet' ? 'IN PROGRESS' : 
-                            'PENDING REVIEW';
-          
-          drawText(statusText, badgeX + 8, badgeY + 7, {
-            size: 8,
-            bold: true,
-            color: colors.white
-          });
-          
-          let currentY = itemY + requiredHeight - 15;
-          
-          // Premium competency number indicator
-          drawRectangle(margin + 8, currentY - 5, 25, 15, colors.primary);
-          drawText(`${index + 1}`, margin + 18, currentY + 2, { 
-            size: 9, 
-            bold: true, 
-            color: colors.white 
-          });
-          
-          // Professional question styling
+          // Question text
           questionLines.forEach((line, lineIndex) => {
-            drawText(line, margin + 45, currentY - (lineIndex * 14), {
-              size: 11,
+            drawText(line, margin + 30, currentY - (lineIndex * 12), {
+              size: 10,
               bold: true,
               color: colors.text
             });
           });
           
           // Move Y position after question
-          currentY -= (questionLines.length * 14) + 10;
+          currentY -= (questionLines.length * 12) + 5;
           
-          // Evidence methodology with elegant styling
+          // Examples/Evidence text
           if (examplesText) {
-            drawText('Assessment Method:', margin + 45, currentY, {
-              size: 9,
-              bold: true,
-              color: colors.primary
-            });
-            currentY -= 12;
-            
             exampleLines.forEach((line, lineIndex) => {
-              drawText(`• ${line}`, margin + 50, currentY - (lineIndex * 11), {
-                size: 9,
+              drawText(line, margin + 30, currentY - (lineIndex * 10), {
+                size: 8,
                 color: colors.textLight,
                 bold: false
               });
             });
-            currentY -= (exampleLines.length * 11) + 10;
+            currentY -= (exampleLines.length * 10) + 8;
           }
           
-          // Professional assessment result
-          drawText('Clinical Assessment Result:', margin + 45, currentY, {
-            size: 10,
+          // Assessment label and answer
+          drawText('Assessment:', margin + 30, currentY, {
+            size: 9,
             bold: true,
-            color: colors.primary
+            color: colors.textLight
           });
           
-          const resultText = response.answer === 'yes' ? 'Competency Achieved - Professional Standard Met' : 
-                            response.answer === 'not-yet' ? 'Development Required - Additional Support Needed' : 
-                            'Assessment Pending - Review Required';
-          
-          drawText(resultText, margin + 200, currentY, {
-            size: 10,
+          drawText(response.answer === 'yes' ? 'Competent' : 
+                  response.answer === 'not-yet' ? 'Not Yet Competent' : 
+                  'Not Assessed', margin + 100, currentY, {
+            size: 9,
             color: statusColor,
             bold: true
           });
           
-          currentY -= 18;
+          currentY -= 14;
           
-          // Professional comments section
+          // Comments
           if (response.comment) {
-            drawText('Clinical Notes & Observations:', margin + 45, currentY, {
-              size: 10,
+            drawText('Comments:', margin + 30, currentY, {
+              size: 9,
               bold: true,
-              color: colors.primary
+              color: colors.textLight
             });
-            currentY -= 12;
-            
             commentLines.forEach((line, lineIndex) => {
-              drawText(line, margin + 50, currentY - (lineIndex * 12), {
-                size: 10,
+              drawText(line, margin + 100, currentY - (lineIndex * 11), {
+                size: 9,
                 color: colors.text
               });
             });
           }
           
-          yPosition = itemY - 15;
+          yPosition = itemY - 10;
         });
         
         yPosition -= 10;
       });
     };
 
-    // Premium signature and certification section
+    // Signature section
     const drawSignatureSection = () => {
-      checkPageSpace(120);
+      checkPageSpace(100);
       
       const signatureResponse = data.responses.find(r => r.question.toLowerCase().includes('signature'));
       
       if (signatureResponse || data.signature) {
-        // Elegant certification card
-        const certHeight = 100;
-        const certY = yPosition - certHeight;
+        drawRectangle(margin, yPosition - 80, contentWidth, 80, colors.background);
         
-        drawRectangle(margin + 2, certY - 2, contentWidth, certHeight, colors.shadow);
-        drawRectangle(margin, certY, contentWidth, certHeight, colors.white);
-        
-        // Premium header with gold accents
-        drawRectangle(margin, certY + certHeight - 25, contentWidth, 25, colors.primary);
-        drawRectangle(margin, certY + certHeight - 5, contentWidth, 5, colors.gold);
-        
-        drawText('🏅 PROFESSIONAL CERTIFICATION & ACKNOWLEDGMENT', margin + 15, certY + certHeight - 15, {
+        drawText('✍️ EMPLOYEE ACKNOWLEDGMENT', margin + 15, yPosition - 20, {
           bold: true,
-          size: 13,
-          color: colors.white
+          size: 12,
+          color: colors.primary
         });
         
-        // Professional signature section
-        drawText('Healthcare Professional Signature:', margin + 20, certY + 55, {
+        drawText('Employee Signature:', margin + 15, yPosition - 45, {
           bold: true,
-          size: 11,
-          color: colors.text
+          size: 10
         });
         
         const signature = data.signature || signatureResponse?.comment || '';
-        drawText(signature || '[Digital Signature Applied]', margin + 220, certY + 55, {
-          size: 12,
+        drawText(signature, margin + 130, yPosition - 45, {
+          size: 11,
           color: colors.primary,
           bold: true
         });
         
-        drawText('Certification Date:', margin + 20, certY + 35, {
+        drawText('Date:', margin + 350, yPosition - 45, {
           bold: true,
-          size: 11,
-          color: colors.text
+          size: 10
         });
-        drawText(format(new Date(data.completedAt), 'MMM dd, yyyy HH:mm'), margin + 150, certY + 35, {
-          size: 11,
-          color: colors.primary
+        drawText(format(new Date(data.completedAt), 'MMM dd, yyyy'), margin + 385, yPosition - 45, {
+          size: 11
         });
         
-        // Elegant signature line with premium styling
+        // Signature line
         page.drawLine({
-          start: { x: margin + 220, y: certY + 50 },
-          end: { x: margin + 450, y: certY + 50 },
-          thickness: 1.5,
-          color: colors.gold
+          start: { x: margin + 130, y: yPosition - 50 },
+          end: { x: margin + 340, y: yPosition - 50 },
+          thickness: 0.5,
+          color: colors.border
         });
         
-        // Professional verification statement
-        drawText('This document certifies the successful completion of medication competency assessment', 
-          margin + 20, certY + 15, {
-            size: 9,
-            color: colors.textLight
-          });
-        drawText('as per healthcare professional standards and regulatory requirements.', 
-          margin + 20, certY + 5, {
-            size: 9,
-            color: colors.textLight
-          });
-        
-        // Professional certification seal
-        drawRectangle(margin + contentWidth - 70, certY + 25, 60, 60, colors.gold);
-        drawText('VERIFIED', margin + contentWidth - 65, certY + 60, {
-          bold: true,
-          size: 9,
-          color: colors.white
-        });
-        drawText('COMPETENCY', margin + contentWidth - 68, certY + 45, {
-          bold: true,
-          size: 8,
-          color: colors.white
-        });
-        drawText('CERT', margin + contentWidth - 55, certY + 32, {
-          bold: true,
-          size: 9,
-          color: colors.white
-        });
-        
-        yPosition = certY - 20;
+        yPosition -= 100;
       }
     };
 
-    // Premium footer with professional branding
+    // Footer
     const drawFooter = () => {
-      const footerY = 35;
-      
-      // Sophisticated footer with gradient effect
+      const footerY = 30;
       drawRectangle(0, 0, pageWidth, footerY, colors.primary);
-      drawRectangle(0, footerY - 3, pageWidth, 3, colors.gold);
       
-      // Professional confidentiality statement
-      drawText('🔒 CONFIDENTIAL HEALTHCARE DOCUMENT', margin, 22, {
-        color: colors.gold,
-        size: 9,
-        bold: true
-      });
-      
-      drawText('Generated by Advanced Compliance Management System • Professional Healthcare Certification', 
-        margin, 12, {
-          color: colors.platinum,
+      drawText('Confidential Medical Document - Generated by Compliance Management System', 
+        margin, 18, {
+          color: colors.white,
           size: 8
         });
       
-      // Page information with elegant styling
-      drawText(`Certificate Page ${pdfDoc.getPageCount()}`, pageWidth - 150, 22, {
-        color: colors.white,
-        size: 9,
-        bold: true
-      });
-      
-      drawText(`Issued: ${format(new Date(), 'PPP')}`, pageWidth - 200, 12, {
-        color: colors.platinum,
-        size: 8
-      });
-      
-      // Security verification mark
-      drawText('✓ VERIFIED', pageWidth - 80, 7, {
-        color: colors.gold,
-        size: 7,
-        bold: true
-      });
+      drawText(`Page ${pdfDoc.getPageCount()} • ${format(new Date(), 'PPP')}`, 
+        pageWidth - 200, 18, {
+          color: colors.white,
+          size: 8
+        });
     };
 
     // Generate the PDF content
