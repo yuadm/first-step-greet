@@ -49,7 +49,6 @@ import { AddComplianceRecordModal } from "./AddComplianceRecordModal";
 import { EditComplianceRecordModal } from "./EditComplianceRecordModal";
 import { format } from "date-fns";
 import { generateSpotCheckPdf } from "@/lib/spot-check-pdf";
-import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { generateSupervisionPdf } from "@/lib/supervision-pdf";
 import SpotCheckFormDialog, { SpotCheckFormData } from "./SpotCheckFormDialog";
 import SupervisionFormDialog, { SupervisionFormData } from "./SupervisionFormDialog";
@@ -104,13 +103,6 @@ export function ComplianceTypeContent() {
   const { toast } = useToast();
   const { getAccessibleBranches, isAdmin } = usePermissions();
   const { companySettings } = useCompany();
-  const {
-    canAddComplianceRecord,
-    canViewComplianceRecord,
-    canEditComplianceRecord,
-    canDeleteComplianceRecord,
-    canDownloadComplianceRecord
-  } = usePagePermissions();
   
   const [complianceType, setComplianceType] = useState<ComplianceType | null>(
     location.state?.complianceType || null
@@ -1173,7 +1165,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-end gap-2">
-                              {!item.record && canAddComplianceRecord() && (
+                              {!item.record && (
                                 <AddComplianceRecordModal
                                   employeeId={item.employee.id}
                                   employeeName={item.employee.name}
@@ -1192,8 +1184,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                               
 {item.record && (
   <>
-     {item.record.completion_method === 'spotcheck' && canDownloadComplianceRecord() && (
-       <Button
+    {item.record.completion_method === 'spotcheck' && (
+      <Button
         variant="ghost"
         size="sm"
         className="hover-scale"
@@ -1202,8 +1194,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
         <Download className="w-4 h-4" />
       </Button>
     )}
-     {item.record.completion_method === 'supervision' && canDownloadComplianceRecord() && (
-       <Button
+    {item.record.completion_method === 'supervision' && (
+      <Button
         variant="ghost"
         size="sm"
         className="hover-scale"
@@ -1212,8 +1204,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
         <Download className="w-4 h-4" />
       </Button>
     )}
-     {item.record.completion_method === 'annual_appraisal' && item.record.status === 'completed' && canDownloadComplianceRecord() && (
-       <Button
+    {item.record.completion_method === 'annual_appraisal' && item.record.status === 'completed' && (
+      <Button
         variant="ghost"
         size="sm"
         className="hover-scale"
@@ -1244,9 +1236,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
     {item.record.completion_method === 'supervision' && item.record.status !== 'completed' && (
       <Badge className="bg-warning/10 text-warning border-warning/20">Not completed</Badge>
     )}
-     {/* View Dialog */}
-                                  {canViewComplianceRecord() && (
-                                   <Dialog>
+    {/* View Dialog */}
+                                  <Dialog>
                                     <DialogTrigger asChild>
                                       <Button variant="ghost" size="sm" className="hover-scale">
                                         <Eye className="w-4 h-4" />
@@ -1327,14 +1318,11 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                           </div>
                                         )}
                                       </div>
-                                     </DialogContent>
-                                   </Dialog>
-                                  )}
+                                    </DialogContent>
+                                  </Dialog>
 
 {/* Edit Record */}
-{canEditComplianceRecord() && (
-  <>
-    {item.record.completion_method === 'spotcheck' ? (
+{item.record.completion_method === 'spotcheck' ? (
   <Button
     variant="ghost"
     size="sm"
@@ -1364,14 +1352,11 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
         <Edit className="w-4 h-4" />
       </Button>
     }
-    />
-  )}
-  </>
+  />
 )}
 
                                   {/* Delete Dialog */}
-                                  {canDeleteComplianceRecord() && (
-                                   <AlertDialog>
+                                  <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <Button variant="ghost" size="sm" className="hover-scale text-destructive hover:text-destructive">
                                         <Trash2 className="w-4 h-4" />
@@ -1397,9 +1382,9 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                         </AlertDialogAction>
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
-                                   </AlertDialog>
-                                  )}
-                                </>
+                                  </AlertDialog>
+                                
+                                  </>
                               )}
                             </div>
                           </TableCell>

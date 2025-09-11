@@ -23,7 +23,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
-import { usePagePermissions } from "@/hooks/usePagePermissions";
 
 interface Employee {
   id: string;
@@ -75,10 +74,6 @@ export function CompliancePeriodEmployeeView({
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const { toast } = useToast();
   const { companySettings } = useCompany();
-  const {
-    canViewComplianceRecord,
-    canDownloadComplianceRecord
-  } = usePagePermissions();
 
   const fetchData = async () => {
     if (!open) return;
@@ -434,7 +429,6 @@ export function CompliancePeriodEmployeeView({
                             </div>
                             {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && (
                               <>
-                                {canViewComplianceRecord() && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -460,8 +454,6 @@ export function CompliancePeriodEmployeeView({
                                 >
                                   <Eye className="h-3 w-3" />
                                 </Button>
-                                )}
-                                {canDownloadComplianceRecord() && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -487,7 +479,6 @@ export function CompliancePeriodEmployeeView({
                                 >
                                   <Download className="h-3 w-3" />
                                 </Button>
-                                )}
                               </>
                             )}
                           </div>
