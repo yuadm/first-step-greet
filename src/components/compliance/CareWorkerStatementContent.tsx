@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Filter, Download, Eye, Edit, Check, X, FileText } from "lucide-react";
+import { Plus, Filter, Download, Eye, Edit, Check, X, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CareWorkerStatementModal } from "./CareWorkerStatementModal";
@@ -56,6 +56,9 @@ interface Branch {
   name: string;
 }
 
+export type StatementSortField = 'care_worker_name' | 'client_name' | 'client_address' | 'branch' | 'report_date' | 'status' | 'created_at';
+export type StatementSortDirection = 'asc' | 'desc';
+
 export function CareWorkerStatementContent() {
   const [statements, setStatements] = useState<CareWorkerStatement[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -66,6 +69,8 @@ export function CareWorkerStatementContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [branchFilter, setBranchFilter] = useState<string>("all");
+  const [sortField, setSortField] = useState<StatementSortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<StatementSortDirection>('desc');
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -223,6 +228,20 @@ export function CareWorkerStatementContent() {
     }
   };
 
+  const handleSort = (field: StatementSortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: StatementSortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4" />;
+    return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'approved': return 'default';
@@ -242,6 +261,50 @@ export function CareWorkerStatementContent() {
     const matchesBranch = branchFilter === "all" || statement.branch_id === branchFilter;
     
     return matchesSearch && matchesStatus && matchesBranch;
+  }).sort((a, b) => {
+    let aVal: any;
+    let bVal: any;
+    
+    switch (sortField) {
+      case 'care_worker_name':
+        aVal = a.care_worker_name || '';
+        bVal = b.care_worker_name || '';
+        break;
+      case 'client_name':
+        aVal = a.client_name || '';
+        bVal = b.client_name || '';
+        break;
+      case 'client_address':
+        aVal = a.client_address || '';
+        bVal = b.client_address || '';
+        break;
+      case 'branch':
+        aVal = a.branches?.name || '';
+        bVal = b.branches?.name || '';
+        break;
+      case 'report_date':
+        aVal = new Date(a.report_date).getTime();
+        bVal = new Date(b.report_date).getTime();
+        break;
+      case 'status':
+        aVal = a.status || '';
+        bVal = b.status || '';
+        break;
+      case 'created_at':
+        aVal = new Date(a.created_at).getTime();
+        bVal = new Date(b.created_at).getTime();
+        break;
+      default:
+        return 0;
+    }
+    
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      const comparison = aVal.localeCompare(bVal);
+      return sortDirection === 'asc' ? comparison : -comparison;
+    } else {
+      const comparison = aVal - bVal;
+      return sortDirection === 'asc' ? comparison : -comparison;
+    }
   });
 
   if (loading) {
@@ -324,13 +387,69 @@ export function CareWorkerStatementContent() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Care Worker</TableHead>
-                <TableHead>Client Name</TableHead>
-                <TableHead>Client Address</TableHead>
-                <TableHead>Branch</TableHead>
-                <TableHead>Report Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="p-0 h-auto font-medium hover:bg-transparent"
+                    onClick={() => handleSort('care_worker_name')}
+                  >
+                    Care Worker {getSortIcon('care_worker_name')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="p-0 h-auto font-medium hover:bg-transparent"
+                    onClick={() => handleSort('client_name')}
+                  >
+                    Client Name {getSortIcon('client_name')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="p-0 h-auto font-medium hover:bg-transparent"
+                    onClick={() => handleSort('client_address')}
+                  >
+                    Client Address {getSortIcon('client_address')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="p-0 h-auto font-medium hover:bg-transparent"
+                    onClick={() => handleSort('branch')}
+                  >
+                    Branch {getSortIcon('branch')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="p-0 h-auto font-medium hover:bg-transparent"
+                    onClick={() => handleSort('report_date')}
+                  >
+                    Report Date {getSortIcon('report_date')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="p-0 h-auto font-medium hover:bg-transparent"
+                    onClick={() => handleSort('status')}
+                  >
+                    Status {getSortIcon('status')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="p-0 h-auto font-medium hover:bg-transparent"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    Created {getSortIcon('created_at')}
+                  </Button>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
