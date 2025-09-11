@@ -84,16 +84,17 @@ export async function generateMedicationCompetencyPdf(
 
     // Helper functions
     const drawText = (text: string, x: number, y: number, options: any = {}) => {
-      page.drawText(text, {
+      const { size = 10, bold = false, color = colors.text, maxWidth, lineHeight, ...rest } = options;
+      const drawOptions: any = {
         x,
         y,
-        size: options.size || 10,
-        font: options.bold ? boldFont : regularFont,
-        color: options.color || colors.text,
-        maxWidth: options.maxWidth || contentWidth,
-        lineHeight: options.lineHeight || (options.size || 10) * 1.2,
-        ...options
-      });
+        size,
+        font: bold ? boldFont : regularFont,
+        color,
+      };
+      if (typeof maxWidth !== 'undefined') drawOptions.maxWidth = maxWidth;
+      if (typeof lineHeight !== 'undefined') drawOptions.lineHeight = lineHeight;
+      page.drawText(text, { ...drawOptions, ...rest });
     };
 
     const drawRectangle = (x: number, y: number, width: number, height: number, color: any) => {
@@ -119,30 +120,57 @@ export async function generateMedicationCompetencyPdf(
     };
 
     const wrapText = (text: string, maxWidth: number, font: any, fontSize: number): string[] => {
-      const words = text.split(' ');
       const lines: string[] = [];
-      let currentLine = '';
+      const paragraphs = String(text || '').split(/\r?\n/);
 
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        const testWidth = font.widthOfTextAtSize(testLine, fontSize);
-        
-        if (testWidth <= maxWidth) {
-          currentLine = testLine;
-        } else {
-          if (currentLine) {
-            lines.push(currentLine);
-            currentLine = word;
+      const pushBrokenWord = (word: string) => {
+        let remainder = word;
+        while (font.widthOfTextAtSize(remainder, fontSize) > maxWidth && remainder.length > 1) {
+          let sliceEnd = 1;
+          for (let i = 1; i <= remainder.length; i++) {
+            const part = remainder.slice(0, i);
+            if (font.widthOfTextAtSize(part, fontSize) > maxWidth) {
+              sliceEnd = i - 1;
+              break;
+            }
+            sliceEnd = i;
+          }
+          const part = remainder.slice(0, sliceEnd);
+          if (!part) break;
+          lines.push(part);
+          remainder = remainder.slice(sliceEnd);
+        }
+        if (remainder) lines.push(remainder);
+      };
+
+      for (let p = 0; p < paragraphs.length; p++) {
+        const para = paragraphs[p];
+        const words = para.split(/\s+/).filter(Boolean);
+        let currentLine = '';
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+
+          if (testWidth <= maxWidth) {
+            currentLine = testLine;
           } else {
-            lines.push(word);
+            if (currentLine) lines.push(currentLine);
+            // If the word alone is too wide, break it into pieces
+            if (font.widthOfTextAtSize(word, fontSize) > maxWidth) {
+              pushBrokenWord(word);
+              currentLine = '';
+            } else {
+              currentLine = word;
+            }
           }
         }
+
+        if (currentLine) lines.push(currentLine);
+        // Keep paragraph spacing (but avoid trailing empty line)
+        if (p < paragraphs.length - 1) lines.push('');
       }
-      
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-      
+
       return lines;
     };
 
