@@ -253,7 +253,7 @@ export function AddClientComplianceRecordModal({
           recordType === 'date' ? 'date_entry' : 
           recordType === 'spotcheck' ? 'spotcheck' : 'text_entry',
         notes: notes.trim() || null,
-        status: recordType === 'new' ? 'compliant' : 'completed',
+        status: recordType === 'new' || recordType === 'date' ? 'compliant' : 'completed',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
