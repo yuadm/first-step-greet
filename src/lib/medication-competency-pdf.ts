@@ -183,15 +183,19 @@ export async function generateMedicationCompetencyPdf(
     // Modern header with gradient effect simulation
     const drawModernHeader = () => {
       // Header background with gradient effect (simulated with multiple rectangles)
+      // Start from the very top of the page
+      const headerHeight = 180;
+      const headerStartY = pageHeight - headerHeight; // Start from top
+      
       for (let i = 0; i < 8; i++) {
         const intensity = 0.2 + (i * 0.1);
-        drawRectangle(0, yPosition - 180 + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
+        drawRectangle(0, headerStartY + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
       }
 
-      // Main header background
-      drawRectangle(0, yPosition - 180, pageWidth, 180, colors.primary);
+      // Main header background - start from very top
+      drawRectangle(0, headerStartY, pageWidth, headerHeight, colors.primary);
 
-      let headerY = yPosition - 40;
+      let headerY = pageHeight - 40;
 
       // Centered company logo
       if (logoImage) {
@@ -238,7 +242,7 @@ export async function generateMedicationCompetencyPdf(
         size: 14
       });
 
-      yPosition -= 200;
+      yPosition = headerStartY - 20;
     };
 
     // Employee information card
