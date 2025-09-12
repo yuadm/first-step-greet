@@ -62,6 +62,7 @@ export async function generateMedicationCompetencyPdf(
 
     let page = pdfDoc.addPage([595, 842]); // A4 size
     let yPosition = 820;
+    let pageIndex = 1; // Track page numbers
     
     const pageWidth = page.getWidth();
     const pageHeight = page.getHeight();
@@ -107,8 +108,27 @@ export async function generateMedicationCompetencyPdf(
       });
     };
 
+    const drawFooter = () => {
+      const footerY = 30; // Position from bottom
+      // Draw divider line
+      page.drawLine({
+        start: { x: margin, y: footerY + 12 },
+        end: { x: pageWidth - margin, y: footerY + 12 },
+        thickness: 0.5,
+        color: colors.border
+      });
+      // Draw page number
+      const footerText = `Page ${pageIndex}`;
+      drawText(footerText, margin, footerY, {
+        size: 10,
+        color: colors.textLight
+      });
+    };
+
     const addNewPage = () => {
+      drawFooter(); // Draw footer on current page before creating new page
       page = pdfDoc.addPage([595, 842]);
+      pageIndex++; // Increment page number
       yPosition = 800;
       drawPageHeader();
     };
@@ -476,6 +496,9 @@ export async function generateMedicationCompetencyPdf(
     drawEmployeeCard();
     drawCompetencyAssessments();
     drawSignatureSection();
+    
+    // Draw footer on the last page
+    drawFooter();
 
     // Save and download the PDF
     const pdfBytes = await pdfDoc.save();
