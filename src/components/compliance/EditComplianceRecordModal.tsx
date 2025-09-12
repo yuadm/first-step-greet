@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import AnnualAppraisalFormDialog, { type AnnualAppraisalFormData } from "./AnnualAppraisalFormDialog";
 import { downloadAnnualAppraisalPDF } from "@/lib/annual-appraisal-pdf";
+import { generateMedicationCompetencyPdf } from "@/lib/medication-competency-pdf";
 
 interface ComplianceRecord {
   id: string;
@@ -77,8 +78,10 @@ export function EditComplianceRecordModal({
     }
     return record.notes || '';
   });
-  const [recordType, setRecordType] = useState<'date' | 'new' | 'annualappraisal'>(() => {
-    return record.completion_method === 'annual_appraisal' ? 'annualappraisal' : 'date';
+  const [recordType, setRecordType] = useState<'date' | 'new' | 'annualappraisal' | 'medicationcompetency'>(() => {
+    if (record.completion_method === 'annual_appraisal') return 'annualappraisal';
+    if (record.completion_method === 'questionnaire' && record.form_data) return 'medicationcompetency';
+    return 'date';
   });
   const [newText, setNewText] = useState('');
   const [annualData, setAnnualData] = useState<AnnualAppraisalFormData | null>(() => {
@@ -96,6 +99,18 @@ export function EditComplianceRecordModal({
     return null;
   });
   const [annualOpen, setAnnualOpen] = useState(false);
+  const [medicationData, setMedicationData] = useState<any | null>(() => {
+    // Parse existing medication competency data from form_data if available
+    try {
+      if (record.form_data && typeof record.form_data === 'object') {
+        return record.form_data;
+      }
+    } catch (e) {
+      console.error('Error parsing medication competency data:', e);
+    }
+    return null;
+  });
+  const [medicationOpen, setMedicationOpen] = useState(false);
   const { toast } = useToast();
   const { companySettings } = useCompany();
 
@@ -189,6 +204,16 @@ export function EditComplianceRecordModal({
         });
         return;
       }
+    } else if (recordType === 'medicationcompetency') {
+      // For medication competency, validate that the form data exists
+      if (!medicationData) {
+        toast({
+          title: "Medication competency incomplete",
+          description: "Please complete the medication competency form.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -197,22 +222,32 @@ export function EditComplianceRecordModal({
       // TODO: When authentication is implemented, get the current user ID
       // const { data: { user } } = await supabase.auth.getUser();
       
-      const updateData = {
+      const updateData: any = {
         completion_date: recordType === 'date' 
           ? format(completionDate, 'yyyy-MM-dd') 
           : recordType === 'annualappraisal'
             ? (annualData?.appraisal_date || format(new Date(), 'yyyy-MM-dd'))
-            : newText,
+            : recordType === 'medicationcompetency'
+              ? format(new Date(), 'yyyy-MM-dd')
+              : newText,
         notes: recordType === 'annualappraisal'
           ? JSON.stringify({ ...(annualData as any), freeTextNotes: notes.trim() || '' })
-          : (notes.trim() || null),
+          : recordType === 'medicationcompetency'
+            ? (notes.trim() || null)
+            : (notes.trim() || null),
         updated_at: new Date().toISOString(),
         status: recordType === 'new' ? 'new' : 'completed',
         completion_method: recordType === 'date' ? 'date_entry' : 
-                          recordType === 'annualappraisal' ? 'annual_appraisal' : 'text_entry',
+                          recordType === 'annualappraisal' ? 'annual_appraisal' :
+                          recordType === 'medicationcompetency' ? 'questionnaire' : 'text_entry',
         // TODO: When authentication is implemented, uncomment this line:
         // completed_by: user?.id || null,
       };
+
+      // Add form_data for medication competency
+      if (recordType === 'medicationcompetency' && medicationData) {
+        updateData.form_data = medicationData;
+      }
 
       const { error } = await supabase
         .from('compliance_period_records')
@@ -281,7 +316,7 @@ export function EditComplianceRecordModal({
 
           <div className="space-y-2">
             <Label>Record Type</Label>
-            <Select value={recordType} onValueChange={(value: 'date' | 'new' | 'annualappraisal') => setRecordType(value)}>
+            <Select value={recordType} onValueChange={(value: 'date' | 'new' | 'annualappraisal' | 'medicationcompetency') => setRecordType(value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -290,6 +325,9 @@ export function EditComplianceRecordModal({
                 <SelectItem value="new">New (before employee joined)</SelectItem>
                 {complianceTypeName?.toLowerCase().includes('appraisal') && (
                   <SelectItem value="annualappraisal">Annual Appraisal</SelectItem>
+                )}
+                {complianceTypeName?.toLowerCase().includes('medication') && (
+                  <SelectItem value="medicationcompetency">Medication Competency</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -366,6 +404,49 @@ export function EditComplianceRecordModal({
                 </div>
               )}
             </div>
+          ) : recordType === 'medicationcompetency' ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Medication Competency Form</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled
+                  >
+                    {medicationData ? 'View Only (Cannot Edit)' : 'Complete Form'}
+                  </Button>
+                  {medicationData && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => generateMedicationCompetencyPdf(medicationData, { name: companySettings?.name, logo: companySettings?.logo })}
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      PDF
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {medicationData ? (
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm text-muted-foreground">
+                    ✓ Medication competency completed - {medicationData.competencies?.filter((c: any) => c.status === 'competent').length || 0} competent items
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Note: This form cannot be edited after completion. You can only view the data and download the PDF.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-destructive/10 rounded-md">
+                  <p className="text-sm text-destructive">
+                    Medication competency form needs to be completed
+                  </p>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="space-y-2">
               <Label htmlFor="newText">Text</Label>
@@ -413,6 +494,8 @@ export function EditComplianceRecordModal({
             setAnnualOpen(false);
           }}
         />
+
+        {/* Note: Medication competency forms cannot be edited once completed, only viewed */}
       </DialogContent>
     </Dialog>
   );
