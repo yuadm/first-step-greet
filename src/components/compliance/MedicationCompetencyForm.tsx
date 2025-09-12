@@ -39,6 +39,10 @@ interface MedicationCompetencyData {
   signature: string;
   signatureDate: string;
   
+  // Assessor fields
+  assessorName?: string;
+  assessorSignature?: string;
+  
   // Status
   status: "draft" | "completed";
 }
@@ -177,6 +181,8 @@ export function MedicationCompetencyForm({
         acknowledgementConfirmed: initialData.acknowledgement?.confirmed || false,
         signature: initialData.acknowledgement?.signature || "",
         signatureDate: initialData.acknowledgement?.date || format(new Date(), "yyyy-MM-dd"),
+        assessorName: initialData.assessorName || "",
+        assessorSignature: initialData.assessorSignature || "",
         status: "completed"
       };
     }
@@ -195,6 +201,8 @@ export function MedicationCompetencyForm({
       acknowledgementConfirmed: false,
       signature: "",
       signatureDate: format(new Date(), "yyyy-MM-dd"),
+      assessorName: "",
+      assessorSignature: "",
       status: "draft"
     };
   });
@@ -608,12 +616,53 @@ export function MedicationCompetencyForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-
-          {/* Signature */}
+          {/* Assessor Name */}
           <div className="space-y-2">
-            <Label className="text-base font-medium">Signature (typed or drawn)</Label>
+            <Label className="text-base font-medium">Assessor Name</Label>
             <Input
-              placeholder="Type your full name as signature"
+              placeholder="Enter assessor's full name"
+              value={formData.assessorName || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, assessorName: e.target.value }))}
+              className={formErrors.assessorName ? "border-red-500" : ""}
+            />
+            {formErrors.assessorName && (
+              <p className="text-red-500 text-sm">{formErrors.assessorName}</p>
+            )}
+          </div>
+
+          {/* Assessor Signature */}
+          <div className="space-y-2">
+            <Label className="text-base font-medium">Assessor Signature</Label>
+            <Input
+              placeholder="Type assessor's full name as signature"
+              value={formData.assessorSignature || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, assessorSignature: e.target.value }))}
+              className={formErrors.assessorSignature ? "border-red-500" : ""}
+            />
+            {formErrors.assessorSignature && (
+              <p className="text-red-500 text-sm">{formErrors.assessorSignature}</p>
+            )}
+          </div>
+
+          {/* Employee Name */}
+          <div className="space-y-2">
+            <Label className="text-base font-medium">Employee Name</Label>
+            <Input
+              placeholder="Enter employee's full name"
+              value={formData.employeeName || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, employeeName: e.target.value }))}
+              className={formErrors.employeeName ? "border-red-500" : ""}
+            />
+            {formErrors.employeeName && (
+              <p className="text-red-500 text-sm">{formErrors.employeeName}</p>
+            )}
+          </div>
+
+          {/* Employee Signature */}
+          <div className="space-y-2">
+            <Label className="text-base font-medium">Employee Signature</Label>
+            <Input
+              placeholder="Type employee's full name as signature"
               value={formData.signature}
               onChange={(e) => setFormData(prev => ({ ...prev, signature: e.target.value }))}
               className={formErrors.signature ? "border-red-500" : ""}
