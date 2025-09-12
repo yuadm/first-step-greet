@@ -608,28 +608,6 @@ export function MedicationCompetencyForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Final Confirmation */}
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="final-acknowledgement"
-              checked={formData.acknowledgementConfirmed}
-              onCheckedChange={(checked) => 
-                setFormData(prev => ({ ...prev, acknowledgementConfirmed: !!checked }))
-              }
-              className="mt-1"
-            />
-            <div className="space-y-1">
-              <Label 
-                htmlFor="final-acknowledgement"
-                className={`text-base font-medium cursor-pointer ${formErrors.acknowledgementConfirmed ? 'text-red-500' : ''}`}
-              >
-                I confirm that I have read, understood, and agree to comply with the Medication Assessment and Competency Procedure.
-              </Label>
-              {formErrors.acknowledgementConfirmed && (
-                <p className="text-red-500 text-sm">{formErrors.acknowledgementConfirmed}</p>
-              )}
-            </div>
-          </div>
 
           {/* Signature */}
           <div className="space-y-2">
