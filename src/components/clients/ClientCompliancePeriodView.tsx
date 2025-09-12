@@ -833,9 +833,11 @@ export function ClientCompliancePeriodView({
                                </TableCell>
                                <TableCell>
                                  <div className="flex items-center gap-2">
-                                    {isCompleted ? (
-                                      <>
-                                        <Button 
+                                     {isCompleted ? (
+                                       <>
+                                         {/* Only show download button for spot check records */}
+                                         {record?.completion_method === 'spotcheck' && (
+                                         <Button
                                           variant="ghost" 
                                           size="sm" 
                                           className="h-8 w-8 p-0"
@@ -889,10 +891,14 @@ export function ClientCompliancePeriodView({
                                               });
                                             }
                                           }}
-                                        >
-                                          <Download className="w-4 h-4" />
-                                        </Button>
-                                        <Button 
+                                         >
+                                           <Download className="w-4 h-4" />
+                                         </Button>
+                                         )}
+                                         
+                                          {/* Only show view button for spot check records */}
+                                         {record?.completion_method === 'spotcheck' && (
+                                          <Button
                                           variant="ghost" 
                                           size="sm" 
                                           className="h-8 w-8 p-0"
@@ -931,20 +937,27 @@ export function ClientCompliancePeriodView({
                                               });
                                             }
                                           }}
-                                        >
-                                          <Eye className="w-4 h-4" />
-                                        </Button>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm" 
-                                          className="h-8 w-8 p-0"
-                                          onClick={() => {
-                                            handleEditSpotCheck(client);
-                                          }}
-                                        >
-                                          <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button 
+                                          >
+                                            <Eye className="w-4 h-4" />
+                                          </Button>
+                                          )}
+                                          
+                                         {/* Only show edit button for spot check records */}
+                                         {record?.completion_method === 'spotcheck' && (
+                                         <Button 
+                                           variant="ghost" 
+                                           size="sm" 
+                                           className="h-8 w-8 p-0"
+                                           onClick={() => {
+                                             handleEditSpotCheck(client);
+                                           }}
+                                         >
+                                           <Edit className="w-4 h-4" />
+                                         </Button>
+                                         )}
+                                         
+                                         {/* Always show delete button for completed records */}
+                                          <Button
                                           variant="ghost" 
                                           size="sm" 
                                           className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
