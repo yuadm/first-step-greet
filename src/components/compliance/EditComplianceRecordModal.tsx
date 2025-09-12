@@ -30,6 +30,7 @@ interface ComplianceRecord {
   period_identifier: string;
   completion_date: string;
   notes: string;
+  form_data?: any | null;
   status: string;
   created_at: string;
   updated_at: string;
