@@ -48,6 +48,8 @@ interface MedicationCompetencyFormProps {
   employeeId?: string;
   employeeName?: string;
   periodIdentifier: string;
+  initialData?: any;
+  recordId?: string; // Add record ID for editing
   onComplete: () => void;
 }
 
@@ -154,23 +156,47 @@ export function MedicationCompetencyForm({
   employeeId,
   employeeName,
   periodIdentifier,
+  initialData,
+  recordId,
   onComplete
 }: MedicationCompetencyFormProps) {
   const [overviewExpanded, setOverviewExpanded] = useState(false);
-  const [formData, setFormData] = useState<MedicationCompetencyData>({
-    employeeId,
-    employeeName: employeeName || "",
-    procedureAcknowledged: false,
-    checklistCompleted: false,
-    competencyItems: competencyFramework.map(item => ({
-      ...item,
-      competent: "",
-      comments: ""
-    })),
-    acknowledgementConfirmed: false,
-    signature: "",
-    signatureDate: format(new Date(), "yyyy-MM-dd"),
-    status: "draft"
+  const [formData, setFormData] = useState<MedicationCompetencyData>(() => {
+    // If we have initial data (editing mode), use it
+    if (initialData) {
+      return {
+        employeeId,
+        employeeName: employeeName || "",
+        procedureAcknowledged: true,
+        checklistCompleted: true,
+        competencyItems: initialData.competencyItems || competencyFramework.map(item => ({
+          ...item,
+          competent: "",
+          comments: ""
+        })),
+        acknowledgementConfirmed: initialData.acknowledgement?.confirmed || false,
+        signature: initialData.acknowledgement?.signature || "",
+        signatureDate: initialData.acknowledgement?.date || format(new Date(), "yyyy-MM-dd"),
+        status: "completed"
+      };
+    }
+    
+    // Default state for new form
+    return {
+      employeeId,
+      employeeName: employeeName || "",
+      procedureAcknowledged: false,
+      checklistCompleted: false,
+      competencyItems: competencyFramework.map(item => ({
+        ...item,
+        competent: "",
+        comments: ""
+      })),
+      acknowledgementConfirmed: false,
+      signature: "",
+      signatureDate: format(new Date(), "yyyy-MM-dd"),
+      status: "draft"
+    };
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -253,7 +279,37 @@ export function MedicationCompetencyForm({
 
     setIsLoading(true);
     try {
-      // Create compliance record
+      const formDataToSave = {
+        competencyItems: formData.competencyItems,
+        acknowledgement: {
+          confirmed: formData.acknowledgementConfirmed,
+          signature: formData.signature,
+          date: formData.signatureDate
+        }
+      };
+
+      // If we have initial data, we're editing - update the existing record
+      if (initialData && recordId) {
+        const { error: updateError } = await supabase
+          .from('compliance_period_records')
+          .update({
+            form_data: JSON.parse(JSON.stringify(formDataToSave)),
+            updated_at: new Date().toISOString(),
+            completion_method: 'questionnaire'
+          })
+          .eq('id', recordId);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: "Medication competency updated",
+          description: "Your medication competency assessment has been updated successfully",
+        });
+        onComplete();
+        return;
+      }
+
+      // Create new compliance record
       const { error: recordError } = await supabase
         .from('compliance_period_records')
         .insert({
@@ -261,16 +317,9 @@ export function MedicationCompetencyForm({
           compliance_type_id: complianceTypeId,
           period_identifier: periodIdentifier,
           completion_date: format(new Date(), 'yyyy-MM-dd'),
-          completion_method: 'medication_competency',
+          completion_method: 'questionnaire',
           status: 'completed',
-          form_data: JSON.parse(JSON.stringify({
-            competencyItems: formData.competencyItems,
-            acknowledgement: {
-              confirmed: formData.acknowledgementConfirmed,
-              signature: formData.signature,
-              date: formData.signatureDate
-            }
-          })),
+          form_data: JSON.parse(JSON.stringify(formDataToSave)),
           notes: null
         });
 

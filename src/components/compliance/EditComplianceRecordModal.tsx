@@ -24,6 +24,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import AnnualAppraisalFormDialog, { type AnnualAppraisalFormData } from "./AnnualAppraisalFormDialog";
 import { downloadAnnualAppraisalPDF } from "@/lib/annual-appraisal-pdf";
 import { generateMedicationCompetencyPdf } from "@/lib/medication-competency-pdf";
+import { MedicationCompetencyForm } from "./MedicationCompetencyForm";
 
 interface ComplianceRecord {
   id: string;
@@ -413,9 +414,9 @@ export function EditComplianceRecordModal({
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled
+                    onClick={() => setMedicationOpen(true)}
                   >
-                    {medicationData ? 'View Only (Cannot Edit)' : 'Complete Form'}
+                    {medicationData ? 'Edit Form' : 'Complete Form'}
                   </Button>
                   {medicationData && (
                     <Button
@@ -433,10 +434,7 @@ export function EditComplianceRecordModal({
               {medicationData ? (
                 <div className="p-3 bg-muted rounded-md">
                   <p className="text-sm text-muted-foreground">
-                    ✓ Medication competency completed - {medicationData.competencies?.filter((c: any) => c.status === 'competent').length || 0} competent items
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Note: This form cannot be edited after completion. You can only view the data and download the PDF.
+                    ✓ Medication competency completed - {medicationData.competencyItems?.filter((c: any) => c.competent === 'yes').length || 0} competent items
                   </p>
                 </div>
               ) : (
@@ -495,7 +493,28 @@ export function EditComplianceRecordModal({
           }}
         />
 
-        {/* Note: Medication competency forms cannot be edited once completed, only viewed */}
+        <Dialog open={medicationOpen} onOpenChange={setMedicationOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Medication Competency Form</DialogTitle>
+              <DialogDescription>
+                Complete or edit the medication competency assessment
+              </DialogDescription>
+            </DialogHeader>
+            <MedicationCompetencyForm
+              complianceTypeId=""
+              employeeId={record.employee_id}
+              employeeName={employeeName}
+              periodIdentifier={record.period_identifier}
+              initialData={medicationData}
+              recordId={record.id}
+              onComplete={() => {
+                setMedicationOpen(false);
+                onRecordUpdated();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
