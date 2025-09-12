@@ -1407,90 +1407,10 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                             </div>
                                           </div>
                                         )}
-                                        {(item.record.completion_method === 'medication_competency' ? (item.record.form_data || item.record.notes) : item.record.notes) && (
+                                        {item.record.notes && item.record.completion_method !== 'medication_competency' && (
                                           <div>
-                                            <h4 className="font-semibold text-sm text-muted-foreground mb-2">
-                                              {item.record.completion_method === 'medication_competency' ? 'Assessment Details' : 'Notes'}
-                                            </h4>
+                                            <h4 className="font-semibold text-sm text-muted-foreground mb-2">Notes</h4>
                                             {(() => {
-                                              if (item.record?.completion_method === 'medication_competency') {
-                                                try {
-                                                  const parsedData = item.record.form_data || JSON.parse(item.record.notes);
-                                                  const competencyItems = parsedData.competencyItems || [];
-                                                  const acknowledgement = parsedData.acknowledgement || {};
-
-                                                  return (
-                                                    <div className="space-y-4">
-                                                      {/* Competency Items */}
-                                                      <div className="space-y-3">
-                                                        {competencyItems.map((item: any, index: number) => (
-                                                          <div key={index} className="bg-muted/50 p-3 rounded-md border">
-                                                            <div className="flex items-center justify-between mb-2">
-                                                              <h5 className="font-medium text-sm">
-                                                                {item.performanceCriteria || `Item ${index + 1}`}
-                                                              </h5>
-                                                              <Badge 
-                                                                className={
-                                                                  item.competent === 'yes' 
-                                                                    ? 'bg-success/10 text-success border-success/20' 
-                                                                    : item.competent === 'not-yet'
-                                                                    ? 'bg-warning/10 text-warning border-warning/20'
-                                                                    : 'bg-muted text-muted-foreground'
-                                                                }
-                                                              >
-                                                                {item.competent === 'yes' ? 'Competent' : 
-                                                                 item.competent === 'not-yet' ? 'Not Yet' : 'N/A'}
-                                                              </Badge>
-                                                            </div>
-                                                            {item.examples && (
-                                                              <p className="text-xs text-muted-foreground mb-2 italic">
-                                                                {item.examples}
-                                                              </p>
-                                                            )}
-                                                            {item.comments && (
-                                                              <div className="mt-2">
-                                                                <span className="text-xs font-medium text-muted-foreground">Comments: </span>
-                                                                <span className="text-xs">{item.comments}</span>
-                                                              </div>
-                                                            )}
-                                                          </div>
-                                                        ))}
-                                                      </div>
-                                                      
-                                                      {/* Acknowledgement Section */}
-                                                      {acknowledgement.signature && (
-                                                        <div className="border-t pt-3">
-                                                          <h5 className="font-medium text-sm mb-2">Employee Acknowledgement</h5>
-                                                          <div className="bg-primary/5 p-3 rounded-md border border-primary/20">
-                                                            <div className="flex items-center justify-between">
-                                                              <span className="text-sm">
-                                                                <strong>Signature:</strong> {acknowledgement.signature}
-                                                              </span>
-                                                              {acknowledgement.date && (
-                                                                <span className="text-xs text-muted-foreground">
-                                                                  {new Date(acknowledgement.date).toLocaleDateString()}
-                                                                </span>
-                                                              )}
-                                                            </div>
-                                                            {acknowledgement.confirmed && (
-                                                              <div className="mt-1 text-xs text-success">
-                                                                ✓ Employee confirmed understanding of procedure
-                                                              </div>
-                                                            )}
-                                                          </div>
-                                                        </div>
-                                                      )}
-                                                    </div>
-                                                  );
-                                                } catch (error) {
-                                                  return (
-                                                    <p className="text-sm bg-muted p-3 rounded-md text-muted-foreground">
-                                                      Unable to display medication competency details
-                                                    </p>
-                                                  );
-                                                }
-                                              }
-                                              
                                               if (item.record?.completion_method === 'supervision' || item.record?.completion_method === 'annual_appraisal') {
                                                 try {
                                                   const j = JSON.parse(item.record.notes);
