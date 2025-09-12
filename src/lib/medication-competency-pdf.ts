@@ -199,15 +199,16 @@ export async function generateMedicationCompetencyPdf(
 
       // Centered company logo
       if (logoImage) {
-        const logoSize = 60;
-        const logoX = (pageWidth - logoSize * 1.5) / 2;
+        const logoW = 60;
+        const logoH = (logoImage.height / logoImage.width) * logoW;
+        const logoX = (pageWidth - logoW) / 2;
         page.drawImage(logoImage, {
           x: logoX,
-          y: headerY - logoSize,
-          width: logoSize * 1.5,
-          height: logoSize,
+          y: headerY - logoH,
+          width: logoW,
+          height: logoH,
         });
-        headerY -= logoSize + 15;
+        headerY -= logoH + 15;
       }
 
       // Centered company name
