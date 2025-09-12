@@ -444,58 +444,11 @@ export async function generateMedicationCompetencyPdf(
       });
     };
 
-    // Signature section
-    const drawSignatureSection = () => {
-      checkPageSpace(100);
-      
-      const signatureResponse = data.responses.find(r => r.question.toLowerCase().includes('signature'));
-      
-      if (signatureResponse || data.signature) {
-        drawRectangle(margin, yPosition - 80, contentWidth, 80, colors.background);
-        
-        drawText('✍️ EMPLOYEE ACKNOWLEDGMENT', margin + 15, yPosition - 20, {
-          bold: true,
-          size: 12,
-          color: colors.primary
-        });
-        
-        drawText('Employee Signature:', margin + 15, yPosition - 45, {
-          bold: true,
-          size: 10
-        });
-        
-        const signature = data.signature || signatureResponse?.comment || '';
-        drawText(signature, margin + 130, yPosition - 45, {
-          size: 11,
-          color: colors.primary,
-          bold: true
-        });
-        
-        drawText('Date:', margin + 350, yPosition - 45, {
-          bold: true,
-          size: 10
-        });
-        drawText(format(new Date(data.completedAt), 'MMM dd, yyyy'), margin + 385, yPosition - 45, {
-          size: 11
-        });
-        
-        // Signature line
-        page.drawLine({
-          start: { x: margin + 130, y: yPosition - 50 },
-          end: { x: margin + 340, y: yPosition - 50 },
-          thickness: 0.5,
-          color: colors.border
-        });
-        
-        yPosition -= 100;
-      }
-    };
 
     // Generate the PDF content
     drawModernHeader();
     drawEmployeeCard();
     drawCompetencyAssessments();
-    drawSignatureSection();
     
     // Draw footer on the last page
     drawFooter();
