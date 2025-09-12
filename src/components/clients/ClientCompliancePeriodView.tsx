@@ -13,6 +13,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import ClientSpotCheckFormDialog, { ClientSpotCheckFormData } from "./ClientSpotCheckFormDialog";
 import { ClientSpotCheckViewDialog } from "./ClientSpotCheckViewDialog";
+import { ClientComplianceRecordViewDialog } from "./ClientComplianceRecordViewDialog";
 import { ClientDeleteConfirmDialog } from "./ClientDeleteConfirmDialog";
 import { generateClientSpotCheckPdf } from "@/lib/client-spot-check-pdf";
 
@@ -89,8 +90,10 @@ export function ClientCompliancePeriodView({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [genericViewDialogOpen, setGenericViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSpotCheckRecord, setSelectedSpotCheckRecord] = useState<any>(null);
+  const [selectedComplianceRecord, setSelectedComplianceRecord] = useState<any>(null);
   const [editingSpotCheckData, setEditingSpotCheckData] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
@@ -899,28 +902,18 @@ export function ClientCompliancePeriodView({
                                           onClick={async () => {
                                             try {
                                               const record = getClientRecordForPeriod(client.id, selectedPeriod);
-                                              if (!record) return;
-                                              
-                                              // Fetch the client spot check record
-                                              const { data: spotCheckData, error } = await supabase
-                                                .from('client_spot_check_records')
-                                                .select('*')
-                                                .eq('compliance_record_id', record.id)
-                                                .maybeSingle();
-                                              
-                                              if (error) throw error;
-                                              if (!spotCheckData) {
+                                              if (!record) {
                                                 toast({
-                                                  title: "No spot check data",
-                                                  description: "No spot check record found for this client.",
+                                                  title: "No record found",
+                                                  description: "No compliance record found for this client.",
                                                   variant: "destructive",
                                                 });
                                                 return;
                                               }
                                               
                                               setSelectedClient(client);
-                                              setSelectedSpotCheckRecord(spotCheckData);
-                                              setViewDialogOpen(true);
+                                              setSelectedComplianceRecord(record);
+                                              setGenericViewDialogOpen(true);
                                               
                                             } catch (error) {
                                               console.error('Error viewing client record:', error);
@@ -1190,6 +1183,14 @@ export function ClientCompliancePeriodView({
         onOpenChange={setViewDialogOpen}
         client={selectedClient}
         spotCheckRecord={selectedSpotCheckRecord}
+      />
+
+      {/* Generic Compliance Record View Dialog */}
+      <ClientComplianceRecordViewDialog
+        open={genericViewDialogOpen}
+        onOpenChange={setGenericViewDialogOpen}
+        client={selectedClient}
+        record={selectedComplianceRecord}
       />
 
       {/* Delete Confirmation Dialog */}
