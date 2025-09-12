@@ -809,7 +809,7 @@ export function ClientCompliancePeriodView({
                          {paginatedClients.map((client) => {
                           const record = getClientRecordForPeriod(client.id, selectedPeriod);
                           const status = record?.status || 'pending';
-                          const isCompleted = status === 'completed';
+                          const isCompleted = status === 'completed' || status === 'compliant';
                       
                             return (
                               <TableRow key={client.id} className={`group hover:bg-gradient-to-r hover:from-muted/20 hover:to-transparent transition-all duration-200 border-b border-border/50 ${getStatusColor(status)}`}>
