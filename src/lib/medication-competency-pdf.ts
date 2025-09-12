@@ -343,6 +343,10 @@ export async function generateMedicationCompetencyPdf(
         yPosition -= 30;
 
         responses.forEach((response) => {
+          // Skip signature-related questions from competency assessment
+          if (response.question.toLowerCase().includes('signature')) {
+            return;
+          }
           // Calculate required height for this item
           const questionLines = wrapText(response.question, contentWidth - 100, regularFont, 10);
           const examplesText = response.helpText || 'Direct observation / discussion';
@@ -444,11 +448,56 @@ export async function generateMedicationCompetencyPdf(
       });
     };
 
+    // Signature section
+    const drawSignatureSection = () => {
+      checkPageSpace(100);
+      
+      if (data.signature) {
+        drawRectangle(margin, yPosition - 80, contentWidth, 80, colors.background);
+        
+        drawText('✍️ EMPLOYEE ACKNOWLEDGMENT', margin + 15, yPosition - 20, {
+          bold: true,
+          size: 12,
+          color: colors.primary
+        });
+        
+        drawText('Employee Signature:', margin + 15, yPosition - 45, {
+          bold: true,
+          size: 10
+        });
+        
+        drawText(data.signature, margin + 130, yPosition - 45, {
+          size: 11,
+          color: colors.primary,
+          bold: true
+        });
+        
+        drawText('Date:', margin + 350, yPosition - 45, {
+          bold: true,
+          size: 10
+        });
+        drawText(format(new Date(data.completedAt), 'MMM dd, yyyy'), margin + 385, yPosition - 45, {
+          size: 11
+        });
+        
+        // Signature line
+        page.drawLine({
+          start: { x: margin + 130, y: yPosition - 50 },
+          end: { x: margin + 340, y: yPosition - 50 },
+          thickness: 0.5,
+          color: colors.border
+        });
+        
+        yPosition -= 100;
+      }
+    };
+
 
     // Generate the PDF content
     drawModernHeader();
     drawEmployeeCard();
     drawCompetencyAssessments();
+    drawSignatureSection();
     
     // Draw footer on the last page
     drawFooter();
