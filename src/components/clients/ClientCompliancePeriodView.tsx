@@ -496,6 +496,7 @@ export function ClientCompliancePeriodView({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
+      case 'compliant':
         return "bg-success/10 text-success border-success/20";
       case 'overdue':
         return "bg-destructive/10 text-destructive border-destructive/20";
@@ -508,6 +509,7 @@ export function ClientCompliancePeriodView({
   const getStatusText = (status: string) => {
     switch (status) {
       case 'completed':
+      case 'compliant':
         return 'Compliant';
       case 'overdue':
         return 'Overdue';
@@ -520,6 +522,7 @@ export function ClientCompliancePeriodView({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
+      case 'compliant':
         return 'bg-success/5 border-success/20';
       case 'overdue':
         return 'bg-destructive/5 border-destructive/20';
