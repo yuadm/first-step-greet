@@ -535,63 +535,6 @@ export function MedicationCompetencyForm({
         </CardContent>
       </Card>
 
-      {/* 5. Compliance Action Required Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <Clock className="h-5 w-5 text-primary" />
-            Compliance Action Required
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Acknowledge Procedure */}
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="acknowledge-procedure"
-              checked={formData.procedureAcknowledged}
-              onCheckedChange={(checked) => 
-                setFormData(prev => ({ ...prev, procedureAcknowledged: !!checked }))
-              }
-              className="mt-1"
-            />
-            <div className="space-y-1">
-              <Label 
-                htmlFor="acknowledge-procedure"
-                className={`text-base font-medium cursor-pointer ${formErrors.procedureAcknowledged ? 'text-red-500' : ''}`}
-              >
-                Acknowledge they have read and understood this procedure
-              </Label>
-              {formErrors.procedureAcknowledged && (
-                <p className="text-red-500 text-sm">{formErrors.procedureAcknowledged}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Competency Checklist Status */}
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="checklist-completed"
-              checked={formData.checklistCompleted}
-              disabled={true}
-              className="mt-1"
-            />
-            <div className="space-y-1">
-              <Label 
-                htmlFor="checklist-completed"
-                className="text-base font-medium cursor-default"
-              >
-                Complete the digital competency checklist (see section below)
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {formData.checklistCompleted 
-                  ? "✓ Competency checklist completed" 
-                  : `${completedCount}/${totalCount} items completed`
-                }
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 6. Digital Competency Checklist */}
       <Card>
