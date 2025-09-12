@@ -276,20 +276,8 @@ export function EditComplianceRecordModal({
     }
   };
 
-  // Handle trigger click - auto-detect form type and open appropriate modal
+  // Handle trigger click directly instead of nesting dialogs
   const handleTriggerClick = () => {
-    // Check if this is a form-based completion that should open the form modal directly
-    if (record.completion_method === 'annual_appraisal' && complianceTypeName?.toLowerCase().includes('appraisal')) {
-      setAnnualOpen(true);
-      return;
-    }
-    
-    if (record.completion_method === 'questionnaire' && complianceTypeName?.toLowerCase().includes('medication')) {
-      setMedicationOpen(true);
-      return;
-    }
-    
-    // For text or date entries, open the regular edit modal
     setIsOpen(true);
   };
 
@@ -499,37 +487,9 @@ export function EditComplianceRecordModal({
           open={annualOpen}
           onOpenChange={setAnnualOpen}
           initialData={annualData || undefined}
-          onSubmit={async (data) => {
+          onSubmit={(data) => {
             setAnnualData(data);
-            
-            // Update the database record
-            try {
-              const { error } = await supabase
-                .from('compliance_period_records')
-                .update({
-                  notes: JSON.stringify({ ...data, freeTextNotes: notes.trim() || '' }),
-                  updated_at: new Date().toISOString(),
-                  completion_method: 'annual_appraisal'
-                })
-                .eq('id', record.id);
-
-              if (error) throw error;
-
-              toast({
-                title: "Record updated successfully",
-                description: `Annual appraisal for ${employeeName} has been updated.`,
-              });
-
-              setAnnualOpen(false);
-              onRecordUpdated();
-            } catch (error) {
-              console.error('Error updating annual appraisal:', error);
-              toast({
-                title: "Error updating record",
-                description: "Could not update annual appraisal. Please try again.",
-                variant: "destructive",
-              });
-            }
+            setAnnualOpen(false);
           }}
         />
 
