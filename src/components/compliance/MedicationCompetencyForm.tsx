@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,9 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ChevronDown, ChevronRight, Check, Shield, Users, Heart, FileText, Clock, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ChevronDown, ChevronRight, Check, Shield, Users, Heart, FileText, Clock, AlertTriangle, Signature } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import SignatureCanvas from 'react-signature-canvas';
 import { format } from "date-fns";
 
 interface CompetencyItem {
@@ -42,6 +44,10 @@ interface MedicationCompetencyData {
   // Assessor fields
   assessorName?: string;
   assessorSignature?: string;
+  assessorSignatureData?: string;
+  
+  // Employee signature data
+  employeeSignatureData?: string;
   
   // Status
   status: "draft" | "completed";
@@ -183,6 +189,8 @@ export function MedicationCompetencyForm({
         signatureDate: initialData.acknowledgement?.date || format(new Date(), "yyyy-MM-dd"),
         assessorName: initialData.assessorName || "",
         assessorSignature: initialData.assessorSignature || "",
+        assessorSignatureData: initialData.assessorSignatureData || "",
+        employeeSignatureData: initialData.employeeSignatureData || "",
         status: "completed"
       };
     }
@@ -203,6 +211,8 @@ export function MedicationCompetencyForm({
       signatureDate: format(new Date(), "yyyy-MM-dd"),
       assessorName: "",
       assessorSignature: "",
+      assessorSignatureData: "",
+      employeeSignatureData: "",
       status: "draft"
     };
   });
@@ -210,6 +220,49 @@ export function MedicationCompetencyForm({
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  
+  // Signature canvas state
+  const [showEmployeeSignature, setShowEmployeeSignature] = useState(false);
+  const [showAssessorSignature, setShowAssessorSignature] = useState(false);
+  const employeeSignatureRef = useRef<SignatureCanvas>(null);
+  const assessorSignatureRef = useRef<SignatureCanvas>(null);
+
+  // Signature handling functions
+  const handleSaveEmployeeSignature = () => {
+    if (employeeSignatureRef.current) {
+      const signatureData = employeeSignatureRef.current.toDataURL();
+      setFormData(prev => ({ ...prev, employeeSignatureData: signatureData }));
+      setShowEmployeeSignature(false);
+      toast({
+        title: "Success",
+        description: "Employee signature saved successfully",
+      });
+    }
+  };
+
+  const handleSaveAssessorSignature = () => {
+    if (assessorSignatureRef.current) {
+      const signatureData = assessorSignatureRef.current.toDataURL();
+      setFormData(prev => ({ ...prev, assessorSignatureData: signatureData }));
+      setShowAssessorSignature(false);
+      toast({
+        title: "Success", 
+        description: "Assessor signature saved successfully",
+      });
+    }
+  };
+
+  const clearEmployeeSignature = () => {
+    if (employeeSignatureRef.current) {
+      employeeSignatureRef.current.clear();
+    }
+  };
+
+  const clearAssessorSignature = () => {
+    if (assessorSignatureRef.current) {
+      assessorSignatureRef.current.clear();
+    }
+  };
 
   const handleCompetencyChange = (id: string, field: 'competent' | 'comments', value: string) => {
     setFormData(prev => ({
@@ -633,12 +686,27 @@ export function MedicationCompetencyForm({
           {/* Assessor Signature */}
           <div className="space-y-2">
             <Label className="text-base font-medium">Assessor Signature</Label>
-            <Input
-              placeholder="Type assessor's full name as signature"
-              value={formData.assessorSignature || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, assessorSignature: e.target.value }))}
-              className={formErrors.assessorSignature ? "border-red-500" : ""}
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type assessor's full name as signature"
+                value={formData.assessorSignature || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, assessorSignature: e.target.value }))}
+                className={formErrors.assessorSignature ? "border-red-500" : ""}
+              />
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => setShowAssessorSignature(true)}
+              >
+                <Signature className="mr-2 h-4 w-4" />
+                Draw
+              </Button>
+            </div>
+            {formData.assessorSignatureData && (
+              <div className="p-2 border rounded">
+                <img src={formData.assessorSignatureData} alt="Assessor Signature" className="max-h-16" />
+              </div>
+            )}
             {formErrors.assessorSignature && (
               <p className="text-red-500 text-sm">{formErrors.assessorSignature}</p>
             )}
@@ -661,12 +729,27 @@ export function MedicationCompetencyForm({
           {/* Employee Signature */}
           <div className="space-y-2">
             <Label className="text-base font-medium">Employee Signature</Label>
-            <Input
-              placeholder="Type employee's full name as signature"
-              value={formData.signature}
-              onChange={(e) => setFormData(prev => ({ ...prev, signature: e.target.value }))}
-              className={formErrors.signature ? "border-red-500" : ""}
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type employee's full name as signature"
+                value={formData.signature}
+                onChange={(e) => setFormData(prev => ({ ...prev, signature: e.target.value }))}
+                className={formErrors.signature ? "border-red-500" : ""}
+              />
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => setShowEmployeeSignature(true)}
+              >
+                <Signature className="mr-2 h-4 w-4" />
+                Draw
+              </Button>
+            </div>
+            {formData.employeeSignatureData && (
+              <div className="p-2 border rounded">
+                <img src={formData.employeeSignatureData} alt="Employee Signature" className="max-h-16" />
+              </div>
+            )}
             {formErrors.signature && (
               <p className="text-red-500 text-sm">{formErrors.signature}</p>
             )}
@@ -712,6 +795,78 @@ export function MedicationCompetencyForm({
           {isLoading ? "Submitting..." : "Submit Competency Assessment"}
         </Button>
       </div>
+
+      {/* Employee Signature Canvas Dialog */}
+      {showEmployeeSignature && (
+        <Dialog open={showEmployeeSignature} onOpenChange={setShowEmployeeSignature}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Employee Digital Signature</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="border rounded-lg">
+                <SignatureCanvas
+                  ref={employeeSignatureRef}
+                  canvasProps={{
+                    width: 500,
+                    height: 200,
+                    className: 'signature-canvas'
+                  }}
+                />
+              </div>
+              <div className="flex justify-between">
+                <Button type="button" variant="outline" onClick={clearEmployeeSignature}>
+                  Clear
+                </Button>
+                <div className="space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setShowEmployeeSignature(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={handleSaveEmployeeSignature}>
+                    Save Signature
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Assessor Signature Canvas Dialog */}
+      {showAssessorSignature && (
+        <Dialog open={showAssessorSignature} onOpenChange={setShowAssessorSignature}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assessor Digital Signature</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="border rounded-lg">
+                <SignatureCanvas
+                  ref={assessorSignatureRef}
+                  canvasProps={{
+                    width: 500,
+                    height: 200,
+                    className: 'signature-canvas'
+                  }}
+                />
+              </div>
+              <div className="flex justify-between">
+                <Button type="button" variant="outline" onClick={clearAssessorSignature}>
+                  Clear
+                </Button>
+                <div className="space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setShowAssessorSignature(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={handleSaveAssessorSignature}>
+                    Save Signature
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
