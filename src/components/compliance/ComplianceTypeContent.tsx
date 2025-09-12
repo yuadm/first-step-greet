@@ -131,6 +131,10 @@ const [spotcheckTarget, setSpotcheckTarget] = useState<{ employeeId: string; per
 const [supervisionEditOpen, setSupervisionEditOpen] = useState(false);
 const [supervisionInitialData, setSupervisionInitialData] = useState<SupervisionFormData | null>(null);
 const [supervisionTarget, setSupervisionTarget] = useState<{ recordId: string } | null>(null);
+// Medication competency edit state
+const [medicationEditOpen, setMedicationEditOpen] = useState(false);
+const [medicationInitialData, setMedicationInitialData] = useState<any | null>(null);
+const [medicationTarget, setMedicationTarget] = useState<{ recordId: string; employeeName: string } | null>(null);
 
   // Get unique branches for filter - filtered by user access
   const uniqueBranches = useMemo(() => {
@@ -684,6 +688,18 @@ const handleOpenSupervisionEdit = (record: ComplianceRecord) => {
   } catch (err) {
     console.error('Error loading supervision form:', err);
     toast({ title: 'Error', description: 'Could not load supervision form.', variant: 'destructive' });
+  }
+};
+
+const handleOpenMedicationEdit = (record: ComplianceRecord, employeeName: string) => {
+  try {
+    const init = record.form_data || null;
+    setMedicationInitialData(init);
+    setMedicationTarget({ recordId: record.id, employeeName });
+    setMedicationEditOpen(true);
+  } catch (err) {
+    console.error('Error loading medication competency form:', err);
+    toast({ title: 'Error', description: 'Could not load medication competency form.', variant: 'destructive' });
   }
 };
 
@@ -1524,6 +1540,15 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
   >
     <Edit className="w-4 h-4" />
   </Button>
+) : item.record.completion_method === 'questionnaire' && item.record.form_data ? (
+  <Button
+    variant="ghost"
+    size="sm"
+    className="hover-scale"
+    onClick={() => handleOpenMedicationEdit(item.record!, item.employee.name)}
+  >
+    <Edit className="w-4 h-4" />
+  </Button>
 ) : (
   <EditComplianceRecordModal
     record={item.record}
@@ -1665,6 +1690,115 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
   initialData={supervisionInitialData || undefined}
   onSubmit={handleSaveSupervisionEdit}
 />
+
+{/* Medication Competency Edit Dialog */}
+<Dialog open={medicationEditOpen} onOpenChange={setMedicationEditOpen}>
+  <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle>Edit Medication Competency Assessment</DialogTitle>
+      <DialogDescription>
+        View and edit the completed medication competency assessment for {medicationTarget?.employeeName}
+      </DialogDescription>
+    </DialogHeader>
+    
+    {medicationInitialData ? (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+          <div>
+            <h4 className="font-medium text-sm text-muted-foreground">Employee</h4>
+            <p className="font-medium">{medicationTarget?.employeeName}</p>
+          </div>
+          <div>
+            <h4 className="font-medium text-sm text-muted-foreground">Assessment Date</h4>
+            <p className="font-medium">{medicationInitialData.assessmentDate || 'Not specified'}</p>
+          </div>
+          <div>
+            <h4 className="font-medium text-sm text-muted-foreground">Overall Status</h4>
+            <Badge variant={medicationInitialData.overallResult === 'competent' ? 'default' : 'destructive'}>
+              {medicationInitialData.overallResult || 'Not assessed'}
+            </Badge>
+          </div>
+          <div>
+            <h4 className="font-medium text-sm text-muted-foreground">Supervisor</h4>
+            <p className="font-medium">{medicationInitialData.supervisor || 'Not specified'}</p>
+          </div>
+        </div>
+
+        {medicationInitialData.responses && (
+          <div className="space-y-4">
+            <h4 className="font-semibold">Assessment Responses</h4>
+            <div className="space-y-3">
+              {medicationInitialData.responses.map((response: any, index: number) => (
+                <div key={index} className="p-3 border rounded-lg">
+                  <div className="font-medium text-sm mb-1">{response.question}</div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant={response.answer === 'yes' ? 'default' : response.answer === 'not-yet' ? 'destructive' : 'secondary'}>
+                      {response.answer}
+                    </Badge>
+                  </div>
+                  {response.comment && (
+                    <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                      {response.comment}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {medicationInitialData.signature && (
+          <div className="p-4 bg-muted/30 rounded-lg">
+            <h4 className="font-medium text-sm text-muted-foreground mb-2">Employee Signature</h4>
+            <p className="font-medium">{medicationInitialData.signature}</p>
+            <p className="text-sm text-muted-foreground">
+              Completed: {format(new Date(medicationInitialData.completedAt), 'PPp')}
+            </p>
+          </div>
+        )}
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start gap-2">
+            <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-blue-900">Medication Competency Assessment</h4>
+              <p className="text-sm text-blue-700 mt-1">
+                This assessment cannot be edited after completion to maintain compliance integrity. 
+                You can view all responses and download the PDF for records.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No assessment data available.</p>
+      </div>
+    )}
+
+    <div className="flex justify-end gap-3 pt-4 border-t">
+      <Button variant="outline" onClick={() => setMedicationEditOpen(false)}>
+        Close
+      </Button>
+      {medicationInitialData && (
+        <Button
+          onClick={() => {
+            // Generate PDF download
+            import("@/lib/medication-competency-pdf").then(({ generateMedicationCompetencyPdf }) => {
+              generateMedicationCompetencyPdf(medicationInitialData, { 
+                name: companySettings?.name, 
+                logo: companySettings?.logo 
+              });
+            });
+          }}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Download PDF
+        </Button>
+      )}
+    </div>
+  </DialogContent>
+</Dialog>
     </div>
   );
 }
