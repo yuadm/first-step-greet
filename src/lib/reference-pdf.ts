@@ -42,6 +42,8 @@ interface CompletedReference {
   reference_type: string;
   form_data: ReferenceData;
   completed_at: string;
+  created_at: string;
+  sent_at: string;
   application_id: string;
 }
 
@@ -363,11 +365,30 @@ export const generateReferencePDF = async (
   yPosition += 10;
 
   // Referee Information
-  ensureSpace(40);
+  ensureSpace(70);
   pdf.setFont('helvetica', 'bold');
   pdf.text('REFEREE INFORMATION', margin, yPosition);
   yPosition += lineHeight + 3;
   
+  // Reference dates section
+  pdf.text('Reference Created:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(new Date(reference.created_at).toLocaleDateString(), margin + 95, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Reference Sent:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(new Date(reference.sent_at).toLocaleDateString(), margin + 85, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Reference Completed:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(new Date(reference.completed_at).toLocaleDateString(), margin + 110, yPosition);
+  yPosition += lineHeight + 3;
+  
+  pdf.setFont('helvetica', 'bold');
   pdf.text('Referee Name:', margin, yPosition);
   pdf.setFont('helvetica', 'normal');
   pdf.text(reference.form_data.refereeFullName || '', margin + 70, yPosition);
