@@ -300,13 +300,21 @@ export function MedicationCompetencyForm({
       }
     });
 
-    // Validate acknowledgement
-    if (!formData.acknowledgementConfirmed) {
-      errors.acknowledgementConfirmed = "Final acknowledgement is required";
+    // Validate signatures and names
+    if (!formData.assessorName?.trim()) {
+      errors.assessorName = "Assessor name is required";
     }
     
-    if (!formData.signature.trim()) {
-      errors.signature = "Signature is required";
+    if (!formData.assessorSignatureData?.trim()) {
+      errors.assessorSignature = "Assessor signature is required";
+    }
+    
+    if (!formData.employeeName?.trim()) {
+      errors.employeeName = "Employee name is required";
+    }
+    
+    if (!formData.employeeSignatureData?.trim()) {
+      errors.signature = "Employee signature is required";
     }
 
     setFormErrors(errors);
