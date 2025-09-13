@@ -39,6 +39,13 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     fetchCompanySettings();
   }, []);
 
+  // Update document title when company settings change
+  useEffect(() => {
+    if (companySettings.name) {
+      document.title = companySettings.name;
+    }
+  }, [companySettings.name]);
+
   const fetchCompanySettings = async () => {
     try {
       setLoading(true);
