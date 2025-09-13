@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Eye, FileText, Edit, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Plus, Minus } from "lucide-react";
+import { Search, Eye, FileText, Edit, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Plus, Minus, Users, TrendingUp, Clock, MapPin, Mail, Phone, Calendar, Filter, MoreVertical, Download, Star, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { generateJobApplicationPdf } from "@/lib/job-application-pdf";
@@ -23,6 +23,9 @@ import { DateRange } from "react-day-picker";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { TimeSlotsList } from "./TimeSlotsList";
 import { ReferenceButtons } from "./ReferenceButtons";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 // Helper function to format dates from YYYY-MM-DD to MM/DD/YYYY
 const formatDateDisplay = (dateString: string | null | undefined): string => {
   if (!dateString) return 'Not provided';
@@ -175,6 +178,7 @@ export function JobApplicationsContent() {
       setLoading(false);
     }
   };
+  
   const deleteApplication = async (id: string) => {
     try {
       const { error } = await supabase
@@ -319,1727 +323,579 @@ Please complete and return this reference as soon as possible.`;
 
   const totalPages = Math.max(1, Math.ceil(filteredApplications.length / pageSize));
   const paginatedApplications = displayedApplications.slice((page - 1) * pageSize, page * pageSize);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'accepted': return <CheckCircle className="w-4 h-4" />;
+      case 'rejected': return <XCircle className="w-4 h-4" />;
+      case 'interviewed': return <Star className="w-4 h-4" />;
+      case 'reviewing': return <AlertCircle className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'accepted': return 'badge-success';
+      case 'rejected': return 'badge-error';
+      case 'interviewed': return 'bg-accent text-accent-foreground';
+      case 'reviewing': return 'badge-warning';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const statusStats = useMemo(() => {
+    const stats = statusOptions.reduce((acc, status) => {
+      acc[status] = applications.filter(app => app.status === status).length;
+      return acc;
+    }, {} as Record<string, number>);
+    return stats;
+  }, [applications, statusOptions]);
+
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="text-center">Loading job applications...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Job Applications</h1>
-          <p className="text-muted-foreground">Manage and review job applications</p>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold">{filteredApplications.length}</div>
-          <div className="text-sm text-muted-foreground">
-            {searchTerm ? `Filtered Results` : `Total Applications`}
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <Card className="p-8 glass">
+          <div className="flex items-center gap-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="text-lg font-medium">Loading job applications...</p>
           </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search by name, email, or position..."
-            value={searchTerm}
-            onChange={(e) => { setPage(1); setSearchTerm(e.target.value); }}
-            className="pl-10"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={(val) => { setPage(1); setStatusFilter(val); }}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {statusOptions.map((s) => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <DatePickerWithRange date={dateRange} setDate={(d) => { setPage(1); setDateRange(d); }} />
-      </div>
-      {/* Applications Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Applications ({filteredApplications.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-               <TableHeader>
-                 <TableRow>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="p-0 h-auto font-medium hover:bg-transparent"
-                       onClick={() => handleSort('applicant_name')}
-                     >
-                       Applicant {getSortIcon('applicant_name')}
-                     </Button>
-                   </TableHead>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="p-0 h-auto font-medium hover:bg-transparent"
-                       onClick={() => handleSort('position')}
-                     >
-                       Position Applied {getSortIcon('position')}
-                     </Button>
-                   </TableHead>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="p-0 h-auto font-medium hover:bg-transparent"
-                       onClick={() => handleSort('created_at')}
-                     >
-                       Date {getSortIcon('created_at')}
-                     </Button>
-                   </TableHead>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="p-0 h-auto font-medium hover:bg-transparent"
-                       onClick={() => handleSort('postcode')}
-                     >
-                       Postcode {getSortIcon('postcode')}
-                     </Button>
-                   </TableHead>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="p-0 h-auto font-medium hover:bg-transparent"
-                       onClick={() => handleSort('english_proficiency')}
-                     >
-                       Proficiency In English {getSortIcon('english_proficiency')}
-                     </Button>
-                   </TableHead>
-                   <TableHead>Actions</TableHead>
-                 </TableRow>
-               </TableHeader>
-              <TableBody>
-                {paginatedApplications.map((application) => (
-                  <TableRow key={application.id}>
-                    <TableCell>
-                      <div className="font-medium">
-                        {application.personal_info?.fullName || 'Unknown'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {application.personal_info?.positionAppliedFor || 'Not specified'}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(application.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {application.personal_info?.postcode || 'Not provided'}
-                    </TableCell>
-                    <TableCell>
-                      {application.personal_info?.englishProficiency || 'Not specified'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedApplication(application)}
-                            >
-                              <Eye className="w-4 h-4 mr-1" />
-                              View
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-6xl max-h-[90vh]">
-                            <DialogHeader>
-                              <DialogTitle>Application Details - {application.personal_info?.fullName}</DialogTitle>
-                            </DialogHeader>
-                            <ScrollArea className="max-h-[75vh]">
-                              {selectedApplication && (
-                                <ApplicationDetails 
-                                  application={selectedApplication} 
-                                  onUpdate={fetchApplications}
-                                  onSendReferenceEmail={sendReferenceEmail}
-                                />
-                              )}
-                            </ScrollArea>
-                          </DialogContent>
-                        </Dialog>
-                        
-                         {(isAdmin || hasPageAction('job-applications', 'delete')) && (
-                           <AlertDialog>
-                             <AlertDialogTrigger asChild>
-                               <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                                 <Trash2 className="w-4 h-4 mr-1" />
-                                 Delete
-                               </Button>
-                             </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Application</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete the application from {application.personal_info?.fullName}? 
-                                This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => deleteApplication(application.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                           </AlertDialogContent>
-                         </AlertDialog>
-                         )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {totalCount > pageSize && (
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Items per page:</span>
-            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (page > 1) {
-                      setPage(page - 1);
-                      window.scrollTo(0, 0);
-                    }
-                  }}
-                />
-              </PaginationItem>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const start = Math.max(1, Math.min(page - 2, totalPages - 4));
-                const pageNumber = start + i;
-                if (pageNumber > totalPages) return null;
-                return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink
-                      href="#"
-                      isActive={pageNumber === page}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPage(pageNumber);
-                        window.scrollTo(0, 0);
-                      }}
-                    >
-                      {pageNumber}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (page < totalPages) {
-                      setPage(page + 1);
-                      window.scrollTo(0, 0);
-                    }
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
-      {displayedApplications.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
-          <p className="text-gray-500">
-            {searchTerm || statusFilter !== 'all' 
-              ? 'Try adjusting your search or filters'
-              : 'Job applications will appear here once submitted'
-            }
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ApplicationDetails({ 
-  application, 
-  onUpdate, 
-  onSendReferenceEmail 
-}: { 
-  application: JobApplication; 
-  onUpdate?: () => void;
-  onSendReferenceEmail: (app: JobApplication, refIndex: number) => void;
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState(application);
-  const { toast } = useToast();
-  const { companySettings } = useCompany();
-  const { isAdmin, hasPageAction } = usePermissions();
-
-  const toJobAppData = () => {
-    const pi = application.personal_info || {};
-    const fullName = pi.fullName || `${pi.firstName || ''} ${pi.lastName || ''}`.trim();
-
-    const personalInfo = {
-      title: pi.title || '',
-      fullName,
-      email: pi.email || '',
-      confirmEmail: pi.confirmEmail || pi.email || '',
-      telephone: pi.telephone || '',
-      dateOfBirth: pi.dateOfBirth || pi.dob || '',
-      streetAddress: pi.streetAddress || pi.address || '',
-      streetAddress2: pi.streetAddress2 || pi.address2 || '',
-      town: pi.town || pi.city || '',
-      borough: pi.borough || '',
-      postcode: pi.postcode || '',
-      englishProficiency: pi.englishProficiency || '',
-      otherLanguages: Array.isArray(pi.otherLanguages)
-        ? pi.otherLanguages
-        : (pi.otherLanguages ? String(pi.otherLanguages).split(',').map((s:string)=>s.trim()).filter(Boolean) : []),
-      positionAppliedFor: pi.positionAppliedFor || '',
-      personalCareWillingness: pi.personalCareWillingness || '',
-      hasDBS: pi.hasDBS || '',
-      hasCarAndLicense: pi.hasCarAndLicense || '',
-      nationalInsuranceNumber: pi.nationalInsuranceNumber || '',
-    };
-
-    const av = application.availability || {};
-    const availability = {
-      timeSlots: av.timeSlots || av.selectedSlots || {},
-      hoursPerWeek: av.hoursPerWeek || '',
-      hasRightToWork: typeof av.hasRightToWork === 'boolean' ? (av.hasRightToWork ? 'Yes' : 'No') : (av.hasRightToWork || ''),
-    };
-
-    const ec = application.emergency_contact || {};
-    const emergencyContact = {
-      fullName: ec.fullName || '',
-      relationship: ec.relationship || '',
-      contactNumber: ec.contactNumber || '',
-      howDidYouHear: ec.howDidYouHear || '',
-    };
-
-    const eh = application.employment_history || {};
-    const recent = eh.recentEmployer || null;
-    const previous = Array.isArray(eh.previousEmployers) ? eh.previousEmployers : [];
-    const previouslyEmployed = typeof eh.previouslyEmployed === 'boolean'
-      ? (eh.previouslyEmployed ? 'yes' : 'no')
-      : (eh.previouslyEmployed || ((recent || previous.length) ? 'yes' : 'no'));
-
-    const references: Record<string, any> = {};
-    let refCount = 0;
-    const addRef = (ref: any) => {
-      if (!ref) return;
-      const hasAny = ref.name || ref.company || ref.email || ref.contactNumber || ref.jobTitle || ref.address;
-      if (!hasAny) return;
-      refCount += 1;
-      references[`reference${refCount}`] = {
-        name: ref.name || '',
-        company: ref.company || '',
-        jobTitle: ref.jobTitle || ref.position || '',
-        email: ref.email || '',
-        contactNumber: ref.contactNumber || ref.telephone || '',
-        address: ref.address || '',
-        address2: ref.address2 || '',
-        town: ref.town || '',
-        postcode: ref.postcode || '',
-      };
-    };
-    const rinfo = application.reference_info || {};
-    addRef(rinfo.reference1);
-    addRef(rinfo.reference2);
-    if (Array.isArray(rinfo.references)) rinfo.references.forEach(addRef);
-    if (Array.isArray(rinfo.additionalReferences)) rinfo.additionalReferences.forEach(addRef);
-    if (recent) addRef(recent);
-    previous.forEach(addRef);
-
-    const skillsExperience = {
-      skills: application.skills_experience?.skills || application.skills_experience || {},
-    };
-
-    const declaration = application.declarations || {};
-    const termsPolicy = application.consent || {};
-
-    return {
-      personalInfo,
-      availability,
-      emergencyContact,
-      employmentHistory: {
-        previouslyEmployed,
-        recentEmployer: recent || undefined,
-        previousEmployers: previous || [],
-      },
-      references: references as any,
-      skillsExperience,
-      declaration,
-      termsPolicy,
-    };
-  };
-
-  const handleDownloadJson = () => {
-    try {
-      const data = toJobAppData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'job-application.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('JSON download failed', err);
-      toast({ title: 'Download Error', description: 'Failed to download JSON.', variant: 'destructive' });
-    }
-  };
-
-  const downloadApplication = async () => {
-try {
-      await generateJobApplicationPdf(toJobAppData() as any, {
-        logoUrl: companySettings.logo,
-        companyName: companySettings.name,
-      });
-      toast({
-        title: "PDF Generated",
-        description: "The application has been downloaded as a PDF.",
-      });
-    } catch (err) {
-      console.error('PDF generation failed', err);
-      toast({
-        title: "PDF Error",
-        description: "Failed to generate PDF. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-  const handleSave = async () => {
-    try {
-      const { error } = await supabase
-        .from('job_applications')
-        .update({
-          personal_info: editData.personal_info,
-          availability: editData.availability,
-          emergency_contact: editData.emergency_contact,
-          employment_history: editData.employment_history,
-          reference_info: editData.reference_info,
-          skills_experience: editData.skills_experience,
-          declarations: editData.declarations,
-          consent: editData.consent
-        })
-        .eq('id', editData.id);
-
-      if (error) throw error;
-
-      // Update the local application state with the saved data
-      Object.assign(application, editData);
-
-      toast({
-        title: "Application Updated",
-        description: "The job application has been updated successfully.",
-      });
-
-      setIsEditing(false);
-      onUpdate?.();
-    } catch (error) {
-      console.error('Error updating application:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update application",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const displayData = isEditing ? editData : application;
-
-  return (
-    <div className="space-y-6">
-      {/* Header with Edit and Download buttons */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold">
-            {displayData.personal_info?.fullName || 
-             `${displayData.personal_info?.firstName || ''} ${displayData.personal_info?.lastName || ''}`.trim() ||
-             'Unknown Applicant'}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Applied: {new Date(displayData.created_at).toLocaleDateString()}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {(isAdmin || hasPageAction('job-applications', 'download-pdf')) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={downloadApplication}
-              className="flex items-center gap-2"
-            >
-              <FileText className="w-4 h-4" />
-              Download PDF
-            </Button>
-          )}
-          {isEditing ? (
-            <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave}>Save</Button>
-              <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-            </div>
-          ) : (
-            (isAdmin || hasPageAction('job-applications', 'edit')) && (
-              <Button size="sm" onClick={() => setIsEditing(true)}>
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-            )
-          )}
-        </div>
-      </div>
-
-
-      {/* Application Content - Using ReviewSummary layout but with editing capability */}
-      {isEditing ? (
-        // Editing mode - keep the detailed form layout for editing
-        <EditableApplicationContent 
-          editData={editData}
-          setEditData={setEditData}
-          onSendReferenceEmail={onSendReferenceEmail}
-        />
-      ) : (
-        // View mode - use comprehensive ReviewSummary layout
-        <ReviewSummary data={toJobAppData() as any} />
-      )}
-      
-      {/* Reference Email Actions */}
-      {!isEditing && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Reference Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ReferenceButtons 
-              application={application}
-              references={toJobAppData().references}
-              onUpdate={onUpdate}
-            />
-          </CardContent>
         </Card>
-      )}
-    </div>
-  );
-};
-
-// Separate component for editing to keep the existing detailed form layout
-function EditableApplicationContent({ 
-  editData, 
-  setEditData, 
-  onSendReferenceEmail 
-}: { 
-  editData: any; 
-  setEditData: (data: any) => void;
-  onSendReferenceEmail: (app: JobApplication, refIndex: number) => void;
-}) {
-  // Initialize missing objects if they don't exist
-  const initializeData = () => {
-    const initialized = { ...editData };
-    if (!initialized.personal_info) initialized.personal_info = {};
-    if (!initialized.availability) initialized.availability = {};
-    if (!initialized.emergency_contact) initialized.emergency_contact = {};
-    if (!initialized.employment_history) initialized.employment_history = {};
-    if (!initialized.reference_info) initialized.reference_info = {};
-    if (!initialized.skills_experience) initialized.skills_experience = {};
-    if (!initialized.declarations) initialized.declarations = {};
-    if (!initialized.consent) initialized.consent = {};
-    
-    // Initialize nested objects
-    if (!initialized.employment_history.recentEmployer) initialized.employment_history.recentEmployer = {};
-    if (!initialized.employment_history.previousEmployers) initialized.employment_history.previousEmployers = [];
-    if (!initialized.reference_info.reference1) initialized.reference_info.reference1 = {};
-    if (!initialized.reference_info.reference2) initialized.reference_info.reference2 = {};
-    if (!initialized.availability.timeSlots) initialized.availability.timeSlots = {};
-    
-    return initialized;
-  };
-
-  const safeEditData = initializeData();
-
-  const updatePersonalInfo = (field: string, value: any) => {
-    setEditData({
-      ...editData,
-      personal_info: { ...editData.personal_info, [field]: value }
-    });
-  };
-
-  const updateAvailability = (field: string, value: any) => {
-    setEditData({
-      ...editData,
-      availability: { ...editData.availability, [field]: value }
-    });
-  };
-
-  const updateEmergencyContact = (field: string, value: any) => {
-    setEditData({
-      ...editData,
-      emergency_contact: { ...editData.emergency_contact, [field]: value }
-    });
-  };
-
-  const updateEmploymentHistory = (field: string, value: any) => {
-    setEditData({
-      ...editData,
-      employment_history: { ...editData.employment_history, [field]: value }
-    });
-  };
-
-  const updateRecentEmployer = (field: string, value: any) => {
-    setEditData({
-      ...editData,
-      employment_history: { 
-        ...editData.employment_history, 
-        recentEmployer: { ...editData.employment_history?.recentEmployer, [field]: value }
-      }
-    });
-  };
-
-  const updateReference = (refKey: 'reference1' | 'reference2', field: string, value: any) => {
-    setEditData({
-      ...editData,
-      reference_info: {
-        ...editData.reference_info,
-        [refKey]: { ...editData.reference_info?.[refKey], [field]: value }
-      }
-    });
-  };
-
-  const updateSkillsExperience = (field: string, value: any) => {
-    setEditData({
-      ...editData,
-      skills_experience: { ...editData.skills_experience, [field]: value }
-    });
-  };
-
-  const updateDeclarations = (field: string, value: any) => {
-    setEditData({
-      ...editData,
-      declarations: { ...editData.declarations, [field]: value }
-    });
-  };
-
-  const updatePreviousEmployer = (index: number, field: string, value: any) => {
-    const currentEmployers = editData.employment_history?.previousEmployers || [];
-    const updated = currentEmployers.map((emp, i) => 
-      i === index ? { ...emp, [field]: value } : emp
+      </div>
     );
-    setEditData({
-      ...editData,
-      employment_history: { 
-        ...editData.employment_history, 
-        previousEmployers: updated
-      }
-    });
-  };
-
-  const addPreviousEmployer = () => {
-    const currentEmployers = editData.employment_history?.previousEmployers || [];
-    const emptyEmployer = {
-      company: '',
-      name: '',
-      email: '',
-      position: '',
-      address: '',
-      address2: '',
-      town: '',
-      postcode: '',
-      telephone: '',
-      from: '',
-      to: '',
-      leavingDate: '',
-      keyTasks: '',
-      reasonForLeaving: '',
-    };
-    setEditData({
-      ...editData,
-      employment_history: { 
-        ...editData.employment_history, 
-        previousEmployers: [...currentEmployers, emptyEmployer]
-      }
-    });
-  };
-
-  const removePreviousEmployer = (index: number) => {
-    const currentEmployers = editData.employment_history?.previousEmployers || [];
-    setEditData({
-      ...editData,
-      employment_history: { 
-        ...editData.employment_history, 
-        previousEmployers: currentEmployers.filter((_, i) => i !== index)
-      }
-    });
-  };
-
-  const addReference = () => {
-    const currentReferences = [...(editData.reference_info?.additionalReferences || [])];
-    const emptyReference = {
-      name: '',
-      company: '',
-      jobTitle: '',
-      email: '',
-      address: '',
-      address2: '',
-      town: '',
-      contactNumber: '',
-      postcode: '',
-    };
-    setEditData({
-      ...editData,
-      reference_info: {
-        ...editData.reference_info,
-        additionalReferences: [...currentReferences, emptyReference]
-      }
-    });
-  };
-
-  const removeReference = (index: number) => {
-    const currentReferences = editData.reference_info?.additionalReferences || [];
-    setEditData({
-      ...editData,
-      reference_info: {
-        ...editData.reference_info,
-        additionalReferences: currentReferences.filter((_, i) => i !== index)
-      }
-    });
-  };
-
-  const updateAdditionalReference = (index: number, field: string, value: any) => {
-    const currentReferences = editData.reference_info?.additionalReferences || [];
-    const updated = currentReferences.map((ref, i) => 
-      i === index ? { ...ref, [field]: value } : ref
-    );
-    setEditData({
-      ...editData,
-      reference_info: {
-        ...editData.reference_info,
-        additionalReferences: updated
-      }
-    });
-  };
-
-  const updateConsent = (field: string, value: any) => {
-    setEditData({
-      ...editData,
-      consent: { ...editData.consent, [field]: value }
-    });
-  };
-
-  // Initialize additionalReferences if it doesn't exist
-  if (!safeEditData.reference_info?.additionalReferences) {
-    safeEditData.reference_info = {
-      ...safeEditData.reference_info,
-      additionalReferences: []
-    };
   }
 
   return (
-    <div className="space-y-6">
-      {/* Personal Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Title</label>
-              <Input
-                value={safeEditData.personal_info?.title || ''}
-                onChange={(e) => updatePersonalInfo('title', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Full Name</label>
-              <Input
-                value={safeEditData.personal_info?.fullName || ''}
-                onChange={(e) => updatePersonalInfo('fullName', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Email</label>
-              <Input
-                value={safeEditData.personal_info?.email || ''}
-                onChange={(e) => updatePersonalInfo('email', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Confirm Email</label>
-              <Input
-                value={safeEditData.personal_info?.confirmEmail || ''}
-                onChange={(e) => updatePersonalInfo('confirmEmail', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Telephone/Mobile</label>
-              <Input
-                value={safeEditData.personal_info?.telephone || ''}
-                onChange={(e) => updatePersonalInfo('telephone', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Date of Birth</label>
-              <DatePicker
-                selected={safeEditData.personal_info?.dateOfBirth ? new Date(safeEditData.personal_info.dateOfBirth) : undefined}
-                onChange={(date) => updatePersonalInfo('dateOfBirth', date ? date.toISOString().split('T')[0] : '')}
-                placeholder="Select date of birth"
-                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Street Address</label>
-              <Input
-                value={safeEditData.personal_info?.streetAddress || ''}
-                onChange={(e) => updatePersonalInfo('streetAddress', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Street Address 2</label>
-              <Input
-                value={safeEditData.personal_info?.streetAddress2 || ''}
-                onChange={(e) => updatePersonalInfo('streetAddress2', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Town</label>
-              <Input
-                value={safeEditData.personal_info?.town || ''}
-                onChange={(e) => updatePersonalInfo('town', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Borough</label>
-              <Input
-                value={safeEditData.personal_info?.borough || ''}
-                onChange={(e) => updatePersonalInfo('borough', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Postcode</label>
-              <Input
-                value={safeEditData.personal_info?.postcode || ''}
-                onChange={(e) => updatePersonalInfo('postcode', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">English Proficiency</label>
-              <Select
-                value={safeEditData.personal_info?.englishProficiency || ''}
-                onValueChange={(value) => updatePersonalInfo('englishProficiency', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select proficiency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Fluent">Fluent</SelectItem>
-                  <SelectItem value="Good">Good</SelectItem>
-                  <SelectItem value="Basic">Basic</SelectItem>
-                  <SelectItem value="Limited">Limited</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Position Applied For</label>
-              <Input
-                value={safeEditData.personal_info?.positionAppliedFor || ''}
-                onChange={(e) => updatePersonalInfo('positionAppliedFor', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Which personal care Are you willing to do?</label>
-              <Select
-                value={safeEditData.personal_info?.personalCareWillingness || ''}
-                onValueChange={(value) => updatePersonalInfo('personalCareWillingness', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select personal care willingness" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-md z-50">
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="both">Both</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">DBS</label>
-              <Select
-                value={safeEditData.personal_info?.hasDBS || ''}
-                onValueChange={(value) => updatePersonalInfo('hasDBS', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select DBS status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Car & Licence</label>
-              <Select
-                value={safeEditData.personal_info?.hasCarAndLicense || ''}
-                onValueChange={(value) => updatePersonalInfo('hasCarAndLicense', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select car & licence status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">NI Number</label>
-              <Input
-                value={safeEditData.personal_info?.nationalInsuranceNumber || ''}
-                onChange={(e) => updatePersonalInfo('nationalInsuranceNumber', e.target.value)}
-              />
+    <div className="min-h-screen bg-gradient-subtle">
+      <div className="p-6 space-y-8">
+        {/* Hero Section */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-primary rounded-radius-xl opacity-5"></div>
+          <div className="relative p-8 rounded-radius-xl border border-card-border bg-gradient-card">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-2">
+                <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  Job Applications
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  Discover, review, and manage talented candidates joining your team
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {statusOptions.slice(0, 4).map((status) => (
+                  <Card key={status} className="card-premium">
+                    <CardContent className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        {getStatusIcon(status)}
+                        <span className="text-sm font-medium capitalize">{status}</span>
+                      </div>
+                      <div className="text-2xl font-bold text-primary">
+                        {statusStats[status] || 0}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Availability */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Availability</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Hours Per Week</label>
+        {/* Advanced Filters */}
+        <Card className="card-premium">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <Filter className="w-5 h-5 text-primary" />
+              <CardTitle>Smart Filters & Search</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  value={safeEditData.availability?.hoursPerWeek || ''}
-                  onChange={(e) => updateAvailability('hoursPerWeek', e.target.value)}
+                  placeholder="Search candidates..."
+                  value={searchTerm}
+                  onChange={(e) => { setPage(1); setSearchTerm(e.target.value); }}
+                  className="pl-10 border-input-border focus:border-primary transition-colors"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Right to Work (UK)</label>
-                <Select
-                  value={safeEditData.availability?.hasRightToWork || ''}
-                  onValueChange={(value) => updateAvailability('hasRightToWork', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select right to work status" />
+              
+              <Select value={statusFilter} onValueChange={(val) => { setPage(1); setStatusFilter(val); }}>
+                <SelectTrigger className="border-input-border focus:border-primary">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {statusOptions.map((s) => (
+                    <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <DatePickerWithRange 
+                date={dateRange} 
+                setDate={(d) => { setPage(1); setDateRange(d); }}
+                className="border-input-border focus:border-primary"
+              />
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Show:</span>
+                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <SelectTrigger className="w-20 border-input-border">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             
-            {/* Time Slots Editor */}
-            <div>
-              <label className="text-sm font-medium text-gray-500 mb-2 block">Time Slots</label>
-              <div className="border rounded-lg p-4 space-y-3">
-                {safeEditData.availability?.timeSlots && Object.keys(safeEditData.availability.timeSlots).length > 0 ? (
-                  <TimeSlotsList timeSlots={safeEditData.availability.timeSlots} />
-                ) : (
-                  <p className="text-sm text-muted-foreground">No time slots selected</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Emergency Contact */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Emergency Contact</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Full Name</label>
-              <Input
-                value={safeEditData.emergency_contact?.fullName || ''}
-                onChange={(e) => updateEmergencyContact('fullName', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Relationship</label>
-              <Input
-                value={safeEditData.emergency_contact?.relationship || ''}
-                onChange={(e) => updateEmergencyContact('relationship', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Contact Number</label>
-              <Input
-                value={safeEditData.emergency_contact?.contactNumber || ''}
-                onChange={(e) => updateEmergencyContact('contactNumber', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">How Did You Hear About Us</label>
-              <Input
-                value={safeEditData.emergency_contact?.howDidYouHear || ''}
-                onChange={(e) => updateEmergencyContact('howDidYouHear', e.target.value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Employment History */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Employment History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Previously Employed</label>
-              <Select
-                value={safeEditData.employment_history?.previouslyEmployed || ''}
-                onValueChange={(value) => updateEmploymentHistory('previouslyEmployed', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select employment status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {safeEditData.employment_history?.previouslyEmployed === 'yes' && (
-              <div className="space-y-4">
-                <h4 className="font-medium">Most Recent Employer</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Company</label>
-                    <Input
-                      value={safeEditData.employment_history?.recentEmployer?.company || ''}
-                      onChange={(e) => updateRecentEmployer('company', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Name</label>
-                    <Input
-                      value={safeEditData.employment_history?.recentEmployer?.name || ''}
-                      onChange={(e) => updateRecentEmployer('name', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Email</label>
-                    <Input
-                      value={safeEditData.employment_history?.recentEmployer?.email || ''}
-                      onChange={(e) => updateRecentEmployer('email', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Position Held</label>
-                    <Input
-                      value={safeEditData.employment_history?.recentEmployer?.position || ''}
-                      onChange={(e) => updateRecentEmployer('position', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Address</label>
-                    <Input
-                      value={safeEditData.employment_history?.recentEmployer?.address || ''}
-                      onChange={(e) => updateRecentEmployer('address', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Town</label>
-                    <Input
-                      value={safeEditData.employment_history?.recentEmployer?.town || ''}
-                      onChange={(e) => updateRecentEmployer('town', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Postcode</label>
-                    <Input
-                      value={safeEditData.employment_history?.recentEmployer?.postcode || ''}
-                      onChange={(e) => updateRecentEmployer('postcode', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Telephone</label>
-                    <Input
-                      value={safeEditData.employment_history?.recentEmployer?.telephone || ''}
-                      onChange={(e) => updateRecentEmployer('telephone', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">From</label>
-                    <DatePicker
-                      selected={safeEditData.employment_history?.recentEmployer?.from ? new Date(safeEditData.employment_history.recentEmployer.from) : undefined}
-                      onChange={(date) => updateRecentEmployer('from', date ? date.toISOString().split('T')[0] : '')}
-                      placeholder="Select start date"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">To</label>
-                    <DatePicker
-                      selected={safeEditData.employment_history?.recentEmployer?.to ? new Date(safeEditData.employment_history.recentEmployer.to) : undefined}
-                      onChange={(date) => updateRecentEmployer('to', date ? date.toISOString().split('T')[0] : '')}
-                      placeholder="Select end date"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Reason for Leaving</label>
-                    <Input
-                      value={safeEditData.employment_history?.recentEmployer?.reasonForLeaving || ''}
-                      onChange={(e) => updateRecentEmployer('reasonForLeaving', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Previous Employers Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Previous Employers (from most recent)</h4>
-                    <Button type="button" onClick={addPreviousEmployer} size="sm" variant="outline">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Previous Employer
-                    </Button>
-                  </div>
-
-                  {safeEditData.employment_history?.previousEmployers?.map((employer, index) => (
-                    <Card key={index} className="relative">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-sm">Previous Employer {index + 1}</CardTitle>
-                          <Button 
-                            type="button" 
-                            onClick={() => removePreviousEmployer(index)} 
-                            size="sm" 
-                            variant="outline"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Company</label>
-                            <Input
-                              value={employer.company || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'company', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Name</label>
-                            <Input
-                              value={employer.name || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'name', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Email</label>
-                            <Input
-                              value={employer.email || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'email', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Position</label>
-                            <Input
-                              value={employer.position || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'position', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Address</label>
-                            <Input
-                              value={employer.address || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'address', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Town</label>
-                            <Input
-                              value={employer.town || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'town', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Postcode</label>
-                            <Input
-                              value={employer.postcode || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'postcode', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">Telephone</label>
-                            <Input
-                              value={employer.telephone || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'telephone', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">From</label>
-                            <DatePicker
-                              selected={employer.from ? new Date(employer.from) : undefined}
-                              onChange={(date) => updatePreviousEmployer(index, 'from', date ? date.toISOString().split('T')[0] : '')}
-                              placeholder="Select start date"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-gray-500">To</label>
-                            <DatePicker
-                              selected={employer.to ? new Date(employer.to) : undefined}
-                              onChange={(date) => updatePreviousEmployer(index, 'to', date ? date.toISOString().split('T')[0] : '')}
-                              placeholder="Select end date"
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="text-sm font-medium text-gray-500">Key Tasks</label>
-                            <Textarea
-                              value={employer.keyTasks || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'keyTasks', e.target.value)}
-                              rows={2}
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="text-sm font-medium text-gray-500">Reason for Leaving</label>
-                            <Textarea
-                              value={employer.reasonForLeaving || ''}
-                              onChange={(e) => updatePreviousEmployer(index, 'reasonForLeaving', e.target.value)}
-                              rows={2}
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* References */}
-      <Card>
-        <CardHeader>
-          <CardTitle>References</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Reference 1 */}
-            <div>
-              <h4 className="font-medium mb-3">Reference 1</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Name</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference1?.name || ''}
-                    onChange={(e) => updateReference('reference1', 'name', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Company</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference1?.company || ''}
-                    onChange={(e) => updateReference('reference1', 'company', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Job Title</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference1?.jobTitle || ''}
-                    onChange={(e) => updateReference('reference1', 'jobTitle', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Email</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference1?.email || ''}
-                    onChange={(e) => updateReference('reference1', 'email', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Contact Number</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference1?.contactNumber || ''}
-                    onChange={(e) => updateReference('reference1', 'contactNumber', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Address</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference1?.address || ''}
-                    onChange={(e) => updateReference('reference1', 'address', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Town</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference1?.town || ''}
-                    onChange={(e) => updateReference('reference1', 'town', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Postcode</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference1?.postcode || ''}
-                    onChange={(e) => updateReference('reference1', 'postcode', e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Reference 2 */}
-            <div>
-              <h4 className="font-medium mb-3">Reference 2</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Name</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference2?.name || ''}
-                    onChange={(e) => updateReference('reference2', 'name', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Company</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference2?.company || ''}
-                    onChange={(e) => updateReference('reference2', 'company', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Job Title</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference2?.jobTitle || ''}
-                    onChange={(e) => updateReference('reference2', 'jobTitle', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Email</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference2?.email || ''}
-                    onChange={(e) => updateReference('reference2', 'email', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Contact Number</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference2?.contactNumber || ''}
-                    onChange={(e) => updateReference('reference2', 'contactNumber', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Address</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference2?.address || ''}
-                    onChange={(e) => updateReference('reference2', 'address', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Town</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference2?.town || ''}
-                    onChange={(e) => updateReference('reference2', 'town', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Postcode</label>
-                  <Input
-                    value={safeEditData.reference_info?.reference2?.postcode || ''}
-                    onChange={(e) => updateReference('reference2', 'postcode', e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Additional References */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">Additional References</h4>
-                <Button type="button" onClick={addReference} size="sm" variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Reference
+            {searchTerm && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Found {filteredApplications.length} candidates matching "{searchTerm}"</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSearchTerm("")}
+                  className="h-6 px-2 text-xs"
+                >
+                  Clear
                 </Button>
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-              {safeEditData.reference_info?.additionalReferences?.map((reference, index) => (
-                <Card key={index} className="relative">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm">Additional Reference {index + 1}</CardTitle>
-                      <Button 
-                        type="button" 
-                        onClick={() => removeReference(index)} 
-                        size="sm" 
-                        variant="outline"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
+        {/* Applications Grid/List View */}
+        <Tabs defaultValue="grid" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <TabsList className="grid w-[200px] grid-cols-2">
+              <TabsTrigger value="grid">Grid View</TabsTrigger>
+              <TabsTrigger value="list">List View</TabsTrigger>
+            </TabsList>
+            
+            <div className="text-sm text-muted-foreground">
+              Showing {paginatedApplications.length} of {filteredApplications.length} applications
+            </div>
+          </div>
+
+          {/* Grid View */}
+          <TabsContent value="grid" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {paginatedApplications.map((application) => (
+                <Card key={application.id} className="group card-premium hover:shadow-glow transition-all duration-normal">
+                  <CardContent className="p-6 space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                          {application.personal_info?.fullName || 'Unknown'}
+                        </h3>
+                        <p className="text-muted-foreground text-sm">
+                          {application.personal_info?.positionAppliedFor || 'Position not specified'}
+                        </p>
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => {
+                                e.preventDefault();
+                                setSelectedApplication(application);
+                              }}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+                              <DialogHeader>
+                                <DialogTitle>Application Details - {application.personal_info?.fullName}</DialogTitle>
+                              </DialogHeader>
+                              {selectedApplication && (
+                                <ReviewSummary data={{
+                                  personalInfo: selectedApplication.personal_info || {},
+                                  availability: selectedApplication.availability || {},
+                                  emergencyContact: selectedApplication.emergency_contact || {},
+                                  employmentHistory: selectedApplication.employment_history || {},
+                                  references: selectedApplication.reference_info || {},
+                                  skillsExperience: selectedApplication.skills_experience || {},
+                                  declaration: selectedApplication.declarations || {},
+                                  termsPolicy: selectedApplication.consent || {}
+                                }} />
+                              )}
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <DropdownMenuItem onClick={() => {
+                            generateJobApplicationPdf({
+                              personalInfo: application.personal_info || {},
+                              availability: application.availability || {},
+                              emergencyContact: application.emergency_contact || {},
+                              employmentHistory: application.employment_history || {},
+                              references: application.reference_info || {},
+                              skillsExperience: application.skills_experience || {},
+                              declaration: application.declarations || {},
+                              termsPolicy: application.consent || {}
+                            }, {
+                              logoUrl: companySettings.logo,
+                              companyName: companySettings.name,
+                            });
+                          }}>
+                            <Download className="w-4 h-4 mr-2" />
+                            Download PDF
+                          </DropdownMenuItem>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Application</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this application? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => deleteApplication(application.id)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Name</label>
-                        <Input
-                          value={reference.name || ''}
-                          onChange={(e) => updateAdditionalReference(index, 'name', e.target.value)}
-                        />
+
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-2">
+                      <Badge className={`${getStatusColor(application.status)} flex items-center gap-1`}>
+                        {getStatusIcon(application.status)}
+                        <span className="capitalize">{application.status}</span>
+                      </Badge>
+                    </div>
+
+                    {/* Key Info */}
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="w-3 h-3" />
+                        <span>Applied {new Date(application.created_at).toLocaleDateString()}</span>
                       </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Company</label>
-                        <Input
-                          value={reference.company || ''}
-                          onChange={(e) => updateAdditionalReference(index, 'company', e.target.value)}
-                        />
+                      
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="w-3 h-3" />
+                        <span>{application.personal_info?.postcode || 'Location not provided'}</span>
                       </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Job Title</label>
-                        <Input
-                          value={reference.jobTitle || ''}
-                          onChange={(e) => updateAdditionalReference(index, 'jobTitle', e.target.value)}
-                        />
+                      
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="w-3 h-3" />
+                        <span className="truncate">{application.personal_info?.email || 'Email not provided'}</span>
                       </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Email</label>
-                        <Input
-                          value={reference.email || ''}
-                          onChange={(e) => updateAdditionalReference(index, 'email', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Contact Number</label>
-                        <Input
-                          value={reference.contactNumber || ''}
-                          onChange={(e) => updateAdditionalReference(index, 'contactNumber', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Address</label>
-                        <Input
-                          value={reference.address || ''}
-                          onChange={(e) => updateAdditionalReference(index, 'address', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Town</label>
-                        <Input
-                          value={reference.town || ''}
-                          onChange={(e) => updateAdditionalReference(index, 'town', e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Postcode</label>
-                        <Input
-                          value={reference.postcode || ''}
-                          onChange={(e) => updateAdditionalReference(index, 'postcode', e.target.value)}
-                        />
-                      </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1 border-primary/20 hover:bg-primary/5"
+                        onClick={() => setSelectedApplication(application)}
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        View
+                      </Button>
+                      
+                      <ReferenceButtons 
+                        application={application} 
+                        references={application.reference_info}
+                      />
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </TabsContent>
 
-      {/* Skills & Experience */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Skills & Experience</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {safeEditData.skills_experience?.skills && Object.keys(safeEditData.skills_experience.skills).length > 0 ? (
-              Object.entries(safeEditData.skills_experience.skills).map(([skill, level]) => (
-                <div key={skill} className="flex items-center justify-between">
-                  <span className="font-medium">{skill}</span>
-                  <Select
-                    value={String(level)}
-                    onValueChange={(value) => updateSkillsExperience('skills', {
-                      ...safeEditData.skills_experience.skills,
-                      [skill]: value
-                    })}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Good">Good</SelectItem>
-                      <SelectItem value="Basic">Basic</SelectItem>
-                      <SelectItem value="None">None</SelectItem>
-                    </SelectContent>
-                  </Select>
+          {/* List View */}
+          <TabsContent value="list" className="space-y-4">
+            <Card className="card-premium">
+              <CardContent className="p-0">
+                <div className="rounded-md border border-card-border overflow-hidden">
+                  <Table>
+                     <TableHeader className="bg-muted/30">
+                       <TableRow className="hover:bg-transparent">
+                         <TableHead>
+                           <Button 
+                             variant="ghost" 
+                             className="p-0 h-auto font-semibold hover:bg-transparent hover:text-primary"
+                             onClick={() => handleSort('applicant_name')}
+                           >
+                             Applicant {getSortIcon('applicant_name')}
+                           </Button>
+                         </TableHead>
+                         <TableHead>
+                           <Button 
+                             variant="ghost" 
+                             className="p-0 h-auto font-semibold hover:bg-transparent hover:text-primary"
+                             onClick={() => handleSort('position')}
+                           >
+                             Position {getSortIcon('position')}
+                           </Button>
+                         </TableHead>
+                         <TableHead>Status</TableHead>
+                         <TableHead>
+                           <Button 
+                             variant="ghost" 
+                             className="p-0 h-auto font-semibold hover:bg-transparent hover:text-primary"
+                             onClick={() => handleSort('created_at')}
+                           >
+                             Applied {getSortIcon('created_at')}
+                           </Button>
+                         </TableHead>
+                         <TableHead>Location</TableHead>
+                         <TableHead>English Level</TableHead>
+                         <TableHead className="text-right">Actions</TableHead>
+                       </TableRow>
+                     </TableHeader>
+                    <TableBody>
+                      {paginatedApplications.map((application) => (
+                        <TableRow key={application.id} className="group hover:bg-muted/20 transition-colors">
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium group-hover:text-primary transition-colors">
+                                {application.personal_info?.fullName || 'Unknown'}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {application.personal_info?.email || 'No email'}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">
+                              {application.personal_info?.positionAppliedFor || 'Not specified'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${getStatusColor(application.status)} flex items-center gap-1 w-fit`}>
+                              {getStatusIcon(application.status)}
+                              <span className="capitalize">{application.status}</span>
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(application.created_at).toLocaleDateString()}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-3 h-3 text-muted-foreground" />
+                              {application.personal_info?.postcode || 'Not provided'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {application.personal_info?.englishProficiency || 'Not specified'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 justify-end">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSelectedApplication(application)}
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+                                  <DialogHeader>
+                                    <DialogTitle>Application Details - {application.personal_info?.fullName}</DialogTitle>
+                                  </DialogHeader>
+                                  {selectedApplication && (
+                                    <ReviewSummary data={{
+                                      personalInfo: selectedApplication.personal_info || {},
+                                      availability: selectedApplication.availability || {},
+                                      emergencyContact: selectedApplication.emergency_contact || {},
+                                      employmentHistory: selectedApplication.employment_history || {},
+                                      references: selectedApplication.reference_info || {},
+                                      skillsExperience: selectedApplication.skills_experience || {},
+                                      declaration: selectedApplication.declarations || {},
+                                      termsPolicy: selectedApplication.consent || {}
+                                    }} />
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  generateJobApplicationPdf({
+                                    personalInfo: application.personal_info || {},
+                                    availability: application.availability || {},
+                                    emergencyContact: application.emergency_contact || {},
+                                    employmentHistory: application.employment_history || {},
+                                    references: application.reference_info || {},
+                                    skillsExperience: application.skills_experience || {},
+                                    declaration: application.declarations || {},
+                                    termsPolicy: application.consent || {}
+                                  }, {
+                                    logoUrl: companySettings.logo,
+                                    companyName: companySettings.name,
+                                  });
+                                }}
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+
+                              <ReferenceButtons 
+                                application={application} 
+                                references={application.reference_info}
+                              />
+
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Application</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete this application? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      onClick={() => deleteApplication(application.id)}
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">No skills recorded</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
-      {/* Declaration */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Declaration</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Social Service Enquiry</label>
-                <Select
-                  value={safeEditData.declarations?.socialServiceEnquiry || ''}
-                  onValueChange={(value) => updateDeclarations('socialServiceEnquiry', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-                {safeEditData.declarations?.socialServiceEnquiry === 'yes' && (
-                  <div className="mt-3">
-                    <label className="text-sm font-medium text-gray-500">Please provide details *</label>
-                    <Textarea
-                      value={safeEditData.declarations?.socialServiceDetails || ''}
-                      onChange={(e) => updateDeclarations('socialServiceDetails', e.target.value)}
-                      placeholder="Please provide full details..."
-                      rows={3}
-                      className="mt-2"
-                      required
-                    />
+        {/* Enhanced Pagination */}
+        {filteredApplications.length > 0 && (
+          <Card className="card-premium">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, filteredApplications.length)} of {filteredApplications.length} applications
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 1}
+                    className="border-input-border hover:bg-primary/5"
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                      let pageNumber;
+                      if (totalPages <= 7) {
+                        pageNumber = i + 1;
+                      } else if (page <= 4) {
+                        pageNumber = i + 1;
+                      } else if (page >= totalPages - 3) {
+                        pageNumber = totalPages - 6 + i;
+                      } else {
+                        pageNumber = page - 3 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNumber}
+                          variant={page === pageNumber ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setPage(pageNumber)}
+                          className={page === pageNumber ? "" : "border-input-border hover:bg-primary/5"}
+                        >
+                          {pageNumber}
+                        </Button>
+                      );
+                    })}
                   </div>
-                )}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === totalPages}
+                    className="border-input-border hover:bg-primary/5"
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Convicted of Offence</label>
-                <Select
-                  value={safeEditData.declarations?.convictedOfOffence || ''}
-                  onValueChange={(value) => updateDeclarations('convictedOfOffence', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-                {safeEditData.declarations?.convictedOfOffence === 'yes' && (
-                  <div className="mt-3">
-                    <label className="text-sm font-medium text-gray-500">Please provide details *</label>
-                    <Textarea
-                      value={safeEditData.declarations?.convictedDetails || ''}
-                      onChange={(e) => updateDeclarations('convictedDetails', e.target.value)}
-                      placeholder="Please provide full details..."
-                      rows={3}
-                      className="mt-2"
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Safeguarding Investigation</label>
-                <Select
-                  value={safeEditData.declarations?.safeguardingInvestigation || ''}
-                  onValueChange={(value) => updateDeclarations('safeguardingInvestigation', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-                {safeEditData.declarations?.safeguardingInvestigation === 'yes' && (
-                  <div className="mt-3">
-                    <label className="text-sm font-medium text-gray-500">Please provide details *</label>
-                    <Textarea
-                      value={safeEditData.declarations?.safeguardingDetails || ''}
-                      onChange={(e) => updateDeclarations('safeguardingDetails', e.target.value)}
-                      placeholder="Please provide full details..."
-                      rows={3}
-                      className="mt-2"
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Criminal Convictions</label>
-                <Select
-                  value={safeEditData.declarations?.criminalConvictions || ''}
-                  onValueChange={(value) => updateDeclarations('criminalConvictions', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-                {safeEditData.declarations?.criminalConvictions === 'yes' && (
-                  <div className="mt-3">
-                    <label className="text-sm font-medium text-gray-500">Please provide details *</label>
-                    <Textarea
-                      value={safeEditData.declarations?.criminalDetails || ''}
-                      onChange={(e) => updateDeclarations('criminalDetails', e.target.value)}
-                      placeholder="Please provide full details..."
-                      rows={3}
-                      className="mt-2"
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Health Conditions</label>
-                <Select
-                  value={safeEditData.declarations?.healthConditions || ''}
-                  onValueChange={(value) => updateDeclarations('healthConditions', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-                {safeEditData.declarations?.healthConditions === 'yes' && (
-                  <div className="mt-3">
-                    <label className="text-sm font-medium text-gray-500">Please provide details *</label>
-                    <Textarea
-                      value={safeEditData.declarations?.healthDetails || ''}
-                      onChange={(e) => updateDeclarations('healthDetails', e.target.value)}
-                      placeholder="Please provide full details..."
-                      rows={3}
-                      className="mt-2"
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Cautions / Reprimands</label>
-                <Select
-                  value={safeEditData.declarations?.cautionsReprimands || ''}
-                  onValueChange={(value) => updateDeclarations('cautionsReprimands', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-                {safeEditData.declarations?.cautionsReprimands === 'yes' && (
-                  <div className="mt-3">
-                    <label className="text-sm font-medium text-gray-500">Please provide details *</label>
-                    <Textarea
-                      value={safeEditData.declarations?.cautionsDetails || ''}
-                      onChange={(e) => updateDeclarations('cautionsDetails', e.target.value)}
-                      placeholder="Please provide full details..."
-                      rows={3}
-                      className="mt-2"
-                      required
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Terms & Policy */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Terms & Policy</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Consent to Terms</label>
-              <Select
-                value={safeEditData.consent?.consentToTerms ? 'yes' : 'no'}
-                onValueChange={(value) => updateConsent('consentToTerms', value === 'yes')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select consent" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Digital Signature (Name)</label>
-              <Input
-                value={safeEditData.consent?.signature || ''}
-                onChange={(e) => updateConsent('signature', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Date</label>
-              <Input
-                type="date"
-                value={safeEditData.consent?.date || ''}
-                onChange={(e) => updateConsent('date', e.target.value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Empty State */}
+        {filteredApplications.length === 0 && (
+          <Card className="card-premium">
+            <CardContent className="p-12 text-center">
+              <div className="space-y-4">
+                <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                  <Users className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">No applications found</h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm 
+                      ? `No applications match "${searchTerm}". Try adjusting your search criteria.`
+                      : "There are no job applications yet. Applications will appear here once candidates start applying."
+                    }
+                  </p>
+                </div>
+                {searchTerm && (
+                  <Button variant="outline" onClick={() => setSearchTerm("")}>
+                    Clear Search
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
