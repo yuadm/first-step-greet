@@ -1,22 +1,17 @@
-import { useState, useEffect, useRef } from "react";
-import { Plus, Search, Filter, Eye, Edit3, Trash2, Building, ArrowUpDown, ArrowUp, ArrowDown, Check, Square, X, Upload, Download, FileSpreadsheet, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Search, Eye, Edit3, Trash2, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/PermissionsContext";
-import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 
 interface Client {
   id: string;
@@ -34,36 +29,19 @@ interface Branch {
   name: string;
 }
 
-export type ClientSortField = 'name' | 'branch' | 'created_at';
-interface ImportClient {
-  name: string;
-  branch: string;
-  error?: string;
-}
-
 export function ClientsContent() {
   const [clients, setClients] = useState<Client[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
-  const [sortField, setSortField] = useState<ClientSortField>('name');
-  const [sortDirection, setSortDirection] = useState<ClientSortDirection>('asc');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [selectedClients, setSelectedClients] = useState<string[]>([]);
-  const [importData, setImportData] = useState<ImportClient[]>([]);
-  const [dragActive, setDragActive] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const { isAdmin } = usePermissions();
   const { toast } = useToast();
 
@@ -168,193 +146,6 @@ export function ClientsContent() {
         description: "Could not add client. Please try again.",
         variant: "destructive",
       });
-  const handleFileUpload = (files: FileList) => {
-    const file = files[0];
-    if (!file) return;
-
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    
-    if (fileExtension === 'csv') {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          processImportData(results.data);
-        },
-        error: (error) => {
-          toast({
-            title: "Error parsing CSV",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
-      });
-    } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-          
-          // Convert to objects with headers from first row
-          if (jsonData.length > 0) {
-            const headers = jsonData[0] as string[];
-            const rows = jsonData.slice(1) as any[][];
-            const objects = rows.map(row => {
-              const obj: any = {};
-              headers.forEach((header, index) => {
-                obj[header] = row[index] || '';
-              });
-              return obj;
-            });
-            processImportData(objects);
-          }
-        } catch (error) {
-          toast({
-            title: "Error parsing Excel file",
-            description: "Please check the file format and try again.",
-            variant: "destructive",
-          });
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      toast({
-        title: "Unsupported file format",
-        description: "Please upload a CSV or Excel file.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const processImportData = (data: any[]) => {
-    const processedData: ImportClient[] = data.map((row, index) => {
-      const client: ImportClient = {
-        name: '',
-        branch: '',
-      };
-
-      // Map common field variations
-      const nameField = Object.keys(row).find(key => 
-        ['name', 'client_name', 'client name', 'Name', 'Client Name'].includes(key)
-      );
-      const branchField = Object.keys(row).find(key => 
-        ['branch', 'Branch', 'branch_name', 'Branch Name'].includes(key)
-      );
-
-      if (nameField) client.name = String(row[nameField] || '').trim();
-      if (branchField) client.branch = String(row[branchField] || '').trim();
-
-      // Validation
-      if (!client.name) {
-        client.error = 'Name is required';
-      } else if (!client.branch) {
-        client.error = 'Branch is required';
-      } else {
-        // Check if branch exists
-        const branchExists = branches.some(b => 
-          b.name.toLowerCase() === client.branch.toLowerCase()
-        );
-        if (!branchExists) {
-          client.error = `Branch "${client.branch}" not found`;
-        }
-      }
-
-      return client;
-    }).filter(client => client.name || client.branch); // Filter out completely empty rows
-
-    setImportData(processedData);
-    setImportDialogOpen(false);
-    setPreviewDialogOpen(true);
-  };
-
-  const performImport = async () => {
-    setImporting(true);
-    try {
-      const validClients = importData.filter(client => !client.error);
-      
-      if (validClients.length === 0) {
-        toast({
-          title: "No valid clients to import",
-          description: "Please fix the errors and try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Convert branch names to IDs
-      const clientsToInsert = validClients.map(client => {
-        const branch = branches.find(b => 
-          b.name.toLowerCase() === client.branch.toLowerCase()
-        );
-        return {
-          name: client.name,
-          branch_id: branch?.id,
-          is_active: true
-        };
-      });
-
-      const { error } = await supabase
-        .from('clients')
-        .insert(clientsToInsert);
-
-      if (error) throw error;
-
-      toast({
-        title: "Import successful",
-        description: `Successfully imported ${validClients.length} clients.`,
-      });
-
-      setPreviewDialogOpen(false);
-      setImportData([]);
-      fetchData();
-    } catch (error) {
-      console.error('Error importing clients:', error);
-      toast({
-        title: "Import failed",
-        description: "Could not import clients. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files);
-    }
-  };
-
-  const downloadTemplate = () => {
-    const csvContent = "name,branch\nExample Client,Main Branch\n";
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "client_import_template.csv");
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
     }
   };
 
@@ -445,133 +236,34 @@ export function ClientsContent() {
     }
   };
 
-  const batchDeleteClients = async () => {
-    if (!isAdmin) {
-      toast({
-        title: "Access denied",
-        description: "You don't have permission to delete clients.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      const { error } = await supabase
-        .from('clients')
-        .delete()
-        .in('id', selectedClients);
-
-      if (error) throw error;
-
-      toast({
-        title: "Clients deleted",
-        description: `Successfully deleted ${selectedClients.length} clients.`,
-      });
-
-      setBatchDeleteDialogOpen(false);
-      setSelectedClients([]);
-      fetchData();
-    } catch (error) {
-      console.error('Error deleting clients:', error);
-      toast({
-        title: "Error deleting clients",
-        description: "Could not delete clients. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const toggleSelectClient = (clientId: string) => {
-    setSelectedClients(prev => 
-      prev.includes(clientId) 
-        ? prev.filter(id => id !== clientId)
-        : [...prev, clientId]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedClients.length === paginatedClients.length) {
-      setSelectedClients([]);
-    } else {
-      setSelectedClients(paginatedClients.map(client => client.id));
-    }
-  };
-
-  const handleSort = (field: ClientSortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const getSortIcon = (field: ClientSortField) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="w-4 h-4" />;
-    }
-    return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
-  };
-
   const getBranchName = (branchId: string) => {
     const branch = branches.find(b => b.id === branchId);
     return branch?.name || 'Unknown Branch';
   };
 
-  // Filter and sort clients
-  const filteredAndSortedClients = clients
-    .filter((client) => {
-      const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesBranch = branchFilter === "all" || client.branch_id === branchFilter;
-      return matchesSearch && matchesBranch;
-    })
-    .sort((a, b) => {
-      let aValue: string | number;
-      let bValue: string | number;
-      
-      switch (sortField) {
-        case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'branch':
-          aValue = getBranchName(a.branch_id).toLowerCase();
-          bValue = getBranchName(b.branch_id).toLowerCase();
-          break;
-        case 'created_at':
-          aValue = new Date(a.created_at).getTime();
-          bValue = new Date(b.created_at).getTime();
-          break;
-        default:
-          return 0;
-      }
-      
-      if (sortDirection === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    });
+  // Filter clients based on search term and branch filter
+  const filteredClients = clients.filter((client) => {
+    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesBranch = branchFilter === "all" || client.branch_id === branchFilter;
+    return matchesSearch && matchesBranch;
+  });
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredAndSortedClients.length / pageSize);
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedClients = filteredAndSortedClients.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+  const startIndex = (page - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedClients = filteredClients.slice(startIndex, endIndex);
 
-  // Reset page when filters change or page size changes
+  // Reset page when filters change or items per page changes
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, branchFilter, pageSize, sortField, sortDirection]);
+  }, [searchTerm, branchFilter, itemsPerPage]);
 
   if (loading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Building className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Clients</h1>
-          </div>
+          <h1 className="text-3xl font-bold text-foreground">Clients</h1>
         </div>
         <div className="animate-pulse space-y-4">
           <div className="h-10 bg-muted rounded"></div>
@@ -583,69 +275,35 @@ export function ClientsContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Building className="w-8 h-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Clients</h1>
-            <p className="text-muted-foreground">
-              Manage your organization's clients
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold text-foreground">Clients</h1>
         </div>
-        <div className="flex items-center gap-2">
-          {selectedClients.length > 0 && isAdmin && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setBatchDeleteDialogOpen(true)}
-              className="gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete ({selectedClients.length})
-            </Button>
-          )}
-          {isAdmin && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setImportDialogOpen(true)}
-                className="gap-2"
-              >
-                <Upload className="w-4 h-4" />
-                Import
-              </Button>
-              <Button onClick={() => setDialogOpen(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Client
-              </Button>
-            </>
-          )}
-        </div>
+        {isAdmin && (
+          <Button onClick={() => setDialogOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Add Client
+          </Button>
+        )}
       </div>
 
       {/* Search and Filter Controls */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Search & Filter
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col lg:flex-row gap-4">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
-                  placeholder="Search clients by name..."
+                  placeholder="Search clients..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-            <div className="w-full lg:w-64">
+            <div className="w-full sm:w-64">
               <Select value={branchFilter} onValueChange={setBranchFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Filter by branch" />
@@ -661,119 +319,38 @@ export function ClientsContent() {
               </Select>
             </div>
           </div>
-          {(searchTerm || branchFilter !== "all") && (
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t">
-              <span className="text-sm text-muted-foreground">Active filters:</span>
-              {searchTerm && (
-                <Badge variant="secondary" className="gap-1">
-                  Search: {searchTerm}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSearchTerm("")} />
-                </Badge>
-              )}
-              {branchFilter !== "all" && (
-                <Badge variant="secondary" className="gap-1">
-                  Branch: {getBranchName(branchFilter)}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setBranchFilter("all")} />
-                </Badge>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSearchTerm("");
-                  setBranchFilter("all");
-                }}
-                className="h-6 px-2 text-xs"
-              >
-                Clear all
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 
       {/* Clients Table - Desktop */}
       <Card className="hidden md:block">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building className="w-5 h-5" />
-            Clients ({filteredAndSortedClients.length} total, showing {paginatedClients.length})
-          </CardTitle>
+          <CardTitle>Clients ({filteredClients.length} total, showing {paginatedClients.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                {isAdmin && (
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedClients.length === paginatedClients.length && paginatedClients.length > 0}
-                      onCheckedChange={toggleSelectAll}
-                      aria-label="Select all clients"
-                    />
-                  </TableHead>
-                )}
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSort('name')}
-                    className="h-auto p-0 font-semibold"
-                  >
-                    Name {getSortIcon('name')}
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSort('branch')}
-                    className="h-auto p-0 font-semibold"
-                  >
-                    Branch {getSortIcon('branch')}
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSort('created_at')}
-                    className="h-auto p-0 font-semibold"
-                  >
-                    Created {getSortIcon('created_at')}
-                  </Button>
-                </TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Branch</TableHead>
+                <TableHead>Created</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedClients.map((client) => (
-                <TableRow key={client.id} className={selectedClients.includes(client.id) ? "bg-muted/50" : ""}>
-                  {isAdmin && (
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedClients.includes(client.id)}
-                        onCheckedChange={() => toggleSelectClient(client.id)}
-                        aria-label={`Select ${client.name}`}
-                      />
-                    </TableCell>
-                  )}
+                <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.name}</TableCell>
+                  <TableCell>{client.branches?.name || getBranchName(client.branch_id)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {client.branches?.name || getBranchName(client.branch_id)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
                     {new Date(client.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => openViewDialog(client)}
-                        className="h-8 w-8 p-0"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -785,7 +362,6 @@ export function ClientsContent() {
                             setSelectedClient(client);
                             setDeleteDialogOpen(true);
                           }}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -796,14 +372,8 @@ export function ClientsContent() {
               ))}
               {paginatedClients.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground py-8">
-                    <div className="flex flex-col items-center gap-2">
-                      <Building className="w-8 h-8 text-muted-foreground/50" />
-                      <span>No clients found</span>
-                      {(searchTerm || branchFilter !== "all") && (
-                        <span className="text-sm">Try adjusting your filters</span>
-                      )}
-                    </div>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    No clients found
                   </TableCell>
                 </TableRow>
               )}
@@ -815,151 +385,116 @@ export function ClientsContent() {
       {/* Clients Cards - Mobile */}
       <div className="md:hidden space-y-4">
         {paginatedClients.map((client) => (
-          <Card key={client.id} className={selectedClients.includes(client.id) ? "ring-2 ring-primary/20 bg-muted/30" : ""}>
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                {isAdmin && (
-                  <Checkbox
-                    checked={selectedClients.includes(client.id)}
-                    onCheckedChange={() => toggleSelectClient(client.id)}
-                    className="mt-1"
-                    aria-label={`Select ${client.name}`}
-                  />
-                )}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-medium text-foreground">{client.name}</h3>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {client.branches?.name || getBranchName(client.branch_id)}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Created: {new Date(client.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openViewDialog(client)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {isAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedClient(client);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+          <Card key={client.id} className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="font-medium text-foreground">{client.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {client.branches?.name || getBranchName(client.branch_id)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Created: {new Date(client.created_at).toLocaleDateString()}
+                </p>
               </div>
-            </CardContent>
+              <div className="flex items-center gap-2 ml-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openViewDialog(client)}
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedClient(client);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </Card>
         ))}
         {paginatedClients.length === 0 && (
           <Card className="p-8 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <Building className="w-8 h-8 text-muted-foreground/50" />
-              <p className="text-muted-foreground">No clients found</p>
-              {(searchTerm || branchFilter !== "all") && (
-                <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
-              )}
-            </div>
+            <p className="text-muted-foreground">No clients found</p>
           </Card>
         )}
       </div>
 
-      {/* Pagination and Page Size */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Page size:</span>
-          <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
-            <SelectTrigger className="w-20 h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Items per page:</span>
+            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (page > 1) {
+                      setPage(page - 1);
+                      window.scrollTo(0, 0);
+                    }
+                  }}
+                />
+              </PaginationItem>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                const pageNumber = start + i;
+                if (pageNumber > totalPages) return null;
+                return (
+                  <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                      href="#"
+                      isActive={pageNumber === page}
+                      className={pageNumber === page ? "bg-primary text-primary-foreground" : ""}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage(pageNumber);
+                        window.scrollTo(0, 0);
+                      }}
+                    >
+                      {pageNumber}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (page < totalPages) {
+                      setPage(page + 1);
+                      window.scrollTo(0, 0);
+                    }
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
-        {totalPages > 1 ? (
-          <div className="flex flex-col items-center gap-2">
-            <div className="text-sm text-muted-foreground">
-              Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedClients.length)} of {filteredAndSortedClients.length} clients
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (page > 1) {
-                        setPage(page - 1);
-                        window.scrollTo(0, 0);
-                      }
-                    }}
-                    className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const start = Math.max(1, Math.min(page - 2, totalPages - 4));
-                  const pageNumber = start + i;
-                  if (pageNumber > totalPages) return null;
-                  return (
-                    <PaginationItem key={pageNumber}>
-                      <PaginationLink
-                        href="#"
-                        isActive={pageNumber === page}
-                        className={pageNumber === page ? "bg-primary text-primary-foreground" : ""}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setPage(pageNumber);
-                          window.scrollTo(0, 0);
-                        }}
-                      >
-                        {pageNumber}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (page < totalPages) {
-                        setPage(page + 1);
-                        window.scrollTo(0, 0);
-                      }
-                    }}
-                    className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        ) : (
-          <div className="text-sm text-muted-foreground">
-            Showing {filteredAndSortedClients.length} clients
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Add Client Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -1085,177 +620,6 @@ export function ClientsContent() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Import Dialog */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Import Clients</DialogTitle>
-            <DialogDescription>
-              Upload a CSV or Excel file with client data
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
-              }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mb-2">
-                Drag and drop your file here, or
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Browse Files
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                className="hidden"
-              />
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Required columns:</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• <strong>name</strong> - Client name</li>
-                <li>• <strong>branch</strong> - Branch name (must exist)</li>
-              </ul>
-            </div>
-            <Button
-              variant="outline"
-              onClick={downloadTemplate}
-              className="w-full gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Download Template
-            </Button>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Import Preview Dialog */}
-      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Import Preview</DialogTitle>
-            <DialogDescription>
-              Review the data before importing. Errors must be fixed before proceeding.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto">
-            {importData.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 text-sm">
-                  <span>Total rows: {importData.length}</span>
-                  <span className="text-green-600">
-                    Valid: {importData.filter(client => !client.error).length}
-                  </span>
-                  <span className="text-red-600">
-                    Errors: {importData.filter(client => client.error).length}
-                  </span>
-                </div>
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Branch</TableHead>
-                        <TableHead>Error</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {importData.map((client, index) => (
-                        <TableRow key={index} className={client.error ? "bg-red-50" : "bg-green-50"}>
-                          <TableCell>
-                            {client.error ? (
-                              <AlertCircle className="w-4 h-4 text-red-500" />
-                            ) : (
-                              <Check className="w-4 h-4 text-green-500" />
-                            )}
-                          </TableCell>
-                          <TableCell>{client.name}</TableCell>
-                          <TableCell>{client.branch}</TableCell>
-                          <TableCell className="text-red-600 text-sm">
-                            {client.error}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                {importData.some(client => client.error) && (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Some rows have errors and will be skipped during import. 
-                      Please fix the errors in your file and re-upload if needed.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={performImport}
-              disabled={importing || importData.filter(client => !client.error).length === 0}
-              className="gap-2"
-            >
-              {importing ? (
-                <>
-                  <FileSpreadsheet className="w-4 h-4 animate-spin" />
-                  Importing...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4" />
-                  Import {importData.filter(client => !client.error).length} Clients
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Batch Delete Confirmation Dialog */}
-      <AlertDialog open={batchDeleteDialogOpen} onOpenChange={setBatchDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Multiple Clients</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {selectedClients.length} selected clients? 
-              This action cannot be undone and will permanently delete all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={batchDeleteClients}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete {selectedClients.length} Clients
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
