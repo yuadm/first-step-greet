@@ -2,7 +2,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -160,7 +161,7 @@ function AppContent() {
   );
 }
 
-const queryClient = new QueryClient();
+import { queryClient } from "@/lib/query-client";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -173,6 +174,7 @@ const App = () => (
             <BrowserRouter>
               <AppContent />
             </BrowserRouter>
+            <ReactQueryDevtools initialIsOpen={false} />
           </TooltipProvider>
         </CompanyProvider>
       </PermissionsProvider>
