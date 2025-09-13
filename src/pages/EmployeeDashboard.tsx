@@ -270,10 +270,8 @@ function EmployeeDashboardContent() {
                   {[
                     { label: 'Full Name', value: employee.name, icon: User },
                     { label: 'Email Address', value: employee.email, icon: FileText },
-                    { label: 'Employee Code', value: employee.employee_code, icon: Shield },
                     { label: 'Branch Location', value: employee.branch, icon: Calendar },
-                    { label: 'Job Title', value: employee.job_title || 'Not specified', icon: CheckCircle },
-                    { label: 'Employment Type', value: employee.employee_type, icon: Clock }
+                    { label: 'Job Title', value: employee.job_title || 'Not specified', icon: CheckCircle }
                   ].map((item, index) => (
                     <div key={item.label} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
                       <div className="h-8 w-8 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -354,10 +352,13 @@ function EmployeeDashboardContent() {
                             {leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-1">
                           <span>{new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}</span>
                           <span>•</span>
-                          <span>Applied {new Date(leave.created_at).toLocaleDateString()}</span>
+                          <span>Duration: {Math.ceil((new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} days</span>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          This leave was applied on {new Date(leave.created_at).toLocaleDateString()}
                         </div>
                         {leave.notes && (
                           <p className="text-sm text-gray-500 mt-2 italic">{leave.notes}</p>
