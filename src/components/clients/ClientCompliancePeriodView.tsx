@@ -329,7 +329,36 @@ export function ClientCompliancePeriodView({
 
   const handleEditSpotCheck = async (client: Client) => {
     try {
-      // First, fetch the compliance record for this client and period
+      // First, check if this compliance type has a form configured
+      const { data: complianceType, error: typeError } = await supabase
+        .from('client_compliance_types')
+        .select('has_questionnaire, questionnaire_id')
+        .eq('id', complianceTypeId)
+        .single();
+
+      if (typeError) throw typeError;
+
+      // If no questionnaire/form is configured, just show message that no form exists
+      if (!complianceType.has_questionnaire || !complianceType.questionnaire_id) {
+        toast({
+          title: "No form configured",
+          description: "This compliance type doesn't have a form configured. Only date/text submissions are available.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if compliance type name includes "spot" to determine if spot check form should be used
+      if (!complianceTypeName?.toLowerCase().includes('spot')) {
+        toast({
+          title: "No form configured",
+          description: "This compliance type doesn't have a form configured. Only date/text submissions are available.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Fetch the compliance record for this client and period
       const { data: complianceRecord, error: complianceError } = await supabase
         .from('client_compliance_period_records')
         .select('*')
