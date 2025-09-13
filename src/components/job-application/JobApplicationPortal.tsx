@@ -70,11 +70,13 @@ const initialFormData: JobApplicationData = {
 };
 
 function JobApplicationPortalContent() {
-  const [currentStep, setCurrentStep] = useState(1);
+const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<JobApplicationData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [honeypotField, setHoneypotField] = useState('');
+  const [startTime] = useState(Date.now());
   const { companySettings } = useCompany();
   const { toast } = useToast();
 
@@ -176,6 +178,48 @@ const handleDownloadPdf = async () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      // Anti-abuse checks
+      // 1. Honeypot field check
+      if (honeypotField.trim() !== '') {
+        console.warn('Bot detected: honeypot field filled');
+        toast({
+          title: "Submission Failed",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 2. Time-based validation (submissions too fast are suspicious)
+      const timeTaken = Date.now() - startTime;
+      if (timeTaken < 30000) { // Less than 30 seconds
+        console.warn('Bot detected: submission too fast');
+        toast({
+          title: "Submission Failed", 
+          description: "Please take your time to complete the application.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 3. Email duplicate detection
+      const { data: existingApplications, error: checkError } = await supabase
+        .from('job_applications')
+        .select('id')
+        .filter('personal_info->>email', 'eq', formData.personalInfo.email)
+        .limit(3);
+
+      if (checkError) {
+        console.error('Error checking duplicates:', checkError);
+      } else if (existingApplications && existingApplications.length >= 2) {
+        toast({
+          title: "Application Limit Reached",
+          description: "This email address has already been used for the maximum number of applications (2). Please contact us directly if you need assistance.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('job_applications')
         .insert([{
@@ -394,6 +438,20 @@ const handleDownloadPdf = async () => {
           </CardHeader>
           <CardContent>
             {renderStep()}
+            
+            {/* Invisible honeypot field */}
+            <div style={{ position: 'absolute', left: '-9999px', visibility: 'hidden' }} aria-hidden="true">
+              <label htmlFor="website">Website</label>
+              <input
+                id="website"
+                name="website"
+                type="text"
+                value={honeypotField}
+                onChange={(e) => setHoneypotField(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
             
             <div className="flex justify-between mt-8">
               <Button
