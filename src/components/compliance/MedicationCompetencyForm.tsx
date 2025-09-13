@@ -199,7 +199,7 @@ export function MedicationCompetencyForm({
     return {
       employeeId,
       employeeName: employeeName || "",
-      procedureAcknowledged: false,
+      procedureAcknowledged: true,
       checklistCompleted: false,
       competencyItems: competencyFramework.map(item => ({
         ...item,
@@ -232,6 +232,14 @@ export function MedicationCompetencyForm({
     if (employeeSignatureRef.current) {
       const signatureData = employeeSignatureRef.current.toDataURL();
       setFormData(prev => ({ ...prev, employeeSignatureData: signatureData }));
+      // Clear error if previously set
+      if (formErrors.signature) {
+        setFormErrors(prev => {
+          const e = { ...prev };
+          delete e.signature;
+          return e;
+        });
+      }
       setShowEmployeeSignature(false);
       toast({
         title: "Success",
@@ -244,6 +252,14 @@ export function MedicationCompetencyForm({
     if (assessorSignatureRef.current) {
       const signatureData = assessorSignatureRef.current.toDataURL();
       setFormData(prev => ({ ...prev, assessorSignatureData: signatureData }));
+      // Clear error if previously set
+      if (formErrors.assessorSignature) {
+        setFormErrors(prev => {
+          const e = { ...prev };
+          delete e.assessorSignature;
+          return e;
+        });
+      }
       setShowAssessorSignature(false);
       toast({
         title: "Success", 
@@ -683,6 +699,30 @@ export function MedicationCompetencyForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="procedureAck"
+                checked={formData.procedureAcknowledged}
+                onCheckedChange={(checked) => {
+                  setFormData(prev => ({ ...prev, procedureAcknowledged: !!checked }));
+                  if (formErrors.procedureAcknowledged) {
+                    setFormErrors(prev => {
+                      const e = { ...prev };
+                      delete e.procedureAcknowledged;
+                      return e;
+                    });
+                  }
+                }}
+              />
+              <Label htmlFor="procedureAck" className="text-sm leading-6">
+                I confirm I have read and understood the Medication Assessment and Competency Procedure.
+              </Label>
+            </div>
+            {formErrors.procedureAcknowledged && (
+              <p className="text-red-500 text-sm">{formErrors.procedureAcknowledged}</p>
+            )}
+          </div>
           {/* Assessor Name */}
           <div className="space-y-2">
             <Label className="text-base font-medium">Assessor Name</Label>
