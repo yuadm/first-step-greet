@@ -364,6 +364,16 @@ export const generateReferencePDF = async (
   yPosition = addWrappedText(`${reference.form_data.additionalComments || 'Not provided'}`, margin, yPosition, pageWidth - 2 * margin);
   yPosition += 10;
 
+  // Declaration and Date
+  ensureSpace(30);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('DECLARATION', margin, yPosition);
+  yPosition += lineHeight + 3;
+  pdf.setFont('helvetica', 'normal');
+  const declarationText = 'I certify that, to the best of my knowledge, the information I have given is true and complete. I understand that any deliberate omission, falsification or misrepresentation may lead to refusal of appointment or dismissal.';
+  yPosition = addWrappedText(declarationText, margin, yPosition, pageWidth - 2 * margin);
+  yPosition += 8;
+
   // Referee Information
   ensureSpace(70);
   pdf.setFont('helvetica', 'bold');
@@ -399,21 +409,6 @@ export const generateReferencePDF = async (
   pdf.setFont('helvetica', 'normal');
   pdf.text(reference.form_data.refereeJobTitle || '', margin + 85, yPosition);
   yPosition += lineHeight + 5;
-
-  // Declaration and Date
-  ensureSpace(50);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('DECLARATION', margin, yPosition);
-  yPosition += lineHeight + 3;
-  pdf.setFont('helvetica', 'normal');
-  const declarationText = 'I certify that, to the best of my knowledge, the information I have given is true and complete. I understand that any deliberate omission, falsification or misrepresentation may lead to refusal of appointment or dismissal.';
-  yPosition = addWrappedText(declarationText, margin, yPosition, pageWidth - 2 * margin);
-  yPosition += 8;
-  
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Date of completion:', margin, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(reference.form_data.signatureDate || new Date(reference.completed_at).toLocaleDateString(), margin + 100, yPosition);
 
   return pdf;
 };
