@@ -641,7 +641,10 @@ const handleDownloadMedicationCompetency = async (record: any, employeeName: str
       responses: responses,
       signature: parsedData.acknowledgement?.signature || '',
       completedAt: record.created_at,
-      questionnaireName: 'Medication Competency Assessment'
+      questionnaireName: 'Medication Competency Assessment',
+      assessorName: parsedData.signatures?.assessorName || '',
+      assessorSignatureData: parsedData.signatures?.assessorSignatureData || '',
+      employeeSignatureData: parsedData.signatures?.employeeSignatureData || ''
     };
 
     // Import and call the PDF generator

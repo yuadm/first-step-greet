@@ -523,16 +523,19 @@ export function CompliancePeriodEmployeeView({
                                       });
                                     }
                                     
-                                    const competencyData = {
-                                      employeeId: item.record.employee_id,
-                                      employeeName: item.employee.name,
-                                      periodIdentifier: item.record.period_identifier,
-                                      assessmentDate: item.record.completion_date,
-                                      responses: responses,
-                                      signature: parsedData.acknowledgement?.signature || '',
-                                      completedAt: item.record.created_at,
-                                      questionnaireName: 'Medication Competency Assessment'
-                                    };
+                                     const competencyData = {
+                                       employeeId: item.record.employee_id,
+                                       employeeName: item.employee.name,
+                                       periodIdentifier: item.record.period_identifier,
+                                       assessmentDate: item.record.completion_date,
+                                       responses: responses,
+                                       signature: parsedData.acknowledgement?.signature || '',
+                                       completedAt: item.record.created_at,
+                                       questionnaireName: 'Medication Competency Assessment',
+                                       assessorName: parsedData.signatures?.assessorName || '',
+                                       assessorSignatureData: parsedData.signatures?.assessorSignatureData || '',
+                                       employeeSignatureData: parsedData.signatures?.employeeSignatureData || ''
+                                     };
   
                                     // Import the PDF generator
                                     import('@/lib/medication-competency-pdf').then(({ generateMedicationCompetencyPdf }) => {

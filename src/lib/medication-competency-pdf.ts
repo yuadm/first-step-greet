@@ -457,7 +457,7 @@ export async function generateMedicationCompetencyPdf(
     };
 
     // Signature section
-    const drawSignatureSection = () => {
+    const drawSignatureSection = async () => {
       checkPageSpace(160);
       
       const sectionHeight = 140;
@@ -491,13 +491,28 @@ export async function generateMedicationCompetencyPdf(
           color: colors.border
         });
         
-        // If we have signature data, we could potentially embed it here
+        // Embed actual signature image if available
         if (data.assessorSignatureData) {
-          drawText('[Digital Signature Present]', margin + 130, signaturesY - 25, { 
-            size: 8, 
-            color: colors.textLight,
-            bold: true 
-          });
+          try {
+            // Convert data URL to image
+            const signatureImage = await pdfDoc.embedPng(data.assessorSignatureData);
+            const signatureWidth = 150;
+            const signatureHeight = (signatureImage.height / signatureImage.width) * signatureWidth;
+            
+            page.drawImage(signatureImage, {
+              x: margin + 130,
+              y: signaturesY - 35,
+              width: signatureWidth,
+              height: Math.min(signatureHeight, 30), // Limit height to keep it proportional
+            });
+          } catch (error) {
+            console.warn('Could not embed assessor signature image:', error);
+            drawText('[Digital Signature Present]', margin + 130, signaturesY - 25, { 
+              size: 8, 
+              color: colors.textLight,
+              bold: true 
+            });
+          }
         }
       }
       
@@ -516,13 +531,28 @@ export async function generateMedicationCompetencyPdf(
           color: colors.border
         });
         
-        // If we have signature data, we could potentially embed it here
+        // Embed actual signature image if available
         if (data.employeeSignatureData) {
-          drawText('[Digital Signature Present]', margin + 130, signaturesY - 75, { 
-            size: 8, 
-            color: colors.textLight,
-            bold: true 
-          });
+          try {
+            // Convert data URL to image
+            const signatureImage = await pdfDoc.embedPng(data.employeeSignatureData);
+            const signatureWidth = 150;
+            const signatureHeight = (signatureImage.height / signatureImage.width) * signatureWidth;
+            
+            page.drawImage(signatureImage, {
+              x: margin + 130,
+              y: signaturesY - 85,
+              width: signatureWidth,
+              height: Math.min(signatureHeight, 30), // Limit height to keep it proportional
+            });
+          } catch (error) {
+            console.warn('Could not embed employee signature image:', error);
+            drawText('[Digital Signature Present]', margin + 130, signaturesY - 75, { 
+              size: 8, 
+              color: colors.textLight,
+              bold: true 
+            });
+          }
         }
       }
       
@@ -538,7 +568,7 @@ export async function generateMedicationCompetencyPdf(
     drawModernHeader();
     drawEmployeeCard();
     drawCompetencyAssessments();
-    drawSignatureSection();
+    await drawSignatureSection();
     
     // Draw footer on the last page
     drawFooter();
