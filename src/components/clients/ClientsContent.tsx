@@ -1,19 +1,22 @@
-import { useState, useEffect } from "react";
-import { Plus, Search, Filter, Eye, Edit3, Trash2, Building, ArrowUpDown, ArrowUp, ArrowDown, Check, Square, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Search, Filter, Eye, Edit3, Trash2, Building, ArrowUpDown, ArrowUp, ArrowDown, Check, Square, X, Upload, Download, FileSpreadsheet, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 interface Client {
   id: string;
@@ -32,7 +35,11 @@ interface Branch {
 }
 
 export type ClientSortField = 'name' | 'branch' | 'created_at';
-export type ClientSortDirection = 'asc' | 'desc';
+interface ImportClient {
+  name: string;
+  branch: string;
+  error?: string;
+}
 
 export function ClientsContent() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -43,12 +50,18 @@ export function ClientsContent() {
   const [sortField, setSortField] = useState<ClientSortField>('name');
   const [sortDirection, setSortDirection] = useState<ClientSortDirection>('asc');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [importData, setImportData] = useState<ImportClient[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const { isAdmin } = usePermissions();
@@ -155,6 +168,193 @@ export function ClientsContent() {
         description: "Could not add client. Please try again.",
         variant: "destructive",
       });
+  const handleFileUpload = (files: FileList) => {
+    const file = files[0];
+    if (!file) return;
+
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    
+    if (fileExtension === 'csv') {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          processImportData(results.data);
+        },
+        error: (error) => {
+          toast({
+            title: "Error parsing CSV",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      });
+    } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          // Convert to objects with headers from first row
+          if (jsonData.length > 0) {
+            const headers = jsonData[0] as string[];
+            const rows = jsonData.slice(1) as any[][];
+            const objects = rows.map(row => {
+              const obj: any = {};
+              headers.forEach((header, index) => {
+                obj[header] = row[index] || '';
+              });
+              return obj;
+            });
+            processImportData(objects);
+          }
+        } catch (error) {
+          toast({
+            title: "Error parsing Excel file",
+            description: "Please check the file format and try again.",
+            variant: "destructive",
+          });
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      toast({
+        title: "Unsupported file format",
+        description: "Please upload a CSV or Excel file.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const processImportData = (data: any[]) => {
+    const processedData: ImportClient[] = data.map((row, index) => {
+      const client: ImportClient = {
+        name: '',
+        branch: '',
+      };
+
+      // Map common field variations
+      const nameField = Object.keys(row).find(key => 
+        ['name', 'client_name', 'client name', 'Name', 'Client Name'].includes(key)
+      );
+      const branchField = Object.keys(row).find(key => 
+        ['branch', 'Branch', 'branch_name', 'Branch Name'].includes(key)
+      );
+
+      if (nameField) client.name = String(row[nameField] || '').trim();
+      if (branchField) client.branch = String(row[branchField] || '').trim();
+
+      // Validation
+      if (!client.name) {
+        client.error = 'Name is required';
+      } else if (!client.branch) {
+        client.error = 'Branch is required';
+      } else {
+        // Check if branch exists
+        const branchExists = branches.some(b => 
+          b.name.toLowerCase() === client.branch.toLowerCase()
+        );
+        if (!branchExists) {
+          client.error = `Branch "${client.branch}" not found`;
+        }
+      }
+
+      return client;
+    }).filter(client => client.name || client.branch); // Filter out completely empty rows
+
+    setImportData(processedData);
+    setImportDialogOpen(false);
+    setPreviewDialogOpen(true);
+  };
+
+  const performImport = async () => {
+    setImporting(true);
+    try {
+      const validClients = importData.filter(client => !client.error);
+      
+      if (validClients.length === 0) {
+        toast({
+          title: "No valid clients to import",
+          description: "Please fix the errors and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Convert branch names to IDs
+      const clientsToInsert = validClients.map(client => {
+        const branch = branches.find(b => 
+          b.name.toLowerCase() === client.branch.toLowerCase()
+        );
+        return {
+          name: client.name,
+          branch_id: branch?.id,
+          is_active: true
+        };
+      });
+
+      const { error } = await supabase
+        .from('clients')
+        .insert(clientsToInsert);
+
+      if (error) throw error;
+
+      toast({
+        title: "Import successful",
+        description: `Successfully imported ${validClients.length} clients.`,
+      });
+
+      setPreviewDialogOpen(false);
+      setImportData([]);
+      fetchData();
+    } catch (error) {
+      console.error('Error importing clients:', error);
+      toast({
+        title: "Import failed",
+        description: "Could not import clients. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const csvContent = "name,branch\nExample Client,Main Branch\n";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "client_import_template.csv");
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -406,10 +606,20 @@ export function ClientsContent() {
             </Button>
           )}
           {isAdmin && (
-            <Button onClick={() => setDialogOpen(true)} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Add Client
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setImportDialogOpen(true)}
+                className="gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Import
+              </Button>
+              <Button onClick={() => setDialogOpen(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add Client
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -879,6 +1089,155 @@ export function ClientsContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Import Clients</DialogTitle>
+            <DialogDescription>
+              Upload a CSV or Excel file with client data
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-2">
+                Drag and drop your file here, or
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Browse Files
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                className="hidden"
+              />
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Required columns:</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• <strong>name</strong> - Client name</li>
+                <li>• <strong>branch</strong> - Branch name (must exist)</li>
+              </ul>
+            </div>
+            <Button
+              variant="outline"
+              onClick={downloadTemplate}
+              className="w-full gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download Template
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Preview Dialog */}
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Import Preview</DialogTitle>
+            <DialogDescription>
+              Review the data before importing. Errors must be fixed before proceeding.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            {importData.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 text-sm">
+                  <span>Total rows: {importData.length}</span>
+                  <span className="text-green-600">
+                    Valid: {importData.filter(client => !client.error).length}
+                  </span>
+                  <span className="text-red-600">
+                    Errors: {importData.filter(client => client.error).length}
+                  </span>
+                </div>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Branch</TableHead>
+                        <TableHead>Error</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {importData.map((client, index) => (
+                        <TableRow key={index} className={client.error ? "bg-red-50" : "bg-green-50"}>
+                          <TableCell>
+                            {client.error ? (
+                              <AlertCircle className="w-4 h-4 text-red-500" />
+                            ) : (
+                              <Check className="w-4 h-4 text-green-500" />
+                            )}
+                          </TableCell>
+                          <TableCell>{client.name}</TableCell>
+                          <TableCell>{client.branch}</TableCell>
+                          <TableCell className="text-red-600 text-sm">
+                            {client.error}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {importData.some(client => client.error) && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Some rows have errors and will be skipped during import. 
+                      Please fix the errors in your file and re-upload if needed.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={performImport}
+              disabled={importing || importData.filter(client => !client.error).length === 0}
+              className="gap-2"
+            >
+              {importing ? (
+                <>
+                  <FileSpreadsheet className="w-4 h-4 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  Import {importData.filter(client => !client.error).length} Clients
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Batch Delete Confirmation Dialog */}
       <AlertDialog open={batchDeleteDialogOpen} onOpenChange={setBatchDeleteDialogOpen}>
