@@ -485,26 +485,10 @@ export function ClientsContent() {
       {/* Clients Table - Desktop */}
       <Card className="hidden md:block">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Building className="w-5 h-5" />
-              Clients ({filteredAndSortedClients.length} total, showing {paginatedClients.length})
-            </CardTitle>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Page size:</span>
-              <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
-                <SelectTrigger className="w-20 h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Building className="w-5 h-5" />
+            Clients ({filteredAndSortedClients.length} total, showing {paginatedClients.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -687,65 +671,85 @@ export function ClientsContent() {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-          <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedClients.length)} of {filteredAndSortedClients.length} clients
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (page > 1) {
-                      setPage(page - 1);
-                      window.scrollTo(0, 0);
-                    }
-                  }}
-                  className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const start = Math.max(1, Math.min(page - 2, totalPages - 4));
-                const pageNumber = start + i;
-                if (pageNumber > totalPages) return null;
-                return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink
-                      href="#"
-                      isActive={pageNumber === page}
-                      className={pageNumber === page ? "bg-primary text-primary-foreground" : ""}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPage(pageNumber);
-                        window.scrollTo(0, 0);
-                      }}
-                    >
-                      {pageNumber}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (page < totalPages) {
-                      setPage(page + 1);
-                      window.scrollTo(0, 0);
-                    }
-                  }}
-                  className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+      {/* Pagination and Page Size */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Page size:</span>
+          <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
+            <SelectTrigger className="w-20 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      )}
+        {totalPages > 1 ? (
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedClients.length)} of {filteredAndSortedClients.length} clients
+            </div>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (page > 1) {
+                        setPage(page - 1);
+                        window.scrollTo(0, 0);
+                      }
+                    }}
+                    className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                  const pageNumber = start + i;
+                  if (pageNumber > totalPages) return null;
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationLink
+                        href="#"
+                        isActive={pageNumber === page}
+                        className={pageNumber === page ? "bg-primary text-primary-foreground" : ""}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setPage(pageNumber);
+                          window.scrollTo(0, 0);
+                        }}
+                      >
+                        {pageNumber}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (page < totalPages) {
+                        setPage(page + 1);
+                        window.scrollTo(0, 0);
+                      }
+                    }}
+                    className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">
+            Showing {filteredAndSortedClients.length} clients
+          </div>
+        )}
+      </div>
 
       {/* Add Client Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
