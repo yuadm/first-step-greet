@@ -39,12 +39,31 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     fetchCompanySettings();
   }, []);
 
-  // Update document title when company settings change
+  // Update document title and favicon when company settings change
   useEffect(() => {
     if (companySettings.name) {
       document.title = companySettings.name;
     }
   }, [companySettings.name]);
+
+  // Update favicon when company logo changes
+  useEffect(() => {
+    if (companySettings.logo) {
+      // Remove existing favicon links
+      const existingLinks = document.querySelectorAll('link[rel*="icon"]');
+      existingLinks.forEach(link => link.remove());
+
+      // Add new favicon with company logo
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.type = 'image/png';
+      link.href = companySettings.logo;
+      document.head.appendChild(link);
+      
+      // Store in localStorage to persist across refreshes
+      localStorage.setItem('companyFavicon', companySettings.logo);
+    }
+  }, [companySettings.logo]);
 
   const fetchCompanySettings = async () => {
     try {
