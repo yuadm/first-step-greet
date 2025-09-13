@@ -15,6 +15,7 @@ import ClientSpotCheckFormDialog, { ClientSpotCheckFormData } from "./ClientSpot
 import { ClientSpotCheckViewDialog } from "./ClientSpotCheckViewDialog";
 import { ClientComplianceRecordViewDialog } from "./ClientComplianceRecordViewDialog";
 import { ClientDeleteConfirmDialog } from "./ClientDeleteConfirmDialog";
+import { EditClientComplianceRecordModal } from "./EditClientComplianceRecordModal";
 import { generateClientSpotCheckPdf } from "@/lib/client-spot-check-pdf";
 
 import { AddClientComplianceRecordModal } from "./AddClientComplianceRecordModal";
@@ -91,6 +92,7 @@ export function ClientCompliancePeriodView({
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [genericViewDialogOpen, setGenericViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSpotCheckRecord, setSelectedSpotCheckRecord] = useState<any>(null);
   const [selectedComplianceRecord, setSelectedComplianceRecord] = useState<any>(null);
@@ -338,73 +340,71 @@ export function ClientCompliancePeriodView({
 
       if (typeError) throw typeError;
 
-      // If no questionnaire/form is configured, just show message that no form exists
-      if (!complianceType.has_questionnaire || !complianceType.questionnaire_id) {
-        toast({
-          title: "No form configured",
-          description: "This compliance type doesn't have a form configured. Only date/text submissions are available.",
-          variant: "destructive",
-        });
-        return;
-      }
+      // If there's a form configured and it's a spot check type, allow the spot check form
+      if (complianceType.has_questionnaire && complianceType.questionnaire_id && complianceTypeName?.toLowerCase().includes('spot')) {
+        // Fetch the compliance record for this client and period
+        const { data: complianceRecord, error: complianceError } = await supabase
+          .from('client_compliance_period_records')
+          .select('*')
+          .eq('client_compliance_type_id', complianceTypeId)
+          .eq('client_id', client.id)
+          .eq('period_identifier', selectedPeriod)
+          .maybeSingle();
 
-      // Check if compliance type name includes "spot" to determine if spot check form should be used
-      if (!complianceTypeName?.toLowerCase().includes('spot')) {
-        toast({
-          title: "No form configured",
-          description: "This compliance type doesn't have a form configured. Only date/text submissions are available.",
-          variant: "destructive",
-        });
-        return;
-      }
+        if (complianceError) throw complianceError;
 
-      // Fetch the compliance record for this client and period
-      const { data: complianceRecord, error: complianceError } = await supabase
-        .from('client_compliance_period_records')
-        .select('*')
-        .eq('client_compliance_type_id', complianceTypeId)
-        .eq('client_id', client.id)
-        .eq('period_identifier', selectedPeriod)
-        .maybeSingle();
+        if (!complianceRecord) {
+          setEditingSpotCheckData(null);
+          setSelectedClient(client);
+          setSpotCheckDialogOpen(true);
+          return;
+        }
 
-      if (complianceError) throw complianceError;
+        // Now fetch the existing spot check record for this compliance record
+        const { data: spotCheckRecord, error } = await supabase
+          .from('client_spot_check_records')
+          .select('*')
+          .eq('compliance_record_id', complianceRecord.id)
+          .maybeSingle();
 
-      if (!complianceRecord) {
-        setEditingSpotCheckData(null);
+        if (error) throw error;
+
+        if (spotCheckRecord) {
+          // Transform the database record to match the form data structure
+          const formData = {
+            serviceUserName: spotCheckRecord.service_user_name || '',
+            date: spotCheckRecord.date || '',
+            completedBy: spotCheckRecord.performed_by || '',
+            observations: spotCheckRecord.observations || []
+          };
+          setEditingSpotCheckData(formData);
+        } else {
+          setEditingSpotCheckData(null);
+        }
+
         setSelectedClient(client);
         setSpotCheckDialogOpen(true);
-        return;
-      }
-
-      // Now fetch the existing spot check record for this compliance record
-      const { data: spotCheckRecord, error } = await supabase
-        .from('client_spot_check_records')
-        .select('*')
-        .eq('compliance_record_id', complianceRecord.id)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (spotCheckRecord) {
-        // Transform the database record to match the form data structure
-        const formData = {
-          serviceUserName: spotCheckRecord.service_user_name || '',
-          date: spotCheckRecord.date || '',
-          completedBy: spotCheckRecord.performed_by || '',
-          observations: spotCheckRecord.observations || []
-        };
-        setEditingSpotCheckData(formData);
       } else {
-        setEditingSpotCheckData(null);
+        // For compliance types without forms, use the edit modal
+        const record = getClientRecordForPeriod(client.id, selectedPeriod);
+        if (!record) {
+          toast({
+            title: "No record found",
+            description: "No compliance record found for this client and period.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        setSelectedClient(client);
+        setSelectedComplianceRecord(record);
+        setEditDialogOpen(true);
       }
-
-      setSelectedClient(client);
-      setSpotCheckDialogOpen(true);
     } catch (error) {
-      console.error('Error fetching spot check data:', error);
+      console.error('Error handling edit:', error);
       toast({
         title: "Error loading data",
-        description: "Could not load existing spot check data.",
+        description: "Could not load the compliance data.",
         variant: "destructive",
       });
     }
@@ -1222,6 +1222,17 @@ export function ClientCompliancePeriodView({
         onOpenChange={setGenericViewDialogOpen}
         client={selectedClient}
         record={selectedComplianceRecord}
+      />
+
+      {/* Edit Compliance Record Modal */}
+      <EditClientComplianceRecordModal
+        record={selectedComplianceRecord}
+        clientName={selectedClient?.name || ''}
+        complianceTypeName={complianceTypeName}
+        frequency={frequency}
+        onRecordUpdated={fetchData}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
       />
 
       {/* Delete Confirmation Dialog */}
