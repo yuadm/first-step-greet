@@ -380,34 +380,34 @@ export const generateReferencePDF = async (
   pdf.text('REFEREE INFORMATION', margin, yPosition);
   yPosition += lineHeight + 3;
   
-  // Reference dates section
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Referee Name:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(reference.form_data.refereeFullName || '', margin + 110, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Referee Job Title:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(reference.form_data.refereeJobTitle || '', margin + 110, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
   pdf.text('Reference Created:', margin, yPosition);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(new Date(reference.created_at).toLocaleDateString(), margin + 95, yPosition);
+  pdf.text(new Date(reference.created_at).toLocaleDateString(), margin + 110, yPosition);
   yPosition += lineHeight;
 
   pdf.setFont('helvetica', 'bold');
   pdf.text('Reference Sent:', margin, yPosition);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(new Date(reference.sent_at).toLocaleDateString(), margin + 85, yPosition);
+  pdf.text(new Date(reference.sent_at).toLocaleDateString(), margin + 110, yPosition);
   yPosition += lineHeight;
 
   pdf.setFont('helvetica', 'bold');
   pdf.text('Reference Completed:', margin, yPosition);
   pdf.setFont('helvetica', 'normal');
   pdf.text(new Date(reference.completed_at).toLocaleDateString(), margin + 110, yPosition);
-  yPosition += lineHeight + 3;
-  
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Referee Name:', margin, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(reference.form_data.refereeFullName || '', margin + 70, yPosition);
-  yPosition += lineHeight;
-
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Referee Job Title:', margin, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(reference.form_data.refereeJobTitle || '', margin + 85, yPosition);
   yPosition += lineHeight + 5;
 
   return pdf;
