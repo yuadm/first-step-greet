@@ -52,6 +52,7 @@ import { generateSpotCheckPdf } from "@/lib/spot-check-pdf";
 import { generateSupervisionPdf } from "@/lib/supervision-pdf";
 import SpotCheckFormDialog, { SpotCheckFormData } from "./SpotCheckFormDialog";
 import SupervisionFormDialog, { SupervisionFormData } from "./SupervisionFormDialog";
+import { MedicationCompetencyForm } from "./MedicationCompetencyForm";
 
 interface ComplianceType {
   id: string;
@@ -1621,80 +1622,17 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
       </DialogDescription>
     </DialogHeader>
     
-    {medicationInitialData ? (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
-          <div>
-            <h4 className="font-medium text-sm text-muted-foreground">Employee</h4>
-            <p className="font-medium">{medicationTarget?.employeeName}</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-sm text-muted-foreground">Assessment Date</h4>
-            <p className="font-medium">{medicationInitialData.assessmentDate || 'Not specified'}</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-sm text-muted-foreground">Overall Status</h4>
-            <Badge variant={medicationInitialData.overallResult === 'competent' ? 'default' : 'destructive'}>
-              {medicationInitialData.overallResult || 'Not assessed'}
-            </Badge>
-          </div>
-          <div>
-            <h4 className="font-medium text-sm text-muted-foreground">Supervisor</h4>
-            <p className="font-medium">{medicationInitialData.supervisor || 'Not specified'}</p>
-          </div>
-        </div>
-
-        {medicationInitialData.responses && (
-          <div className="space-y-4">
-            <h4 className="font-semibold">Assessment Responses</h4>
-            <div className="space-y-3">
-              {medicationInitialData.responses.map((response: any, index: number) => (
-                <div key={index} className="p-3 border rounded-lg">
-                  <div className="font-medium text-sm mb-1">{response.question}</div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant={response.answer === 'yes' ? 'default' : response.answer === 'not-yet' ? 'destructive' : 'secondary'}>
-                      {response.answer}
-                    </Badge>
-                  </div>
-                  {response.comment && (
-                    <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
-                      {response.comment}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {medicationInitialData.signature && (
-          <div className="p-4 bg-muted/30 rounded-lg">
-            <h4 className="font-medium text-sm text-muted-foreground mb-2">Employee Signature</h4>
-            <p className="font-medium">{medicationInitialData.signature}</p>
-            <p className="text-sm text-muted-foreground">
-              Completed: {format(new Date(medicationInitialData.completedAt), 'PPp')}
-            </p>
-          </div>
-        )}
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start gap-2">
-            <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-blue-900">Medication Competency Assessment</h4>
-              <p className="text-sm text-blue-700 mt-1">
-                This assessment cannot be edited after completion to maintain compliance integrity. 
-                You can view all responses and download the PDF for records.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    ) : (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">No assessment data available.</p>
-      </div>
-    )}
+    <MedicationCompetencyForm
+      complianceTypeId=""
+      employeeName={medicationTarget?.employeeName}
+      periodIdentifier={medicationInitialData?.periodIdentifier || ""}
+      initialData={medicationInitialData || undefined}
+      recordId={medicationTarget?.recordId}
+      onComplete={() => {
+        setMedicationEditOpen(false);
+        fetchData();
+      }}
+    />
 
     <div className="flex justify-end gap-3 pt-4 border-t">
       <Button variant="outline" onClick={() => setMedicationEditOpen(false)}>

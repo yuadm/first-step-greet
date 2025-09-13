@@ -311,8 +311,8 @@ export function MedicationCompetencyForm({
       if (!item.competent) {
         errors[`${item.id}_competent`] = "Competency assessment required";
       }
-      if (!item.comments.trim()) {
-        errors[`${item.id}_comments`] = "Comments required for all items";
+      if (item.competent === 'not-yet' && !item.comments.trim()) {
+        errors[`${item.id}_comments`] = "Comments required when marked 'Not Yet'";
       }
     });
 
@@ -386,7 +386,7 @@ export function MedicationCompetencyForm({
           .update({
             form_data: JSON.parse(JSON.stringify(formDataToSave)),
             updated_at: new Date().toISOString(),
-            completion_method: 'questionnaire'
+            completion_method: 'medication_competency'
           })
           .eq('id', recordId);
 
@@ -408,7 +408,7 @@ export function MedicationCompetencyForm({
           compliance_type_id: complianceTypeId,
           period_identifier: periodIdentifier,
           completion_date: format(new Date(), 'yyyy-MM-dd'),
-          completion_method: 'questionnaire',
+          completion_method: 'medication_competency',
           status: 'completed',
           form_data: JSON.parse(JSON.stringify(formDataToSave)),
           notes: null

@@ -482,7 +482,7 @@ export function CompliancePeriodEmployeeView({
                                 </Button>
                               </>
                             )}
-                            {item.record?.completion_method === 'medication_competency' && item.record?.status === 'completed' && ((item.record?.form_data) || item.record?.notes) && (
+                            {(item.record?.status === 'completed' && ((item.record?.completion_method === 'medication_competency') || (item.record?.completion_method === 'questionnaire' && item.record?.form_data && item.record?.form_data?.competencyItems))) && ((item.record?.form_data) || item.record?.notes) && (
                               <Button
                                 variant="ghost"
                                 size="sm"
