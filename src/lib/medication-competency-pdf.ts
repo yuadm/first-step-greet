@@ -26,6 +26,9 @@ export interface MedicationCompetencyData {
   completedAt: string;
   questionnaireName?: string;
   overallResult?: 'competent' | 'not-yet-competent' | 'requires-training';
+  assessorName?: string;
+  assessorSignatureData?: string;
+  employeeSignatureData?: string;
 }
 
 interface CompanyInfo {
@@ -455,46 +458,79 @@ export async function generateMedicationCompetencyPdf(
 
     // Signature section
     const drawSignatureSection = () => {
-      checkPageSpace(100);
+      checkPageSpace(160);
       
-      if (data.signature) {
-        drawRectangle(margin, yPosition - 80, contentWidth, 80, colors.background);
+      const sectionHeight = 140;
+      const sectionY = yPosition - sectionHeight;
+      
+      // Section background
+      drawRectangle(margin, sectionY, contentWidth, sectionHeight, colors.background);
+      
+      // Section header
+      drawRectangle(margin, sectionY + sectionHeight - 25, contentWidth, 25, colors.primary);
+      drawText('✍️ SIGNATURES', margin + 15, sectionY + sectionHeight - 17, {
+        color: colors.white,
+        size: 12,
+        bold: true
+      });
+      
+      const signaturesY = sectionY + sectionHeight - 45;
+      
+      // Assessor signature section
+      if (data.assessorName || data.assessorSignatureData) {
+        drawText('Assessor Name:', margin + 20, signaturesY, { bold: true, size: 10 });
+        drawText(data.assessorName || '', margin + 120, signaturesY, { size: 10, color: colors.primary });
         
-        drawText('✍️ EMPLOYEE ACKNOWLEDGMENT', margin + 15, yPosition - 20, {
-          bold: true,
-          size: 12,
-          color: colors.primary
-        });
+        drawText('Assessor Signature:', margin + 20, signaturesY - 25, { bold: true, size: 10 });
         
-        drawText('Employee Signature:', margin + 15, yPosition - 45, {
-          bold: true,
-          size: 10
-        });
-        
-        drawText(data.signature, margin + 130, yPosition - 45, {
-          size: 11,
-          color: colors.primary,
-          bold: true
-        });
-        
-        drawText('Date:', margin + 350, yPosition - 45, {
-          bold: true,
-          size: 10
-        });
-        drawText(format(new Date(data.completedAt), 'MMM dd, yyyy'), margin + 385, yPosition - 45, {
-          size: 11
-        });
-        
-        // Signature line
+        // Draw signature line for assessor
         page.drawLine({
-          start: { x: margin + 130, y: yPosition - 50 },
-          end: { x: margin + 340, y: yPosition - 50 },
+          start: { x: margin + 130, y: signaturesY - 30 },
+          end: { x: margin + 300, y: signaturesY - 30 },
           thickness: 0.5,
           color: colors.border
         });
         
-        yPosition -= 100;
+        // If we have signature data, we could potentially embed it here
+        if (data.assessorSignatureData) {
+          drawText('[Digital Signature Present]', margin + 130, signaturesY - 25, { 
+            size: 8, 
+            color: colors.textLight,
+            bold: true 
+          });
+        }
       }
+      
+      // Employee signature section
+      if (data.employeeName || data.employeeSignatureData) {
+        drawText('Employee Name:', margin + 20, signaturesY - 50, { bold: true, size: 10 });
+        drawText(data.employeeName || '', margin + 120, signaturesY - 50, { size: 10, color: colors.primary });
+        
+        drawText('Employee Signature:', margin + 20, signaturesY - 75, { bold: true, size: 10 });
+        
+        // Draw signature line for employee
+        page.drawLine({
+          start: { x: margin + 130, y: signaturesY - 80 },
+          end: { x: margin + 300, y: signaturesY - 80 },
+          thickness: 0.5,
+          color: colors.border
+        });
+        
+        // If we have signature data, we could potentially embed it here
+        if (data.employeeSignatureData) {
+          drawText('[Digital Signature Present]', margin + 130, signaturesY - 75, { 
+            size: 8, 
+            color: colors.textLight,
+            bold: true 
+          });
+        }
+      }
+      
+      // Date
+      drawText('Date:', margin + 350, signaturesY - 25, { bold: true, size: 10 });
+      drawText(format(new Date(data.completedAt), 'MMM dd, yyyy'), margin + 390, signaturesY - 25, { size: 10 });
+      
+      yPosition = sectionY - 20;
     };
 
 

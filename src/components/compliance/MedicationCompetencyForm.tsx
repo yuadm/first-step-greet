@@ -354,6 +354,12 @@ export function MedicationCompetencyForm({
           confirmed: formData.acknowledgementConfirmed,
           signature: formData.signature,
           date: formData.signatureDate
+        },
+        signatures: {
+          assessorName: formData.assessorName,
+          assessorSignatureData: formData.assessorSignatureData,
+          employeeName: formData.employeeName,
+          employeeSignatureData: formData.employeeSignatureData
         }
       };
 
