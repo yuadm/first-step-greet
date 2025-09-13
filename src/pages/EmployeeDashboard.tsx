@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, FileText, User, LogOut, Clock, CheckCircle, XCircle, Shield } from 'lucide-react';
 import { LeaveRequestDialog } from '@/components/employee/LeaveRequestDialog';
 import { DocumentUploadDialog } from '@/components/employee/DocumentUploadDialog';
+import { ComplianceOverview } from '@/components/employee/ComplianceOverview';
 import { CompanyProvider, useCompany } from '@/contexts/CompanyContext';
 
 interface LeaveRequest {
@@ -227,6 +228,9 @@ function EmployeeDashboardContent() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Compliance Overview */}
+        <ComplianceOverview employeeId={employee.id} />
 
         {/* Leave Management */}
         <Card>
