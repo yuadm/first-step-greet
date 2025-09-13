@@ -835,66 +835,68 @@ export function ClientCompliancePeriodView({
                                  </div>
                                </TableCell>
                                <TableCell>
-                                 <div className="flex items-center gap-2">
-                                    {isCompleted ? (
-                                      <>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm" 
-                                          className="h-8 w-8 p-0"
-                                          onClick={async () => {
-                                            try {
-                                              const record = getClientRecordForPeriod(client.id, selectedPeriod);
-                                              if (!record) return;
-                                              
-                                              // Fetch the client spot check record
-                                              const { data: spotCheckData, error } = await supabase
-                                                .from('client_spot_check_records')
-                                                .select('*')
-                                                .eq('compliance_record_id', record.id)
-                                                .maybeSingle();
-                                              
-                                              if (error) throw error;
-                                              if (!spotCheckData) {
-                                                toast({
-                                                  title: "No spot check data",
-                                                  description: "No spot check record found for this client.",
-                                                  variant: "destructive",
-                                                });
-                                                return;
-                                              }
-                                              
-                                               // Transform data for PDF generation
-                                                const pdfData = {
-                                                  serviceUserName: spotCheckData.service_user_name || client.name || 'Unknown',
-                                                  date: spotCheckData.date || record.completion_date || '',
-                                                  completedBy: spotCheckData.performed_by || 'Not specified',
-                                                  observations: Array.isArray(spotCheckData.observations) ? spotCheckData.observations as any[] : []
-                                                };
-                                               
-                                               // Generate PDF using client-specific generator
-                                               await generateClientSpotCheckPdf(pdfData, {
-                                                 name: companySettings?.name,
-                                                 logo: companySettings?.logo
-                                               });
-                                              
-                                              toast({
-                                                title: "PDF Downloaded",
-                                                description: `Spot check record for ${client.name} has been downloaded.`,
-                                              });
-                                              
-                                            } catch (error) {
-                                              console.error('Error downloading client PDF:', error);
-                                              toast({
-                                                title: "Download failed",
-                                                description: "Could not download the PDF. Please try again.",
-                                                variant: "destructive",
-                                              });
-                                            }
-                                          }}
-                                        >
-                                          <Download className="w-4 h-4" />
-                                        </Button>
+                                  <div className="flex items-center gap-2">
+                                     {isCompleted ? (
+                                       <>
+                                         {record?.completion_method === 'spotcheck' && (
+                                           <Button 
+                                             variant="ghost" 
+                                             size="sm" 
+                                             className="h-8 w-8 p-0"
+                                             onClick={async () => {
+                                               try {
+                                                 const record = getClientRecordForPeriod(client.id, selectedPeriod);
+                                                 if (!record) return;
+                                                 
+                                                 // Fetch the client spot check record
+                                                 const { data: spotCheckData, error } = await supabase
+                                                   .from('client_spot_check_records')
+                                                   .select('*')
+                                                   .eq('compliance_record_id', record.id)
+                                                   .maybeSingle();
+                                                 
+                                                 if (error) throw error;
+                                                 if (!spotCheckData) {
+                                                   toast({
+                                                     title: "No spot check data",
+                                                     description: "No spot check record found for this client.",
+                                                     variant: "destructive",
+                                                   });
+                                                   return;
+                                                 }
+                                                 
+                                                  // Transform data for PDF generation
+                                                   const pdfData = {
+                                                     serviceUserName: spotCheckData.service_user_name || client.name || 'Unknown',
+                                                     date: spotCheckData.date || record.completion_date || '',
+                                                     completedBy: spotCheckData.performed_by || 'Not specified',
+                                                     observations: Array.isArray(spotCheckData.observations) ? spotCheckData.observations as any[] : []
+                                                   };
+                                                  
+                                                  // Generate PDF using client-specific generator
+                                                  await generateClientSpotCheckPdf(pdfData, {
+                                                    name: companySettings?.name,
+                                                    logo: companySettings?.logo
+                                                  });
+                                                 
+                                                 toast({
+                                                   title: "PDF Downloaded",
+                                                   description: `Spot check record for ${client.name} has been downloaded.`,
+                                                 });
+                                                 
+                                               } catch (error) {
+                                                 console.error('Error downloading client PDF:', error);
+                                                 toast({
+                                                   title: "Download failed",
+                                                   description: "Could not download the PDF. Please try again.",
+                                                   variant: "destructive",
+                                                 });
+                                               }
+                                             }}
+                                           >
+                                             <Download className="w-4 h-4" />
+                                           </Button>
+                                         )}
                                         <Button 
                                           variant="ghost" 
                                           size="sm" 
