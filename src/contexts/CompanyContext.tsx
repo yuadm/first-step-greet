@@ -39,11 +39,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     fetchCompanySettings();
   }, []);
 
-  // Update document title and favicon when company settings change
+  // Update document title when company settings change
   useEffect(() => {
-    if (companySettings.name) {
-      document.title = companySettings.name;
-    }
+    document.title = companySettings.name || '';
   }, [companySettings.name]);
 
   // Update favicon when company logo changes
