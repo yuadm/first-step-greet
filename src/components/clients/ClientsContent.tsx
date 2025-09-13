@@ -30,9 +30,7 @@ interface Branch {
 }
 
 export function ClientsContent() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { clients, branches, loading, refetchData } = useClientData();
   const [searchTerm, setSearchTerm] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
