@@ -2416,6 +2416,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_employee_leave_balance: {
+        Args: { p_days: number; p_employee_id: string; p_operation: string }
+        Returns: Json
+      }
       backfill_annual_appraisal_responses: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -2531,6 +2535,15 @@ export type Database = {
       update_compliance_statuses: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      update_leave_status_with_balance: {
+        Args: {
+          p_leave_id: string
+          p_manager_notes?: string
+          p_new_status: string
+          p_user_id?: string
+        }
+        Returns: Json
       }
       user_has_permission: {
         Args: { perm_key: string; perm_type: string; user_id: string }
