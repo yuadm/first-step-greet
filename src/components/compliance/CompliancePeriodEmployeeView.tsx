@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,9 +20,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useCompliancePeriodEmployeeData } from "@/hooks/queries/useCompliancePeriodQueries";
 
 interface Employee {
   id: string;
@@ -65,10 +65,6 @@ export function CompliancePeriodEmployeeView({
   frequency,
   trigger 
 }: CompliancePeriodEmployeeViewProps) {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [records, setRecords] = useState<ComplianceRecord[]>([]);
-  const [employeeStatusList, setEmployeeStatusList] = useState<EmployeeComplianceStatus[]>([]);
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [open, setOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -76,51 +72,19 @@ export function CompliancePeriodEmployeeView({
   const { toast } = useToast();
   const { companySettings } = useCompany();
 
-  const fetchData = async () => {
-    if (!open) return;
+  // Fetch data using React Query
+  const { data, isLoading, error } = useCompliancePeriodEmployeeData(complianceTypeId, periodIdentifier);
+  
+  const employees = data?.employees || [];
+  const records = data?.records || [];
+
+  // Calculate employee status using useMemo
+  const employeeStatusList = useMemo(() => {
+    if (!employees || !records) return [];
     
-    try {
-      setLoading(true);
-      
-      // Fetch all employees
-      const { data: employeesData, error: employeesError } = await supabase
-        .from('employees')
-        .select('id, name, branch')
-        .order('name');
-
-      if (employeesError) throw employeesError;
-
-      // Fetch compliance records for this type and period
-      const { data: recordsData, error: recordsError } = await supabase
-        .from('compliance_period_records')
-        .select('*')
-        .eq('compliance_type_id', complianceTypeId)
-        .eq('period_identifier', periodIdentifier)
-        .order('completion_date', { ascending: false });
-
-      if (recordsError) throw recordsError;
-
-      setEmployees(employeesData || []);
-      setRecords(recordsData || []);
-      
-      // Calculate employee compliance status for this specific period
-      calculateEmployeeStatus(employeesData || [], recordsData || []);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: "Error loading data",
-        description: "Could not fetch employee and compliance data.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateEmployeeStatus = (employeesData: Employee[], recordsData: ComplianceRecord[]) => {
-    const statusList: EmployeeComplianceStatus[] = employeesData.map(employee => {
+    return employees.map(employee => {
       // Find the record for this employee in this specific period
-      const record = recordsData.find(record => record.employee_id === employee.id);
+      const record = records.find(record => record.employee_id === employee.id);
 
       let status: 'compliant' | 'overdue' | 'due' | 'pending' = 'pending';
 
@@ -146,9 +110,7 @@ export function CompliancePeriodEmployeeView({
         status
       };
     });
-
-    setEmployeeStatusList(statusList);
-  };
+  }, [employees, records, periodIdentifier, frequency]);
 
   const isPeriodOverdue = (periodIdentifier: string, frequency: string, currentDate: Date): boolean => {
     const now = currentDate;
@@ -244,9 +206,10 @@ export function CompliancePeriodEmployeeView({
     setCurrentPage(1);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [open]);
+  // Show error if data fetching failed
+  if (error) {
+    console.error('Error loading data:', error);
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -264,7 +227,7 @@ export function CompliancePeriodEmployeeView({
           </DialogDescription>
         </DialogHeader>
 
-        {loading ? (
+        {isLoading ? (
           <div className="space-y-4 animate-pulse">
             <div className="h-8 bg-muted rounded w-64"></div>
             <div className="grid grid-cols-4 gap-4">
@@ -482,7 +445,7 @@ export function CompliancePeriodEmployeeView({
                                 </Button>
                               </>
                             )}
-                            {(item.record?.status === 'completed' && ((item.record?.completion_method === 'medication_competency') || (item.record?.completion_method === 'questionnaire' && item.record?.form_data && item.record?.form_data?.competencyItems))) && ((item.record?.form_data) || item.record?.notes) && (
+                            {(item.record?.status === 'completed' && ((item.record?.completion_method === 'medication_competency') || (item.record?.completion_method === 'questionnaire' && item.record?.form_data && (item.record.form_data as any)?.competencyItems))) && ((item.record?.form_data) || item.record?.notes) && (
                               <Button
                                 variant="ghost"
                                 size="sm"
