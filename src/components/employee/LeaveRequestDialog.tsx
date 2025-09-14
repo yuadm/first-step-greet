@@ -44,6 +44,14 @@ const leaveRequestSchema = z.object({
     required_error: 'Please select an end date',
   }),
   notes: z.string().optional(),
+}).refine((data) => {
+  if (data.start_date && data.end_date) {
+    return data.end_date >= data.start_date;
+  }
+  return true;
+}, {
+  message: "End date must be the same or after start date",
+  path: ["end_date"],
 });
 
 type LeaveRequestFormData = z.infer<typeof leaveRequestSchema>;
@@ -263,13 +271,23 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
             {form.watch('start_date') && form.watch('end_date') && (
               <div className="p-3 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  Duration: <span className="font-medium">
+                  Duration: <span className={`font-medium ${(() => {
+                    const startDate = form.watch('start_date');
+                    const endDate = form.watch('end_date');
+                    if (startDate && endDate) {
+                      return endDate < startDate ? 'text-red-600' : 'text-green-600';
+                    }
+                    return '';
+                  })()}`}>
                     {(() => {
                       const startDate = form.watch('start_date');
                       const endDate = form.watch('end_date');
                       if (startDate && endDate) {
-                        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+                        const diffTime = endDate.getTime() - startDate.getTime();
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                        if (diffDays < 0) {
+                          return `${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''} (Invalid: End date is before start date)`;
+                        }
                         return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
                       }
                       return '0 days';
