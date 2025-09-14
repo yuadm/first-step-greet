@@ -15,10 +15,13 @@ import { useComplianceData } from "@/hooks/useComplianceData";
 interface ComplianceType {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   frequency: string;
-  target_table: 'employees' | 'clients';
+  target_table: string;
+  has_questionnaire?: boolean;
+  questionnaire_id?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export function ComplianceContent() {

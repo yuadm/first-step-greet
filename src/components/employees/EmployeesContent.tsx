@@ -24,9 +24,10 @@ import * as XLSX from 'xlsx';
 interface Employee {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
   branch: string;
+  branch_id?: string;
   employee_code: string;
   job_title?: string;
   employee_type?: string;
@@ -35,6 +36,8 @@ interface Employee {
   leave_taken?: number;
   remaining_leave_days?: number;
   hours_restriction?: string;
+  is_active?: boolean;
+  password_hash?: string;
   created_at?: string;
 }
 
