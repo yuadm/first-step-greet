@@ -161,16 +161,6 @@ function EmployeeDashboardContent() {
                 <h2 className="text-3xl font-bold mb-2">Dashboard Overview</h2>
                 <p className="text-white/90 text-lg">Track your progress and stay compliant</p>
               </div>
-              <div className="hidden md:flex items-center gap-4">
-                <div className="text-right">
-                  
-                  
-                </div>
-                <div className="text-right">
-                  
-                  
-                </div>
-              </div>
             </div>
           </div>
         </div>
