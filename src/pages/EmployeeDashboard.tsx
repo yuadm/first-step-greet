@@ -127,10 +127,6 @@ function EmployeeDashboardContent() {
               </div>
               <div className="hidden lg:block w-px h-12 bg-gradient-to-b from-transparent via-gray-300 to-transparent" />
               <div className="hidden lg:block">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-lg font-semibold text-gray-900">Welcome back!</span>
-                </div>
                 
               </div>
             </div>
@@ -158,18 +154,13 @@ function EmployeeDashboardContent() {
           <div className="relative z-10">
             <div className="flex items-center justify-between">
               <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-2 w-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-lg font-semibold text-white/90">Welcome back!</span>
+                </div>
                 <h2 className="text-3xl font-bold mb-2">Dashboard Overview</h2>
-                <p className="text-white/90 text-lg">Track your progress and stay compliant</p>
-              </div>
-              <div className="hidden md:flex items-center gap-4">
-                <div className="text-right">
-                  
-                  
-                </div>
-                <div className="text-right">
-                  
-                  
-                </div>
+                <p className="text-white/90 text-lg mb-1">Track your progress and stay compliant</p>
+                <p className="text-white/80 text-sm">This is where you will request leaves and complete statements</p>
               </div>
             </div>
           </div>
