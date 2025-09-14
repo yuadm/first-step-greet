@@ -162,16 +162,41 @@ export function useLeaveActions() {
         .eq('id', leaveId);
       
       if (error) throw error;
+      return { leaveId, status: 'approved', approved_by: userId, approved_at: new Date().toISOString() };
+    },
+    // Optimistic update for immediate UI feedback
+    onMutate: async ({ leaveId }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: leaveQueryKeys.lists() });
+      
+      // Snapshot previous value
+      const previousLeaves = queryClient.getQueryData<Leave[]>(leaveQueryKeys.lists());
+      
+      // Optimistically update cache
+      queryClient.setQueryData<Leave[]>(leaveQueryKeys.lists(), (old) => {
+        if (!old) return [];
+        return old.map(leave => 
+          leave.id === leaveId 
+            ? { ...leave, status: 'approved' as const }
+            : leave
+        );
+      });
+      
+      return { previousLeaves };
     },
     onSuccess: () => {
-      // Invalidate and refetch leave data
+      // Invalidate and refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: leaveQueryKeys.lists() });
       toast({
         title: "Leave Approved",
         description: "Leave request has been approved successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousLeaves) {
+        queryClient.setQueryData(leaveQueryKeys.lists(), context.previousLeaves);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to approve leave request.",
@@ -193,6 +218,24 @@ export function useLeaveActions() {
         .eq('id', leaveId);
       
       if (error) throw error;
+      return { leaveId, status: 'rejected', rejected_by: userId, rejection_reason: reason };
+    },
+    // Optimistic update for immediate UI feedback
+    onMutate: async ({ leaveId, reason }) => {
+      await queryClient.cancelQueries({ queryKey: leaveQueryKeys.lists() });
+      
+      const previousLeaves = queryClient.getQueryData<Leave[]>(leaveQueryKeys.lists());
+      
+      queryClient.setQueryData<Leave[]>(leaveQueryKeys.lists(), (old) => {
+        if (!old) return [];
+        return old.map(leave => 
+          leave.id === leaveId 
+            ? { ...leave, status: 'rejected' as const, rejection_reason: reason }
+            : leave
+        );
+      });
+      
+      return { previousLeaves };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leaveQueryKeys.lists() });
@@ -201,7 +244,10 @@ export function useLeaveActions() {
         description: "Leave request has been rejected.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousLeaves) {
+        queryClient.setQueryData(leaveQueryKeys.lists(), context.previousLeaves);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to reject leave request.",

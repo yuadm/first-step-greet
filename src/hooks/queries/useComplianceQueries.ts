@@ -101,6 +101,30 @@ export function useComplianceActions() {
       if (error) throw error;
       return data;
     },
+    // Optimistic update for immediate UI feedback
+    onMutate: async (newRecord) => {
+      await queryClient.cancelQueries({ queryKey: complianceQueryKeys.records() });
+      await queryClient.cancelQueries({ 
+        queryKey: complianceQueryKeys.periods(newRecord.compliance_task_id, new Date().getFullYear()) 
+      });
+      
+      const previousRecords = queryClient.getQueryData(complianceQueryKeys.records());
+      
+      // Create optimistic record with temporary ID
+      const optimisticRecord = {
+        ...newRecord,
+        id: `temp-${Date.now()}`,
+        created_at: new Date().toISOString(),
+      };
+      
+      // Update records cache
+      queryClient.setQueryData<ComplianceRecord[]>(complianceQueryKeys.records(), (old) => {
+        if (!old) return [optimisticRecord];
+        return [optimisticRecord, ...old];
+      });
+      
+      return { previousRecords };
+    },
     onSuccess: (data) => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: complianceQueryKeys.records() });
@@ -112,7 +136,10 @@ export function useComplianceActions() {
         description: "Compliance record created successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousRecords) {
+        queryClient.setQueryData(complianceQueryKeys.records(), context.previousRecords);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to create compliance record.",

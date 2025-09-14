@@ -96,6 +96,26 @@ export function useEmployeeActions() {
       if (error) throw error;
       return data;
     },
+    // Optimistic update for immediate UI feedback
+    onMutate: async (newEmployee) => {
+      await queryClient.cancelQueries({ queryKey: employeeQueryKeys.lists() });
+      
+      const previousEmployees = queryClient.getQueryData<Employee[]>(employeeQueryKeys.lists());
+      
+      // Create optimistic employee with temporary ID
+      const optimisticEmployee = {
+        ...newEmployee,
+        id: `temp-${Date.now()}`,
+        created_at: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData<Employee[]>(employeeQueryKeys.lists(), (old) => {
+        if (!old) return [optimisticEmployee];
+        return [optimisticEmployee, ...old];
+      });
+      
+      return { previousEmployees };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employeeQueryKeys.lists() });
       toast({
@@ -103,7 +123,10 @@ export function useEmployeeActions() {
         description: "Employee created successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousEmployees) {
+        queryClient.setQueryData(employeeQueryKeys.lists(), context.previousEmployees);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to create employee.",
@@ -124,6 +147,23 @@ export function useEmployeeActions() {
       if (error) throw error;
       return data;
     },
+    // Optimistic update for immediate UI feedback
+    onMutate: async ({ id, ...updateData }) => {
+      await queryClient.cancelQueries({ queryKey: employeeQueryKeys.lists() });
+      
+      const previousEmployees = queryClient.getQueryData<Employee[]>(employeeQueryKeys.lists());
+      
+      queryClient.setQueryData<Employee[]>(employeeQueryKeys.lists(), (old) => {
+        if (!old) return [];
+        return old.map(employee => 
+          employee.id === id 
+            ? { ...employee, ...updateData }
+            : employee
+        );
+      });
+      
+      return { previousEmployees };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: employeeQueryKeys.lists() });
       toast({
@@ -131,7 +171,10 @@ export function useEmployeeActions() {
         description: "Employee updated successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousEmployees) {
+        queryClient.setQueryData(employeeQueryKeys.lists(), context.previousEmployees);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to update employee.",
