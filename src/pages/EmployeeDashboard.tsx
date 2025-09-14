@@ -127,6 +127,10 @@ function EmployeeDashboardContent() {
               </div>
               <div className="hidden lg:block w-px h-12 bg-gradient-to-b from-transparent via-gray-300 to-transparent" />
               <div className="hidden lg:block">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-lg font-semibold text-gray-900">Welcome back!</span>
+                </div>
                 
               </div>
             </div>
@@ -150,17 +154,22 @@ function EmployeeDashboardContent() {
       <main className="max-w-7xl mx-auto p-6 space-y-8">
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-8 text-white shadow-2xl">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.03%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20" />
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50" />
           <div className="relative z-10">
             <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="h-2 w-2 bg-green-400 rounded-full animate-pulse" />
-                  <span className="text-lg font-semibold text-white/90">Welcome back!</span>
-                </div>
                 <h2 className="text-3xl font-bold mb-2">Dashboard Overview</h2>
-                <p className="text-white/90 text-lg mb-1">Track your progress and stay compliant</p>
-                <p className="text-white/80 text-sm">This is where you will request leaves and complete statements</p>
+                <p className="text-white/90 text-lg">Track your progress and stay compliant</p>
+              </div>
+              <div className="hidden md:flex items-center gap-4">
+                <div className="text-right">
+                  
+                  
+                </div>
+                <div className="text-right">
+                  
+                  
+                </div>
               </div>
             </div>
           </div>
