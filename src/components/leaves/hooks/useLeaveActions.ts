@@ -9,38 +9,46 @@ interface UseLeaveActionsProps {
   refetchData: () => void;
 }
 
+interface LeaveBalanceResult {
+  success: boolean;
+  error?: string;
+  employee_id: string;
+  operation: string;
+  days_adjusted: number;
+  previous_taken: number;
+  new_taken: number;
+  previous_remaining: number;
+  new_remaining: number;
+}
+
+interface UpdateLeaveStatusResult {
+  success: boolean;
+  error?: string;
+  leave_id: string;
+  previous_status: string;
+  new_status: string;
+  reduces_balance: boolean;
+  balance_adjustment?: LeaveBalanceResult;
+}
+
 export function useLeaveActions({ leaves, employees, leaveTypes, refetchData }: UseLeaveActionsProps) {
   const { toast } = useToast();
 
   const updateEmployeeLeaveBalance = async (employeeId: string, days: number, operation: 'add' | 'subtract') => {
-    const employee = employees.find(e => e.id === employeeId);
-    if (!employee) return;
-
-    const currentTaken = employee.leave_taken || 0;
-    const currentRemaining = employee.remaining_leave_days || 28;
-    const leaveAllowance = typeof (employee as any).leave_allowance === 'number' ? (employee as any).leave_allowance : 28;
-    
-    let newTaken: number, newRemaining: number;
-    
-    if (operation === 'add') {
-      // Adding leave (approving a leave or increasing days)
-      newTaken = currentTaken + days;
-      newRemaining = Math.max(0, currentRemaining - days);
-    } else {
-      // Subtracting leave (rejecting/reverting a leave or decreasing days)
-      newTaken = Math.max(0, currentTaken - days);
-      newRemaining = Math.min(leaveAllowance, currentRemaining + days);
-    }
-
-    const { error } = await supabase
-      .from('employees')
-      .update({
-        leave_taken: newTaken,
-        remaining_leave_days: newRemaining
-      })
-      .eq('id', employeeId);
+    const { data, error } = await supabase.rpc('adjust_employee_leave_balance', {
+      p_employee_id: employeeId,
+      p_days: days,
+      p_operation: operation
+    });
 
     if (error) throw error;
+
+    const result = data as unknown as LeaveBalanceResult;
+    if (!result?.success) {
+      throw new Error(result?.error || 'Failed to update leave balance');
+    }
+
+    return result;
   };
 
   const addLeave = async (data: {
@@ -184,16 +192,6 @@ export function useLeaveActions({ leaves, employees, leaveTypes, refetchData }: 
     try {
       console.log('Updating leave status:', { leaveId, newStatus, managerNotes });
       
-      // Get the leave details first
-      const leave = leaves.find(l => l.id === leaveId);
-      if (!leave) {
-        console.error('Leave not found:', leaveId);
-        return;
-      }
-
-      const previousStatus = leave.status;
-      const leaveType = leaveTypes.find(lt => lt.id === leave.leave_type_id);
-
       // Get current user for audit trail
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -201,45 +199,27 @@ export function useLeaveActions({ leaves, employees, leaveTypes, refetchData }: 
         return;
       }
       
-      console.log('Current user:', user.id, 'Previous status:', previousStatus);
+      console.log('Current user:', user.id);
       
-      // Update leave status
-      const updateData = { 
-        status: newStatus, 
-        manager_notes: managerNotes || null,
-        approved_date: newStatus === 'approved' ? new Date().toISOString() : null,
-        rejected_date: newStatus === 'rejected' ? new Date().toISOString() : null,
-        approved_by: newStatus === 'approved' ? user?.id : null,
-        rejected_by: newStatus === 'rejected' ? user?.id : null
-      };
-      
-      console.log('Update data:', updateData);
-      
-      const { error: leaveError } = await supabase
-        .from('leave_requests')
-        .update(updateData)
-        .eq('id', leaveId);
+      // Use database function for atomic update
+      const { data, error } = await supabase.rpc('update_leave_status_with_balance', {
+        p_leave_id: leaveId,
+        p_new_status: newStatus,
+        p_manager_notes: managerNotes || null,
+        p_user_id: user.id
+      });
 
-      if (leaveError) {
-        console.error('Database update error:', leaveError);
-        throw leaveError;
+      if (error) {
+        console.error('Database update error:', error);
+        throw error;
+      }
+
+      const result = data as unknown as UpdateLeaveStatusResult;
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to update leave status');
       }
       
-      console.log('Leave status updated successfully');
-
-      // Handle leave balance updates for leaves that reduce balance
-      if (leaveType?.reduces_balance) {
-        // Status change logic
-        if (previousStatus === 'approved' && newStatus !== 'approved') {
-          // Was approved, now not approved - restore balance
-          await updateEmployeeLeaveBalance(leave.employee_id, leave.days_requested, 'subtract');
-        } else if (previousStatus !== 'approved' && newStatus === 'approved') {
-          // Was not approved, now approved - deduct balance
-          await updateEmployeeLeaveBalance(leave.employee_id, leave.days_requested, 'add');
-        }
-        // If changing from pending to rejected or vice versa, no balance change needed
-        // If changing from approved to approved (just updating notes), no balance change needed
-      }
+      console.log('Leave status updated successfully:', result);
 
       toast({
         title: `Leave ${newStatus}`,
