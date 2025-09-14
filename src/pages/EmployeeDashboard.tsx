@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -11,25 +10,30 @@ import { LeaveRequestDialog } from '@/components/employee/LeaveRequestDialog';
 import { DocumentUploadDialog } from '@/components/employee/DocumentUploadDialog';
 import { ComplianceOverview } from '@/components/employee/ComplianceOverview';
 import { CompanyProvider, useCompany } from '@/contexts/CompanyContext';
-
 interface LeaveRequest {
   id: string;
   start_date: string;
   end_date: string;
   status: string;
   notes: string;
-  leave_type: { name: string };
+  leave_type: {
+    name: string;
+  };
   created_at: string;
 }
-
 function EmployeeDashboardContent() {
-  const { employee, loading, signOut } = useEmployeeAuth();
-  const { companySettings } = useCompany();
+  const {
+    employee,
+    loading,
+    signOut
+  } = useEmployeeAuth();
+  const {
+    companySettings
+  } = useCompany();
   const navigate = useNavigate();
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
-
   useEffect(() => {
     if (!loading && !employee) {
       navigate('/employee-login');
@@ -39,74 +43,68 @@ function EmployeeDashboardContent() {
       fetchLeaveRequests();
     }
   }, [employee, loading, navigate]);
-
   const fetchLeaveRequests = async () => {
     if (!employee) return;
-    
     try {
       // Fetch leave requests
-      const { data: leaveData, error: leaveError } = await supabase
-        .from('leave_requests')
-        .select(`
+      const {
+        data: leaveData,
+        error: leaveError
+      } = await supabase.from('leave_requests').select(`
           *,
           leave_type:leave_types(name)
-        `)
-        .eq('employee_id', employee.id)
-        .order('created_at', { ascending: false });
-
+        `).eq('employee_id', employee.id).order('created_at', {
+        ascending: false
+      });
       if (leaveError) throw leaveError;
       setLeaveRequests(leaveData || []);
-
     } catch (error) {
       console.error('Error fetching leave requests:', error);
     }
   };
-
   const handleSignOut = async () => {
     await signOut();
     navigate('/employee-login');
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'default';
-      case 'pending': return 'secondary';
-      case 'rejected': return 'destructive';
-      default: return 'secondary';
+      case 'approved':
+        return 'default';
+      case 'pending':
+        return 'secondary';
+      case 'rejected':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved': return <CheckCircle className="w-4 h-4" />;
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'rejected': return <XCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case 'approved':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'pending':
+        return <Clock className="w-4 h-4" />;
+      case 'rejected':
+        return <XCircle className="w-4 h-4" />;
+      default:
+        return <Clock className="w-4 h-4" />;
     }
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+    return <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
-      </div>
-    );
+      </div>;
   }
-
   if (!employee) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+    return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Employee Profile Not Found</h2>
           <p className="text-muted-foreground mb-4">Please contact your administrator to set up your employee profile.</p>
           <Button onClick={handleSignOut}>Sign Out</Button>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       {/* Modern Header */}
       <header className="backdrop-blur-md bg-white/80 border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -114,27 +112,17 @@ function EmployeeDashboardContent() {
             {/* Company Info */}
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-4">
-                {companySettings.logo ? (
-                  <div className="relative">
-                    <img
-                      src={companySettings.logo}
-                      alt={companySettings.name}
-                      className="h-12 w-12 object-contain rounded-xl shadow-sm"
-                    />
+                {companySettings.logo ? <div className="relative">
+                    <img src={companySettings.logo} alt={companySettings.name} className="h-12 w-12 object-contain rounded-xl shadow-sm" />
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 to-transparent pointer-events-none" />
-                  </div>
-                ) : (
-                  <div className="h-12 w-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
+                  </div> : <div className="h-12 w-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
                     <Shield className="h-7 w-7 text-white" />
-                  </div>
-                )}
+                  </div>}
                 <div>
                   <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                     {companySettings.name}
                   </h1>
-                  {companySettings.tagline && (
-                    <p className="text-sm text-gray-600">{companySettings.tagline}</p>
-                  )}
+                  {companySettings.tagline && <p className="text-sm text-gray-600">{companySettings.tagline}</p>}
                 </div>
               </div>
               <div className="hidden lg:block w-px h-12 bg-gradient-to-b from-transparent via-gray-300 to-transparent" />
@@ -143,25 +131,17 @@ function EmployeeDashboardContent() {
                   <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
                   <span className="text-lg font-semibold text-gray-900">Welcome back!</span>
                 </div>
-                <p className="text-sm text-gray-600">{employee.name}</p>
+                
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/employee-statements')}
-                className="hidden sm:flex items-center gap-2 hover:bg-primary/5 hover:border-primary/20"
-              >
+              <Button variant="outline" onClick={() => navigate('/employee-statements')} className="hidden sm:flex items-center gap-2 hover:bg-primary/5 hover:border-primary/20">
                 <FileText className="w-4 h-4" />
                 Statements
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleSignOut}
-                className="hover:bg-red-50 hover:border-red-200 hover:text-red-700"
-              >
+              <Button variant="outline" onClick={handleSignOut} className="hover:bg-red-50 hover:border-red-200 hover:text-red-700">
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </Button>
@@ -183,12 +163,12 @@ function EmployeeDashboardContent() {
               </div>
               <div className="hidden md:flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-white/80 text-sm">Employee ID</p>
-                  <p className="font-mono font-semibold">{employee.employee_code}</p>
+                  
+                  
                 </div>
                 <div className="text-right">
-                  <p className="text-white/80 text-sm">Branch</p>
-                  <p className="font-semibold">{employee.branch}</p>
+                  
+                  
                 </div>
               </div>
             </div>
@@ -215,7 +195,9 @@ function EmployeeDashboardContent() {
             </CardContent>
           </Card>
           
-          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 animate-fade-in" style={{
+          animationDelay: '0.1s'
+        }}>
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-amber-500/5" />
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
@@ -233,7 +215,9 @@ function EmployeeDashboardContent() {
             </CardContent>
           </Card>
           
-          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 animate-fade-in" style={{
+          animationDelay: '0.2s'
+        }}>
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/5" />
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
@@ -255,7 +239,9 @@ function EmployeeDashboardContent() {
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Enhanced Personal Information */}
-          <Card className="hover:shadow-lg transition-all duration-300 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <Card className="hover:shadow-lg transition-all duration-300 animate-fade-in" style={{
+          animationDelay: '0.3s'
+        }}>
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
@@ -267,13 +253,23 @@ function EmployeeDashboardContent() {
             <CardContent>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4">
-                  {[
-                    { label: 'Full Name', value: employee.name, icon: User },
-                    { label: 'Email Address', value: employee.email, icon: FileText },
-                    { label: 'Branch Location', value: employee.branch, icon: Calendar },
-                    { label: 'Job Title', value: employee.job_title || 'Not specified', icon: CheckCircle }
-                  ].map((item, index) => (
-                    <div key={item.label} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                  {[{
+                  label: 'Full Name',
+                  value: employee.name,
+                  icon: User
+                }, {
+                  label: 'Email Address',
+                  value: employee.email,
+                  icon: FileText
+                }, {
+                  label: 'Branch Location',
+                  value: employee.branch,
+                  icon: Calendar
+                }, {
+                  label: 'Job Title',
+                  value: employee.job_title || 'Not specified',
+                  icon: CheckCircle
+                }].map((item, index) => <div key={item.label} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
                       <div className="h-8 w-8 bg-gray-100 rounded-lg flex items-center justify-center">
                         <item.icon className="w-4 h-4 text-gray-600" />
                       </div>
@@ -281,21 +277,24 @@ function EmployeeDashboardContent() {
                         <p className="text-sm text-gray-600">{item.label}</p>
                         <p className="font-medium text-gray-900">{item.value}</p>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Enhanced Compliance Overview */}
-          <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-fade-in" style={{
+          animationDelay: '0.4s'
+        }}>
             <ComplianceOverview employeeId={employee.id} />
           </div>
         </div>
 
         {/* Enhanced Leave Management */}
-        <Card className="hover:shadow-lg transition-all duration-300 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+        <Card className="hover:shadow-lg transition-all duration-300 animate-fade-in" style={{
+        animationDelay: '0.5s'
+      }}>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3">
@@ -305,18 +304,11 @@ function EmployeeDashboardContent() {
                 Leave Management
               </CardTitle>
               <div className="flex gap-3">
-                <Button 
-                  onClick={() => setShowLeaveDialog(true)}
-                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200"
-                >
+                <Button onClick={() => setShowLeaveDialog(true)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200">
                   <Calendar className="w-4 h-4 mr-2" />
                   Request Leave
                 </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowDocumentDialog(true)}
-                  className="hover:bg-primary/5 hover:border-primary/20"
-                >
+                <Button variant="outline" onClick={() => setShowDocumentDialog(true)} className="hover:bg-primary/5 hover:border-primary/20">
                   <FileText className="w-4 h-4 mr-2" />
                   Upload Document
                 </Button>
@@ -325,21 +317,15 @@ function EmployeeDashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {leaveRequests.length === 0 ? (
-                <div className="text-center py-12">
+              {leaveRequests.length === 0 ? <div className="text-center py-12">
                   <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Calendar className="w-8 h-8 text-gray-400" />
                   </div>
                   <p className="text-gray-500 mb-2">No leave requests found</p>
                   <p className="text-sm text-gray-400">Your leave requests will appear here</p>
-                </div>
-              ) : (
-                leaveRequests.map((leave, index) => (
-                  <div 
-                    key={leave.id} 
-                    className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200"
-                    style={{ animationDelay: `${0.1 * index}s` }}
-                  >
+                </div> : leaveRequests.map((leave, index) => <div key={leave.id} className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200" style={{
+              animationDelay: `${0.1 * index}s`
+            }}>
                     <div className="flex items-center gap-4 flex-1">
                       <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
                         {getStatusIcon(leave.status)}
@@ -360,40 +346,23 @@ function EmployeeDashboardContent() {
                         <div className="text-sm text-gray-500">
                           This leave was applied on {new Date(leave.created_at).toLocaleDateString()}
                         </div>
-                        {leave.notes && (
-                          <p className="text-sm text-gray-500 mt-2 italic">{leave.notes}</p>
-                        )}
+                        {leave.notes && <p className="text-sm text-gray-500 mt-2 italic">{leave.notes}</p>}
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  </div>)}
             </div>
           </CardContent>
         </Card>
       </main>
 
       {/* Dialogs */}
-      <LeaveRequestDialog
-        open={showLeaveDialog}
-        onOpenChange={setShowLeaveDialog}
-        employeeId={employee.id}
-        onSuccess={fetchLeaveRequests}
-      />
+      <LeaveRequestDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog} employeeId={employee.id} onSuccess={fetchLeaveRequests} />
       
-      <DocumentUploadDialog
-        open={showDocumentDialog}
-        onOpenChange={setShowDocumentDialog}
-        employeeId={employee.id}
-      />
-    </div>
-  );
+      <DocumentUploadDialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog} employeeId={employee.id} />
+    </div>;
 }
-
 export default function EmployeeDashboard() {
-  return (
-    <CompanyProvider>
+  return <CompanyProvider>
       <EmployeeDashboardContent />
-    </CompanyProvider>
-  );
+    </CompanyProvider>;
 }
