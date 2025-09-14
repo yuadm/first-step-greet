@@ -51,6 +51,14 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
     return period;
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   if (loading) {
     return (
       <Card>
@@ -103,27 +111,72 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                 Action Required ({dueItems.length})
               </h4>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {dueItems.map((item, index) => (
                 <div 
                   key={`${item.id}-${item.period}`} 
-                  className="group p-4 border-2 border-orange-100 bg-orange-50/50 rounded-xl hover:border-orange-200 transition-all duration-200"
+                  className="group p-5 border-2 border-orange-100 bg-gradient-to-r from-orange-50/80 to-red-50/60 rounded-2xl hover:border-orange-200 transition-all duration-300 hover:shadow-md"
                   style={{ animationDelay: `${0.1 * index}s` }}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200 shadow-lg">
                       {getStatusIcon(item.status, item.isOverdue)}
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-semibold text-gray-900">{item.name}</span>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-bold text-gray-900 text-lg">{item.name}</span>
                         <Badge variant={getStatusVariant(item.status, item.isOverdue)} className="flex items-center gap-1 px-3 py-1">
                           {item.isOverdue ? 'Overdue' : 'Due Soon'}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600">
-                        {formatPeriod(item.period)} • {formatFrequency(item.frequency)}
-                      </p>
+                      
+                      {item.frequency === 'quarterly' && item.quarterlyTimeline ? (
+                        <div className="space-y-3 mt-3">
+                          <p className="text-sm font-medium text-gray-700 mb-3">{formatFrequency(item.frequency)} Timeline</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {item.quarterlyTimeline.map((quarter, qIndex) => (
+                              <div 
+                                key={quarter.quarter}
+                                className={`relative p-3 rounded-lg border-2 transition-all duration-200 ${
+                                  quarter.status === 'completed' 
+                                    ? 'border-green-200 bg-green-50/60' 
+                                    : quarter.status === 'due'
+                                    ? 'border-orange-200 bg-orange-50/60'
+                                    : 'border-gray-200 bg-gray-50/60'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                    quarter.status === 'completed' 
+                                      ? 'bg-green-500 text-white' 
+                                      : quarter.status === 'due'
+                                      ? 'bg-orange-500 text-white'
+                                      : 'bg-gray-400 text-white'
+                                  }`}>
+                                    {quarter.quarter}
+                                  </div>
+                                  <span className="font-semibold text-sm text-gray-900">{quarter.label}</span>
+                                </div>
+                                <div className="mt-1 flex items-center justify-between">
+                                  <Badge 
+                                    variant={quarter.status === 'completed' ? 'default' : quarter.status === 'due' ? 'secondary' : 'outline'}
+                                    className="text-xs px-2 py-0.5"
+                                  >
+                                    {quarter.status === 'completed' ? 'Completed' : quarter.status === 'due' ? 'Due' : 'Upcoming'}
+                                  </Badge>
+                                  {quarter.completedDate && quarter.status === 'completed' && (
+                                    <span className="text-xs text-gray-500">{formatDate(quarter.completedDate)}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-600">
+                          {formatPeriod(item.period)} • {formatFrequency(item.frequency)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -141,28 +194,78 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                 Recently Completed ({completedItems.length})
               </h4>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {completedItems.map((item, index) => (
                 <div 
                   key={`${item.id}-${item.period}`} 
-                  className="group p-4 border-2 border-green-100 bg-green-50/50 rounded-xl hover:border-green-200 transition-all duration-200"
+                  className="group p-5 border-2 border-green-100 bg-gradient-to-r from-green-50/80 to-emerald-50/60 rounded-2xl hover:border-green-200 transition-all duration-300 hover:shadow-md"
                   style={{ animationDelay: `${0.1 * index}s` }}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200 shadow-lg">
                       {getStatusIcon(item.status)}
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-semibold text-gray-900">{item.name}</span>
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-bold text-gray-900 text-lg">{item.name}</span>
                         <Badge variant="default" className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 border-green-200">
                           <CheckCircle className="w-3 h-3" />
                           Completed
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600">
-                        {formatPeriod(item.period)} • {formatFrequency(item.frequency)}
-                      </p>
+                      
+                      {item.frequency === 'quarterly' && item.quarterlyTimeline ? (
+                        <div className="space-y-3 mt-3">
+                          <p className="text-sm font-medium text-gray-700 mb-3">{formatFrequency(item.frequency)} Timeline</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {item.quarterlyTimeline.map((quarter, qIndex) => (
+                              <div 
+                                key={quarter.quarter}
+                                className={`relative p-3 rounded-lg border-2 transition-all duration-200 ${
+                                  quarter.status === 'completed' 
+                                    ? 'border-green-200 bg-green-50/60' 
+                                    : quarter.status === 'due'
+                                    ? 'border-orange-200 bg-orange-50/60'
+                                    : 'border-gray-200 bg-gray-50/60'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                    quarter.status === 'completed' 
+                                      ? 'bg-green-500 text-white' 
+                                      : quarter.status === 'due'
+                                      ? 'bg-orange-500 text-white'
+                                      : 'bg-gray-400 text-white'
+                                  }`}>
+                                    {quarter.quarter}
+                                  </div>
+                                  <span className="font-semibold text-sm text-gray-900">{quarter.label}</span>
+                                </div>
+                                <div className="mt-1 flex items-center justify-between">
+                                  <Badge 
+                                    variant={quarter.status === 'completed' ? 'default' : quarter.status === 'due' ? 'secondary' : 'outline'}
+                                    className="text-xs px-2 py-0.5"
+                                  >
+                                    {quarter.status === 'completed' ? 'Completed' : quarter.status === 'due' ? 'Due' : 'Upcoming'}
+                                  </Badge>
+                                  {quarter.completedDate && quarter.status === 'completed' && (
+                                    <span className="text-xs text-gray-500">{formatDate(quarter.completedDate)}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-gray-600">
+                            {formatPeriod(item.period)} • {formatFrequency(item.frequency)}
+                          </p>
+                          {item.completedDate && (
+                            <span className="text-xs text-gray-500">Completed {formatDate(item.completedDate)}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

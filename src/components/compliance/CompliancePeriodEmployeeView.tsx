@@ -183,7 +183,7 @@ export function CompliancePeriodEmployeeView({
   const compliantCount = filteredEmployeeStatusList.filter(item => item.status === 'compliant').length;
   const overdueCount = filteredEmployeeStatusList.filter(item => item.status === 'overdue').length;
   const dueCount = filteredEmployeeStatusList.filter(item => item.status === 'due').length;
-  const pendingCount = filteredEmployeeStatusList.filter(item => item.status === 'pending').length;
+  const pendingCount = 0; // Remove pending status as it's not part of the compliance status enum
 
   // Pagination calculations
   const totalItems = filteredEmployeeStatusList.length;
