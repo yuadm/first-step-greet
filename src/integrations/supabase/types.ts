@@ -2417,7 +2417,9 @@ export type Database = {
     }
     Functions: {
       adjust_employee_leave_balance: {
-        Args: { p_days: number; p_employee_id: string; p_operation: string }
+        Args:
+          | { p_days: number; p_employee_id: string; p_operation: string }
+          | { p_days: number; p_employee_id: string; p_operation: string }
         Returns: Json
       }
       backfill_annual_appraisal_responses: {
