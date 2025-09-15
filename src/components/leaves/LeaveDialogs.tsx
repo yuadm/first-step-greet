@@ -210,6 +210,7 @@ export function LeaveDialogs({
                 <Select
                   value={editData.employee_id}
                   onValueChange={(value) => setEditData({...editData, employee_id: value})}
+                  disabled
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select employee" />
