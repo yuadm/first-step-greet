@@ -156,7 +156,7 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[95vw] max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Request Leave</DialogTitle>
         </DialogHeader>
@@ -170,11 +170,11 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
                   <FormLabel>Leave Type</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11">
                         <SelectValue placeholder="Select leave type" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="z-50 bg-background">
                       {leaveTypes.map((type) => (
                         <SelectItem key={type.id} value={type.id}>
                           {type.name}
@@ -199,7 +199,7 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
                         <Button
                           variant="outline"
                           className={cn(
-                            'w-full pl-3 text-left font-normal',
+                            'w-full h-11 pl-3 text-left font-normal',
                             !field.value && 'text-muted-foreground'
                           )}
                         >
@@ -212,7 +212,7 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
                       <Calendar
                         mode="single"
                         selected={field.value}
@@ -239,7 +239,7 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
                         <Button
                           variant="outline"
                           className={cn(
-                            'w-full pl-3 text-left font-normal',
+                            'w-full h-11 pl-3 text-left font-normal',
                             !field.value && 'text-muted-foreground'
                           )}
                         >
@@ -252,7 +252,7 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
                       <Calendar
                         mode="single"
                         selected={field.value}
@@ -306,6 +306,7 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
                   <FormControl>
                     <Textarea
                       placeholder="Add any additional information..."
+                      className="min-h-[80px] resize-none"
                       {...field}
                     />
                   </FormControl>
@@ -315,11 +316,11 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
             />
 
 
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                 {loading ? 'Submitting...' : 'Submit Request'}
               </Button>
             </div>
@@ -329,7 +330,7 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
     </Dialog>
 
     <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-      <AlertDialogContent className="max-w-md">
+      <AlertDialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
         <AlertDialogHeader>
           <AlertDialogTitle>Leave Request Submitted</AlertDialogTitle>
           <AlertDialogDescription className="space-y-3 text-sm">
@@ -344,7 +345,7 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction onClick={handleConfirmationOk}>
+          <AlertDialogAction onClick={handleConfirmationOk} className="w-full sm:w-auto">
             OK
           </AlertDialogAction>
         </AlertDialogFooter>
