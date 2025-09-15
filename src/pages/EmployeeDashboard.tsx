@@ -104,28 +104,28 @@ function EmployeeDashboardContent() {
         </div>
       </div>;
   }
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-x-hidden">
       {/* Modern Header */}
       <header className="backdrop-blur-md bg-white/80 border-b border-white/20 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
             {/* Company Info */}
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-4">
-                {companySettings.logo ? <div className="relative">
-                    <img src={companySettings.logo} alt={companySettings.name} className="h-12 w-12 object-contain rounded-xl shadow-sm" />
+            <div className="flex items-center gap-3 sm:gap-6 min-w-0 flex-1">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                {companySettings.logo ? <div className="relative flex-shrink-0">
+                    <img src={companySettings.logo} alt={companySettings.name} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-xl shadow-sm" />
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 to-transparent pointer-events-none" />
-                  </div> : <div className="h-12 w-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg">
-                    <Shield className="h-7 w-7 text-white" />
+                  </div> : <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                    <Shield className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                   </div>}
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent truncate">
                     {companySettings.name}
                   </h1>
-                  {companySettings.tagline && <p className="text-sm text-gray-600">{companySettings.tagline}</p>}
+                  {companySettings.tagline && <p className="text-xs sm:text-sm text-gray-600 truncate">{companySettings.tagline}</p>}
                 </div>
               </div>
-              <div className="hidden lg:block w-px h-12 bg-gradient-to-b from-transparent via-gray-300 to-transparent" />
+              <div className="hidden lg:block w-px h-12 bg-gradient-to-b from-transparent via-gray-300 to-transparent flex-shrink-0" />
               <div className="hidden lg:block">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
@@ -136,10 +136,10 @@ function EmployeeDashboardContent() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={handleSignOut} className="hover:bg-red-50 hover:border-red-200 hover:text-red-700">
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <Button variant="outline" onClick={handleSignOut} className="hover:bg-red-50 hover:border-red-200 hover:text-red-700 text-xs sm:text-sm px-2 sm:px-4">
+                <LogOut className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sign Out</span>
               </Button>
             </div>
           </div>
@@ -147,15 +147,15 @@ function EmployeeDashboardContent() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-6 space-y-8">
+      <main className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-8 text-white shadow-2xl">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-6 sm:p-8 text-white shadow-2xl">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50" />
           <div className="relative z-10">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold mb-2">Dashboard Overview</h2>
-                <p className="text-white/90 text-lg">Track your progress and stay compliant</p>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Dashboard Overview</h2>
+                <p className="text-white/90 text-base sm:text-lg">Track your progress and stay compliant</p>
               </div>
               <div className="hidden md:flex items-center gap-4">
                 <div className="text-right">
@@ -292,19 +292,19 @@ function EmployeeDashboardContent() {
         animationDelay: '0.5s'
       }}>
           <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <CardTitle className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Calendar className="w-5 h-5 text-white" />
                 </div>
                 Leave Management
               </CardTitle>
-              <div className="flex gap-3">
-                <Button onClick={() => setShowLeaveDialog(true)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <Button onClick={() => setShowLeaveDialog(true)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200 text-sm flex-1 sm:flex-none">
                   <Calendar className="w-4 h-4 mr-2" />
                   Request Leave
                 </Button>
-                <Button variant="outline" onClick={() => navigate('/employee-statements')} className="hover:bg-primary/5 hover:border-primary/20">
+                <Button variant="outline" onClick={() => navigate('/employee-statements')} className="hover:bg-primary/5 hover:border-primary/20 text-sm flex-1 sm:flex-none">
                   <FileText className="w-4 h-4 mr-2" />
                   Statements
                 </Button>
