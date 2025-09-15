@@ -47,7 +47,7 @@ export function useActivitySync() {
     let activityTimeout: NodeJS.Timeout;
     const throttledActivity = () => {
       clearTimeout(activityTimeout);
-      activityTimeout = setTimeout(handleUserActivity, 1000); // Throttle to once per second
+      activityTimeout = setTimeout(handleUserActivity, 500); // Throttle to once per half second
     };
 
     // Window focus/blur events
