@@ -257,14 +257,14 @@ const handleDownloadPdf = async () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-primary/5 to-secondary/5">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <CardTitle className="text-2xl text-green-700">Application Submitted!</CardTitle>
+      <div className="min-h-screen flex items-center justify-center p-3 sm:p-6 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <Card className="w-full max-w-md mx-4 sm:mx-auto shadow-lg">
+          <CardHeader className="text-center pb-4">
+            <CheckCircle className="w-12 h-12 sm:w-16 sm:h-16 text-green-500 mx-auto mb-4" />
+            <CardTitle className="text-xl sm:text-2xl text-green-700">Application Submitted!</CardTitle>
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground">
+          <CardContent className="text-center space-y-4 p-4 sm:p-6">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Thank you for your interest in joining our team. We have received your application and will review it shortly.
             </p>
             <Button onClick={() => {
@@ -273,7 +273,7 @@ const handleDownloadPdf = async () => {
               setCurrentStep(1);
               setIsSubmitted(false);
               window.location.href = '/';
-            }} className="w-full">
+            }} className="w-full min-h-[44px]">
               Return to Homepage
             </Button>
           </CardContent>
@@ -382,36 +382,37 @@ const handleDownloadPdf = async () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-3 sm:p-6">
       <div className="max-w-2xl mx-auto">
         {/* Company Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
             {companySettings.logo ? (
               <img
                 src={companySettings.logo}
                 alt={companySettings.name}
-                className="h-12 w-12 object-contain"
+                className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
                 loading="lazy"
                 decoding="async"
               />
             ) : (
-              <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Shield className="h-8 w-8 text-primary" />
+              <div className="h-10 w-10 sm:h-12 sm:w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               </div>
             )}
-            <div className="text-left">
-              <div className="text-2xl font-bold">{companySettings.name}</div>
-              <p className="text-muted-foreground">{companySettings.tagline}</p>
+            <div className="text-center sm:text-left">
+              <div className="text-xl sm:text-2xl font-bold">{companySettings.name}</div>
+              <p className="text-sm sm:text-base text-muted-foreground">{companySettings.tagline}</p>
             </div>
           </div>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex flex-wrap gap-2 mb-4">
             <Button
               variant="ghost"
               onClick={() => window.history.back()}
+              className="text-sm sm:text-base"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Homepage
@@ -419,24 +420,24 @@ const handleDownloadPdf = async () => {
           </div>
           
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold mb-2">Job Application</h1>
-            <p className="text-muted-foreground">Step {currentStep} of {totalSteps}: {getStepTitle()}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Job Application</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Step {currentStep} of {totalSteps}: {getStepTitle()}</p>
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-secondary/20 rounded-full h-2 mb-8">
+          <div className="w-full bg-secondary/20 rounded-full h-3 sm:h-2 mb-6 sm:mb-8">
             <div 
-              className="bg-primary h-2 rounded-full transition-all duration-300"
+              className="bg-primary h-3 sm:h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{getStepTitle()}</CardTitle>
+        <Card className="shadow-lg">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg sm:text-xl">{getStepTitle()}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             {renderStep()}
             
             {/* Invisible honeypot field */}
@@ -453,28 +454,31 @@ const handleDownloadPdf = async () => {
               />
             </div>
             
-            <div className="flex justify-between mt-8">
+            <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6 sm:mt-8">
               <Button
                 variant="outline"
                 onClick={prevStep}
                 disabled={currentStep === 1}
+                className="w-full sm:w-auto min-h-[44px]"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Previous
               </Button>
-          <div className="flex gap-2">
-            {currentStep === totalSteps ? (
-              <Button
-                onClick={handleSubmit}
-                disabled={!canProceed() || isSubmitting}
-                className="min-w-[120px]"
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Application'}
-              </Button>
-            ) : (
+              <div className="flex gap-2">
+                {currentStep === totalSteps ? (
+                  <Button
+                    onClick={() => setIsReviewOpen(true)}
+                    disabled={!canProceed() || isSubmitting}
+                    className="w-full sm:w-auto min-h-[44px]"
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Review & Submit'}
+                    <CheckCircle className="w-4 h-4 ml-2" />
+                  </Button>
+                ) : (
                   <Button
                     onClick={nextStep}
                     disabled={!canProceed()}
+                    className="w-full sm:w-auto min-h-[44px]"
                   >
                     Next
                     <ArrowRight className="w-4 h-4 ml-2" />

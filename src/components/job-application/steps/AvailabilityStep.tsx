@@ -95,17 +95,18 @@ export function AvailabilityStep({ data, updateData }: AvailabilityStepProps) {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
               {DAYS_OF_WEEK.map(day => (
-                <div key={`${timeSlot.id}-${day}`} className="flex items-center space-x-2">
+                <div key={`${timeSlot.id}-${day}`} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                   <Checkbox
                     id={`${timeSlot.id}-${day}`}
                     checked={data.timeSlots?.[timeSlot.id]?.includes(day) || false}
                     onCheckedChange={(checked) => handleDayToggle(timeSlot.id, day, checked === true)}
+                    className="h-5 w-5"
                   />
                   <Label 
                     htmlFor={`${timeSlot.id}-${day}`} 
-                    className="text-sm font-medium cursor-pointer"
+                    className="text-sm font-medium cursor-pointer flex-1 min-h-[44px] flex items-center"
                   >
                     {day}
                   </Label>
@@ -120,7 +121,7 @@ export function AvailabilityStep({ data, updateData }: AvailabilityStepProps) {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <Label htmlFor="hoursPerWeek">How many hours per week are you willing to work? *</Label>
           <Input

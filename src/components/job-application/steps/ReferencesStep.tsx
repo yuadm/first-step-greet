@@ -70,7 +70,7 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
           <CardTitle>{getReferenceType('reference1')} 1 ** All fields are required</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <Label>Name *</Label>
               <Input
@@ -165,7 +165,7 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
           <CardTitle>{getReferenceType('reference2')} 2 ** All fields are required</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <Label>Name *</Label>
               <Input

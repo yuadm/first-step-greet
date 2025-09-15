@@ -67,7 +67,7 @@ export function EmergencyContactStep({ data, updateData }: EmergencyContactStepP
         <p className="text-muted-foreground mb-6">Please provide details of someone we can contact in case of emergency.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <Label htmlFor="emergencyFullName">Full Name *</Label>
           <Input
@@ -82,7 +82,7 @@ export function EmergencyContactStep({ data, updateData }: EmergencyContactStepP
         <div>
           <Label htmlFor="relationship">Relationship *</Label>
           <Select value={data.relationship} onValueChange={(value) => updateData('relationship', value)}>
-            <SelectTrigger>
+            <SelectTrigger className="min-h-[44px]">
               <SelectValue placeholder="Relationship" />
             </SelectTrigger>
             <SelectContent>
@@ -111,7 +111,7 @@ export function EmergencyContactStep({ data, updateData }: EmergencyContactStepP
         <div>
           <Label htmlFor="howDidYouHear">How did you Hear about us? *</Label>
           <Select value={data.howDidYouHear} onValueChange={(value) => updateData('howDidYouHear', value)}>
-            <SelectTrigger>
+            <SelectTrigger className="min-h-[44px]">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
