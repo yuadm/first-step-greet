@@ -137,10 +137,6 @@ function EmployeeDashboardContent() {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
-              <Button variant="outline" onClick={() => navigate('/employee-statements')} className="hidden sm:flex items-center gap-2 hover:bg-primary/5 hover:border-primary/20">
-                <FileText className="w-4 h-4" />
-                Statements
-              </Button>
               <Button variant="outline" onClick={handleSignOut} className="hover:bg-red-50 hover:border-red-200 hover:text-red-700">
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
@@ -308,10 +304,15 @@ function EmployeeDashboardContent() {
                   <Calendar className="w-4 h-4 mr-2" />
                   Request Leave
                 </Button>
-                <Button variant="outline" onClick={() => setShowDocumentDialog(true)} className="hover:bg-primary/5 hover:border-primary/20">
+                <Button variant="outline" onClick={() => navigate('/employee-statements')} className="hover:bg-primary/5 hover:border-primary/20">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Statements
+                </Button>
+                {/* Hidden Upload Document Button - keeping for future use */}
+                {/* <Button variant="outline" onClick={() => setShowDocumentDialog(true)} className="hover:bg-primary/5 hover:border-primary/20">
                   <FileText className="w-4 h-4 mr-2" />
                   Upload Document
-                </Button>
+                </Button> */}
               </div>
             </div>
           </CardHeader>
