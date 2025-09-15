@@ -369,7 +369,7 @@ Please complete and return this reference as soon as possible.`;
       {/* Applications Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Applications ({filteredApplications.length})</CardTitle>
+          <CardTitle>Applications</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
