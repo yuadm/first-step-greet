@@ -216,6 +216,13 @@ export function useEmployeeCompliance(employeeId: string | undefined): Complianc
     };
 
     fetchComplianceData();
+    
+    // Set up auto-refresh every 2 minutes
+    const interval = setInterval(() => {
+      fetchComplianceData();
+    }, 2 * 60 * 1000); // 2 minutes
+
+    return () => clearInterval(interval);
   }, [employeeId]);
 
   return data;

@@ -41,6 +41,13 @@ function EmployeeDashboardContent() {
     }
     if (employee) {
       fetchLeaveRequests();
+      
+      // Set up auto-refresh every 2 minutes
+      const interval = setInterval(() => {
+        fetchLeaveRequests();
+      }, 2 * 60 * 1000); // 2 minutes
+
+      return () => clearInterval(interval);
     }
   }, [employee, loading, navigate]);
   const fetchLeaveRequests = async () => {
