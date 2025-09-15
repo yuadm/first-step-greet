@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useEmployeeAuth } from '@/contexts/EmployeeAuthContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,17 +9,7 @@ import { LeaveRequestDialog } from '@/components/employee/LeaveRequestDialog';
 import { DocumentUploadDialog } from '@/components/employee/DocumentUploadDialog';
 import { ComplianceOverview } from '@/components/employee/ComplianceOverview';
 import { CompanyProvider, useCompany } from '@/contexts/CompanyContext';
-interface LeaveRequest {
-  id: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-  notes: string;
-  leave_type: {
-    name: string;
-  };
-  created_at: string;
-}
+import { useEmployeeLeaves } from '@/hooks/queries/useEmployeeDashboardQueries';
 function EmployeeDashboardContent() {
   const {
     employee,
@@ -31,7 +20,14 @@ function EmployeeDashboardContent() {
     companySettings
   } = useCompany();
   const navigate = useNavigate();
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  
+  // Use React Query hooks for data fetching with auto-sync
+  const { 
+    data: leaveRequests = [], 
+    isLoading: leavesLoading, 
+    refetch: refetchLeaves 
+  } = useEmployeeLeaves(employee?.id || '');
+  
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
   useEffect(() => {
@@ -39,36 +35,7 @@ function EmployeeDashboardContent() {
       navigate('/employee-login');
       return;
     }
-    if (employee) {
-      fetchLeaveRequests();
-      
-      // Set up auto-refresh every 2 minutes
-      const interval = setInterval(() => {
-        fetchLeaveRequests();
-      }, 2 * 60 * 1000); // 2 minutes
-
-      return () => clearInterval(interval);
-    }
   }, [employee, loading, navigate]);
-  const fetchLeaveRequests = async () => {
-    if (!employee) return;
-    try {
-      // Fetch leave requests
-      const {
-        data: leaveData,
-        error: leaveError
-      } = await supabase.from('leave_requests').select(`
-          *,
-          leave_type:leave_types(name)
-        `).eq('employee_id', employee.id).order('created_at', {
-        ascending: false
-      });
-      if (leaveError) throw leaveError;
-      setLeaveRequests(leaveData || []);
-    } catch (error) {
-      console.error('Error fetching leave requests:', error);
-    }
-  };
   const handleSignOut = async () => {
     await signOut();
     navigate('/employee-login');
@@ -97,7 +64,7 @@ function EmployeeDashboardContent() {
         return <Clock className="w-4 h-4" />;
     }
   };
-  if (loading) {
+  if (loading || leavesLoading) {
     return <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>
       </div>;
@@ -363,7 +330,7 @@ function EmployeeDashboardContent() {
       </main>
 
       {/* Dialogs */}
-      <LeaveRequestDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog} employeeId={employee.id} onSuccess={fetchLeaveRequests} />
+      <LeaveRequestDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog} employeeId={employee.id} onSuccess={refetchLeaves} />
       
       <DocumentUploadDialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog} employeeId={employee.id} />
     </div>;
