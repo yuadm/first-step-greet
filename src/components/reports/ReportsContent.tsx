@@ -42,17 +42,21 @@ export function ReportsContent() {
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
   const [selectedQuarters, setSelectedQuarters] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
+  const [complianceTypes, setComplianceTypes] = useState<ComplianceType[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<{[key: string]: string[]}>({});
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false);
   const { toast } = useToast();
 
-  // React Query hooks
-  const { data: branches = [], error: branchesError } = useReportsBranches();
-  const { data: leaveTypes = [], error: leaveTypesError } = useReportsLeaveTypes();
-  const { data: documentTypes = [], error: documentTypesError } = useReportsDocumentTypes();
-  const { data: complianceTypes = [], error: complianceTypesError } = useReportsComplianceTypes();
+  useEffect(() => {
+    fetchBranches();
+    fetchLeaveTypes();
+    fetchDocumentTypes();
+    fetchComplianceTypes();
+  }, []);
 
-  // Remove old fetch functions since we now use React Query
   // Re-initialize columns when document types change (for dynamic Documents Report)
   useEffect(() => {
     if (selectedReport === 'documents' && documentTypes.length > 0) {
@@ -60,7 +64,76 @@ export function ReportsContent() {
     }
   }, [documentTypes, selectedReport]);
 
-  // Remove old fetch functions - data now comes from React Query hooks
+  const fetchBranches = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setBranches(data || []);
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+      toast({
+        title: "Error loading branches",
+        description: "Could not fetch branch data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchLeaveTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('leave_types')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setLeaveTypes(data || []);
+    } catch (error) {
+      console.error('Error fetching leave types:', error);
+      toast({
+        title: "Error loading leave types",
+        description: "Could not fetch leave type data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchDocumentTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('document_types')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setDocumentTypes(data || []);
+    } catch (error) {
+      console.error('Error fetching document types:', error);
+    }
+  };
+
+  const fetchComplianceTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('compliance_types')
+        .select('id, name, frequency')
+        .order('name');
+
+      if (error) throw error;
+      setComplianceTypes(data || []);
+    } catch (error) {
+      console.error('Error fetching compliance types:', error);
+      toast({
+        title: "Error loading compliance types",
+        description: "Could not fetch compliance type data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const reportTypes = [
     {
