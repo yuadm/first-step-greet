@@ -318,36 +318,36 @@ function EmployeeDashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {leaveRequests.length === 0 ? <div className="text-center py-12">
+                {leaveRequests.length === 0 ? <div className="text-center py-12">
                   <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Calendar className="w-8 h-8 text-gray-400" />
                   </div>
                   <p className="text-gray-500 mb-2">No leave requests found</p>
                   <p className="text-sm text-gray-400">Your leave requests will appear here</p>
-                </div> : leaveRequests.map((leave, index) => <div key={leave.id} className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200" style={{
+                </div> : leaveRequests.map((leave, index) => <div key={leave.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200" style={{
               animationDelay: `${0.1 * index}s`
             }}>
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
                         {getStatusIcon(leave.status)}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-semibold text-gray-900">{leave.leave_type.name}</span>
-                          <Badge variant={getStatusColor(leave.status)} className="flex items-center gap-1 px-3 py-1">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                          <span className="font-semibold text-gray-900 truncate">{leave.leave_type.name}</span>
+                          <Badge variant={getStatusColor(leave.status)} className="flex items-center gap-1 px-3 py-1 w-fit">
                             {getStatusIcon(leave.status)}
-                            {leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}
+                            <span className="text-xs">{leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}</span>
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-1">
-                          <span>{new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}</span>
-                          <span>•</span>
-                          <span>Duration: {Math.ceil((new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} days</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-600 mb-1">
+                          <span className="truncate">{new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}</span>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="text-xs sm:text-sm">Duration: {Math.ceil((new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} days</span>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          This leave was applied on {new Date(leave.created_at).toLocaleDateString()}
+                        <div className="text-xs sm:text-sm text-gray-500">
+                          Applied on {new Date(leave.created_at).toLocaleDateString()}
                         </div>
-                        {leave.notes && <p className="text-sm text-gray-500 mt-2 italic">{leave.notes}</p>}
+                        {leave.notes && <p className="text-xs sm:text-sm text-gray-500 mt-2 italic truncate">{leave.notes}</p>}
                       </div>
                     </div>
                   </div>)}
