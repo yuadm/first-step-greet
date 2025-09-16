@@ -449,12 +449,19 @@ export function ClientCompliancePeriodView({
         if (record.client_spot_check_records && record.client_spot_check_records.length > 0) {
           const spotCheckRecord = record.client_spot_check_records[0];
           
-           // Transform the data to match the client PDF format
-           const transformedObservations = Array.isArray((spotCheckRecord as any)?.observations) 
-             ? (spotCheckRecord as any).observations.map((obs: any) => ({
-                 label: obs.label || 'Unknown Question',
-                 value: obs.value || 'Not Rated', 
-                 comments: obs.comments || ''
+           // Transform observations (handle array, stringified JSON, or object map)
+           let rawObs: any = (spotCheckRecord as any)?.observations;
+           if (typeof rawObs === 'string') {
+             try { rawObs = JSON.parse(rawObs); } catch { rawObs = []; }
+           }
+           if (rawObs && !Array.isArray(rawObs) && typeof rawObs === 'object') {
+             rawObs = Object.values(rawObs);
+           }
+           const transformedObservations = Array.isArray(rawObs)
+             ? rawObs.map((obs: any) => ({
+                 label: obs?.label || 'Unknown Question',
+                 value: obs?.value || 'Not Rated',
+                 comments: obs?.comments || ''
                }))
              : [];
              
@@ -892,28 +899,40 @@ export function ClientCompliancePeriodView({
                                                   return;
                                                 }
                                                 
-                                                // Try to fetch spot check data first (regardless of completion method)
-                                                const { data: spotCheckData, error } = await supabase
-                                                  .from('client_spot_check_records')
-                                                  .select('*')
-                                                  .eq('compliance_record_id', record.id)
-                                                  .maybeSingle();
-                                                
-                                                let pdfData;
-                                                
-                                                 if (spotCheckData && !error && Array.isArray(spotCheckData.observations)) {
-                                                   // Use spot check data if available with proper observations
-                                                   const transformedObservations = spotCheckData.observations.map((obs: any) => ({
-                                                     label: obs.label || 'Unknown Question',
-                                                     value: obs.value || 'Not Rated',
-                                                     comments: obs.comments || ''
-                                                   }));
-                                                   
+                                                 // Fetch record with nested spot check to avoid join issues
+                                                 const { data: recordWithSpot, error: nestedError } = await supabase
+                                                   .from('client_compliance_period_records')
+                                                   .select('id, completion_date, clients(name), client_spot_check_records(*)')
+                                                   .eq('id', record.id)
+                                                   .maybeSingle();
+                                                 
+                                                 let pdfData;
+                                                 let observationsArray: any[] = [];
+                                                 const sc: any = recordWithSpot?.client_spot_check_records?.[0];
+                                                 
+                                                 if (!nestedError && sc) {
+                                                   let obs: any = sc.observations;
+                                                   if (typeof obs === 'string') {
+                                                     try { obs = JSON.parse(obs); } catch { obs = []; }
+                                                   }
+                                                   if (obs && !Array.isArray(obs) && typeof obs === 'object') {
+                                                     obs = Object.values(obs);
+                                                   }
+                                                   if (Array.isArray(obs)) {
+                                                     observationsArray = obs.map((o: any) => ({
+                                                       label: o?.label || 'Unknown Question',
+                                                       value: o?.value || 'Not Rated',
+                                                       comments: o?.comments || ''
+                                                     }));
+                                                   }
+                                                 }
+                                                 
+                                                 if (observationsArray.length > 0) {
                                                    pdfData = {
-                                                     serviceUserName: spotCheckData.service_user_name || client.name || 'Unknown',
-                                                     date: spotCheckData.date || record.completion_date || '',
-                                                     completedBy: spotCheckData.performed_by || 'Not specified',
-                                                     observations: transformedObservations
+                                                     serviceUserName: sc?.service_user_name || client.name || 'Unknown',
+                                                     date: sc?.date || record.completion_date || '',
+                                                     completedBy: sc?.performed_by || 'Not specified',
+                                                     observations: observationsArray,
                                                    };
                                                  } else {
                                                    // Create basic PDF with compliance record data
