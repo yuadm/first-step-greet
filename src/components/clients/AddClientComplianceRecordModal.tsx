@@ -174,6 +174,73 @@ export function AddClientComplianceRecordModal({
 
   const { minDate, maxDate } = getValidDateRange();
 
+  // Handle spot check submission directly with data
+  const handleSubmitWithSpotCheck = async (spotCheckData: ClientSpotCheckFormData) => {
+    if (!selectedClientId || !selectedPeriod) {
+      toast({
+        title: "Missing information",
+        description: "Please select a client and period.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Save spot check form
+      const observationsPayload: any = spotCheckData.observations
+        ? JSON.parse(JSON.stringify(spotCheckData.observations))
+        : null;
+
+      await supabase.from('client_spot_check_records').insert({
+        service_user_name: spotCheckData.serviceUserName,
+        care_workers: spotCheckData.completedBy,
+        date: spotCheckData.date,
+        time: new Date().toTimeString().slice(0, 5), // Default time
+        performed_by: spotCheckData.completedBy,
+        observations: observationsPayload,
+        client_id: selectedClientId,
+        compliance_record_id: null, // Will be updated after compliance record is created
+      });
+
+      // Create the compliance record
+      const { error: recordError } = await supabase.from('client_compliance_period_records').insert({
+        client_compliance_type_id: complianceTypeId,
+        client_id: selectedClientId,
+        period_identifier: selectedPeriod,
+        status: 'completed',
+        completion_date: spotCheckData.date,
+        completion_method: 'spotcheck',
+      });
+
+      if (recordError) throw recordError;
+
+      toast({
+        title: "Success",
+        description: "Spot check record has been saved successfully.",
+      });
+
+      onRecordAdded();
+      setIsOpen(false);
+      // Reset form state
+      setCompletionDate(new Date());
+      setNotes('');
+      setRecordType('date');
+      setNewText('');
+      setSpotcheckData(null);
+    } catch (error) {
+      console.error('Error saving spot check:', error);
+      toast({
+        title: "Error",
+        description: "Could not save the spot check record. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -208,36 +275,19 @@ export function AddClientComplianceRecordModal({
         return;
       }
     } else if (recordType === 'spotcheck') {
-      if (!spotcheckData) {
-        toast({
-          title: "Spot check incomplete",
-          description: "Please complete the spot check form.",
-          variant: "destructive",
-        });
-        return;
-      }
+      // For spot check, this validation should not run since we handle it directly
+      toast({
+        title: "Spot check form required",
+        description: "Please complete the spot check form first.",
+        variant: "destructive",
+      });
+      return;
     }
 
     setIsLoading(true);
 
     try {
-      // Save spot check form when provided
-      if (recordType === 'spotcheck' && spotcheckData) {
-        const observationsPayload: any = spotcheckData.observations
-          ? JSON.parse(JSON.stringify(spotcheckData.observations))
-          : null;
-
-        await supabase.from('client_spot_check_records').insert({
-          service_user_name: spotcheckData.serviceUserName,
-          care_workers: spotcheckData.completedBy,
-          date: spotcheckData.date,
-          time: new Date().toTimeString().slice(0, 5), // Default time
-          performed_by: spotcheckData.completedBy,
-          observations: observationsPayload,
-          client_id: selectedClientId,
-          compliance_record_id: null, // Will be updated after compliance record is created
-        });
-      }
+      // Spot check is handled separately, this should not be reached for spot checks
 
       const recordData = {
         client_id: selectedClientId,
@@ -246,12 +296,9 @@ export function AddClientComplianceRecordModal({
         completion_date:
           recordType === 'date'
             ? format(completionDate, 'yyyy-MM-dd')
-            : recordType === 'spotcheck'
-              ? (spotcheckData?.date || format(new Date(), 'yyyy-MM-dd'))
-              : newText,
+            : newText,
         completion_method:
-          recordType === 'date' ? 'date_entry' : 
-          recordType === 'spotcheck' ? 'spotcheck' : 'text_entry',
+          recordType === 'date' ? 'date_entry' : 'text_entry',
         notes: notes.trim() || null,
         status: 'completed',
         created_at: new Date().toISOString(),
@@ -473,16 +520,11 @@ export function AddClientComplianceRecordModal({
             setSpotcheckData(null);
           }
         }}
-        onSubmit={(data) => {
+        onSubmit={async (data) => {
           setSpotcheckData(data);
           setSpotcheckOpen(false);
-          // Automatically submit the form when spot check is completed
-          setTimeout(() => {
-            const submitButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
-            if (submitButton) {
-              submitButton.click();
-            }
-          }, 100);
+          // Directly call submit with the spot check data
+          await handleSubmitWithSpotCheck(data);
         }}
         periodIdentifier={selectedPeriod}
         frequency={frequency}
