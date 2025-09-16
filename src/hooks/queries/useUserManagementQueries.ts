@@ -119,7 +119,7 @@ export function useUserManagementActions() {
     mutationFn: async (userId: string) => {
       const { data: { session } } = await supabase.auth.getSession();
       
-      const response = await fetch(`https://vfzyodedgtefvxcrqdtc.supabase.co/functions/v1/admin-delete-user`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-delete-user`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
@@ -159,7 +159,7 @@ export function useUserManagementActions() {
     mutationFn: async ({ userId, password }: { userId: string; password: string }) => {
       const { data: { session } } = await supabase.auth.getSession();
       
-      const response = await fetch(`https://vfzyodedgtefvxcrqdtc.supabase.co/functions/v1/admin-reset-password`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
