@@ -444,43 +444,80 @@ export function ClientCompliancePeriodView({
 
       let downloadCount = 0;
 
-      // Generate PDF for each completed record
-      for (const record of periodRecords) {
-        if (record.client_spot_check_records && record.client_spot_check_records.length > 0) {
-          const spotCheckRecord = record.client_spot_check_records[0];
-          
-           // Transform observations (handle array, stringified JSON, or object map)
-           let rawObs: any = (spotCheckRecord as any)?.observations;
-           if (typeof rawObs === 'string') {
-             try { rawObs = JSON.parse(rawObs); } catch { rawObs = []; }
+       for (const record of periodRecords) {
+         // Prefer nested spot check, but fall back to client/date-range lookup when missing
+         let sc: any = (record as any)?.client_spot_check_records?.[0];
+ 
+         // Helper to parse observations stored as JSON text/array/object map
+         const parseObs = (raw: any) => {
+           let obs: any = raw;
+           if (typeof obs === 'string') {
+             try { obs = JSON.parse(obs); } catch { obs = []; }
            }
-           if (rawObs && !Array.isArray(rawObs) && typeof rawObs === 'object') {
-             rawObs = Object.values(rawObs);
+           if (obs && !Array.isArray(obs) && typeof obs === 'object') {
+             obs = Object.values(obs);
            }
-           const transformedObservations = Array.isArray(rawObs)
-             ? rawObs.map((obs: any) => ({
-                 label: obs?.label || 'Unknown Question',
-                 value: obs?.value || 'Not Rated',
-                 comments: obs?.comments || ''
+           return Array.isArray(obs)
+             ? obs.map((o: any) => ({
+                 label: o?.label || 'Unknown Question',
+                 value: o?.value || 'Not Rated',
+                 comments: o?.comments || ''
                }))
              : [];
-             
+         };
+ 
+         // Fallback query when no nested link or empty observations
+         let transformedObservations: any[] = parseObs(sc?.observations);
+         if (!sc || transformedObservations.length === 0) {
+           const periodId = period.period_identifier;
+           const freq = (frequency || '').toLowerCase();
+           const toISO = (d: Date) => d.toISOString().slice(0,10);
+           let start: string; let end: string;
+           if (freq === 'quarterly' && /\d{4}-Q[1-4]/.test(periodId)) {
+             const [y, qStr] = periodId.split('-Q');
+             const year = parseInt(y, 10); const q = parseInt(qStr, 10);
+             const mStart = (q - 1) * 3; // 0-indexed
+             start = toISO(new Date(year, mStart, 1));
+             end = toISO(new Date(year, mStart + 3, 0));
+           } else if (freq === 'monthly' && /\d{4}-\d{2}/.test(periodId)) {
+             const [y, m] = periodId.split('-');
+             const year = parseInt(y, 10); const month = parseInt(m, 10) - 1;
+             start = toISO(new Date(year, month, 1));
+             end = toISO(new Date(year, month + 1, 0));
+           } else {
+             const year = parseInt(periodId.slice(0,4), 10);
+             start = toISO(new Date(year, 0, 1));
+             end = toISO(new Date(year, 11, 31));
+           }
+           const { data: fallbackSC } = await supabase
+             .from('client_spot_check_records')
+             .select('*')
+             .eq('client_id', record.client_id)
+             .gte('date', start)
+             .lte('date', end)
+             .order('date', { ascending: false })
+             .maybeSingle();
+           if (fallbackSC) {
+             sc = fallbackSC;
+             transformedObservations = parseObs(fallbackSC.observations);
+           }
+         }
+ 
+         if (sc && transformedObservations.length > 0) {
            const pdfData = {
-             serviceUserName: (spotCheckRecord as any)?.service_user_name || record.clients?.name || 'Unknown',
-             date: (spotCheckRecord as any)?.date || record.completion_date || '',
-             completedBy: (spotCheckRecord as any)?.performed_by || 'Not specified',
-             observations: transformedObservations
+             serviceUserName: sc?.service_user_name || record.clients?.name || 'Unknown',
+             date: sc?.date || record.completion_date || '',
+             completedBy: sc?.performed_by || 'Not specified',
+             observations: transformedObservations,
            };
-
-          // Generate PDF using client-specific generator
-          await generateClientSpotCheckPdf(pdfData, {
-            name: companySettings?.name,
-            logo: companySettings?.logo
-          });
-          
-          downloadCount++;
-        }
-      }
+ 
+           await generateClientSpotCheckPdf(pdfData, {
+             name: companySettings?.name,
+             logo: companySettings?.logo
+           });
+           downloadCount++;
+         }
+       }
 
       if (downloadCount === 0) {
         toast({
@@ -899,7 +936,7 @@ export function ClientCompliancePeriodView({
                                                   return;
                                                 }
                                                 
-                                                 // Fetch record with nested spot check to avoid join issues
+                                                 // Try nested spot check first
                                                  const { data: recordWithSpot, error: nestedError } = await supabase
                                                    .from('client_compliance_period_records')
                                                    .select('id, completion_date, clients(name), client_spot_check_records(*)')
@@ -908,22 +945,63 @@ export function ClientCompliancePeriodView({
                                                  
                                                  let pdfData;
                                                  let observationsArray: any[] = [];
-                                                 const sc: any = recordWithSpot?.client_spot_check_records?.[0];
+                                                 let sc: any = recordWithSpot?.client_spot_check_records?.[0];
                                                  
-                                                 if (!nestedError && sc) {
-                                                   let obs: any = sc.observations;
+                                                 // Helper to parse observation JSON stored as text/array/object
+                                                 const parseObs = (raw: any) => {
+                                                   let obs: any = raw;
                                                    if (typeof obs === 'string') {
                                                      try { obs = JSON.parse(obs); } catch { obs = []; }
                                                    }
                                                    if (obs && !Array.isArray(obs) && typeof obs === 'object') {
                                                      obs = Object.values(obs);
                                                    }
-                                                   if (Array.isArray(obs)) {
-                                                     observationsArray = obs.map((o: any) => ({
-                                                       label: o?.label || 'Unknown Question',
-                                                       value: o?.value || 'Not Rated',
-                                                       comments: o?.comments || ''
-                                                     }));
+                                                   return Array.isArray(obs)
+                                                     ? obs.map((o: any) => ({
+                                                         label: o?.label || 'Unknown Question',
+                                                         value: o?.value || 'Not Rated',
+                                                         comments: o?.comments || ''
+                                                       }))
+                                                     : [];
+                                                 };
+                                                 
+                                                 if (!nestedError && sc) {
+                                                   observationsArray = parseObs(sc.observations);
+                                                 }
+                                                 
+                                                 // Fallback: fetch by client_id/date range when compliance_record_id is null
+                                                 if (!sc || observationsArray.length === 0) {
+                                                   const periodId = selectedPeriod;
+                                                   const freq = (frequency || '').toLowerCase();
+                                                   const toISO = (d: Date) => d.toISOString().slice(0,10);
+                                                   let start: string; let end: string;
+                                                   if (freq === 'quarterly' && /\d{4}-Q[1-4]/.test(periodId)) {
+                                                     const [y, qStr] = periodId.split('-Q');
+                                                     const year = parseInt(y, 10); const q = parseInt(qStr, 10);
+                                                     const mStart = (q - 1) * 3; // 0-indexed month
+                                                     start = toISO(new Date(year, mStart, 1));
+                                                     end = toISO(new Date(year, mStart + 3, 0)); // last day of quarter
+                                                   } else if (freq === 'monthly' && /\d{4}-\d{2}/.test(periodId)) {
+                                                     const [y, m] = periodId.split('-');
+                                                     const year = parseInt(y, 10); const month = parseInt(m, 10) - 1;
+                                                     start = toISO(new Date(year, month, 1));
+                                                     end = toISO(new Date(year, month + 1, 0));
+                                                   } else {
+                                                     const year = parseInt(periodId.slice(0,4), 10);
+                                                     start = toISO(new Date(year, 0, 1));
+                                                     end = toISO(new Date(year, 11, 31));
+                                                   }
+                                                   const { data: fallbackSC } = await supabase
+                                                     .from('client_spot_check_records')
+                                                     .select('*')
+                                                     .eq('client_id', client.id)
+                                                     .gte('date', start)
+                                                     .lte('date', end)
+                                                     .order('date', { ascending: false })
+                                                     .maybeSingle();
+                                                   if (fallbackSC) {
+                                                     sc = fallbackSC;
+                                                     observationsArray = parseObs(fallbackSC.observations);
                                                    }
                                                  }
                                                  
