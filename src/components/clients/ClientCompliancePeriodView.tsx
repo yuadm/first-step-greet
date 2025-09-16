@@ -884,7 +884,7 @@ export function ClientCompliancePeriodView({
                                                   return;
                                                 }
                                                 
-                                                // Try to fetch spot check data first
+                                                // Try to fetch spot check data first (regardless of completion method)
                                                 const { data: spotCheckData, error } = await supabase
                                                   .from('client_spot_check_records')
                                                   .select('*')
@@ -902,74 +902,12 @@ export function ClientCompliancePeriodView({
                                                     observations: Array.isArray(spotCheckData.observations) ? spotCheckData.observations as any[] : []
                                                   };
                                                 } else {
-                                                  // Try to fetch questionnaire responses
-                                                  const { data: questionnaireResponse, error: qError } = await supabase
-                                                    .from('compliance_questionnaire_responses')
-                                                    .select(`
-                                                      *,
-                                                      compliance_responses (
-                                                        *,
-                                                        compliance_questions (
-                                                          question_text,
-                                                          question_type,
-                                                          options
-                                                        )
-                                                      )
-                                                    `)
-                                                    .eq('compliance_record_id', record.id)
-                                                    .maybeSingle();
-                                                  
-                                                  let observations = [];
-                                                  
-                                                  if (questionnaireResponse && !qError && questionnaireResponse.compliance_responses) {
-                                                    // Transform questionnaire responses into observations format
-                                                    observations = questionnaireResponse.compliance_responses.map((response: any) => ({
-                                                      label: response.compliance_questions?.question_text || 'Question',
-                                                      value: response.response_value || 'No response',
-                                                      comments: response.entity_reference || ''
-                                                    }));
-                                                  }
-                                                  
-                                                  // If no questionnaire responses, try to get compliance questionnaire directly
-                                                  if (observations.length === 0) {
-                                                    const { data: complianceType } = await supabase
-                                                      .from('client_compliance_types')
-                                                      .select('questionnaire_id')
-                                                      .eq('id', complianceTypeId)
-                                                      .maybeSingle();
-                                                    
-                                                    if (complianceType?.questionnaire_id) {
-                                                      const { data: questionnaire } = await supabase
-                                                        .from('compliance_questionnaires')
-                                                        .select(`
-                                                          compliance_questionnaire_questions (
-                                                            compliance_questions (
-                                                              question_text,
-                                                              question_type,
-                                                              options
-                                                            )
-                                                          )
-                                                        `)
-                                                        .eq('id', complianceType.questionnaire_id)
-                                                        .maybeSingle();
-                                                      
-                                                      if (questionnaire?.compliance_questionnaire_questions) {
-                                                        // Show questions with no responses
-                                                        observations = questionnaire.compliance_questionnaire_questions.map((qq: any, index: number) => ({
-                                                          label: qq.compliance_questions?.question_text || `Question ${index + 1}`,
-                                                          value: 'Not answered',
-                                                          comments: 'No response provided'
-                                                        }));
-                                                      }
-                                                    }
-                                                  }
-                                                  
-                                                  // Create PDF data with actual questionnaire data or fallback
+                                                  // Create basic PDF with compliance record data
                                                   pdfData = {
                                                     serviceUserName: client.name || 'Unknown',
                                                     date: record.completion_date || new Date().toISOString().split('T')[0],
-                                                    completedBy: questionnaireResponse?.completed_by || 'System Generated',
-                                                    observations: observations.length > 0 ? observations : [{
+                                                    completedBy: 'System Generated',
+                                                    observations: [{
                                                       label: 'Compliance Status',
                                                       value: 'completed',
                                                       comments: record.notes || 'No additional notes provided.'
