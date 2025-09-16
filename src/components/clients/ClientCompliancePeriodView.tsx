@@ -449,13 +449,21 @@ export function ClientCompliancePeriodView({
         if (record.client_spot_check_records && record.client_spot_check_records.length > 0) {
           const spotCheckRecord = record.client_spot_check_records[0];
           
-          // Transform the data to match the client PDF format
-          const pdfData = {
-            serviceUserName: (spotCheckRecord as any)?.service_user_name || record.clients?.name || 'Unknown',
-            date: (spotCheckRecord as any)?.date || record.completion_date || '',
-            completedBy: (spotCheckRecord as any)?.performed_by || 'Not specified',
-            observations: Array.isArray((spotCheckRecord as any)?.observations) ? (spotCheckRecord as any).observations : []
-          };
+           // Transform the data to match the client PDF format
+           const transformedObservations = Array.isArray((spotCheckRecord as any)?.observations) 
+             ? (spotCheckRecord as any).observations.map((obs: any) => ({
+                 label: obs.label || 'Unknown Question',
+                 value: obs.value || 'Not Rated', 
+                 comments: obs.comments || ''
+               }))
+             : [];
+             
+           const pdfData = {
+             serviceUserName: (spotCheckRecord as any)?.service_user_name || record.clients?.name || 'Unknown',
+             date: (spotCheckRecord as any)?.date || record.completion_date || '',
+             completedBy: (spotCheckRecord as any)?.performed_by || 'Not specified',
+             observations: transformedObservations
+           };
 
           // Generate PDF using client-specific generator
           await generateClientSpotCheckPdf(pdfData, {
@@ -893,27 +901,33 @@ export function ClientCompliancePeriodView({
                                                 
                                                 let pdfData;
                                                 
-                                                if (spotCheckData && !error) {
-                                                  // Use spot check data if available
-                                                  pdfData = {
-                                                    serviceUserName: spotCheckData.service_user_name || client.name || 'Unknown',
-                                                    date: spotCheckData.date || record.completion_date || '',
-                                                    completedBy: spotCheckData.performed_by || 'Not specified',
-                                                    observations: Array.isArray(spotCheckData.observations) ? spotCheckData.observations as any[] : []
-                                                  };
-                                                } else {
-                                                  // Create basic PDF with compliance record data
-                                                  pdfData = {
-                                                    serviceUserName: client.name || 'Unknown',
-                                                    date: record.completion_date || new Date().toISOString().split('T')[0],
-                                                    completedBy: 'System Generated',
-                                                    observations: [{
-                                                      label: 'Compliance Status',
-                                                      value: 'completed',
-                                                      comments: record.notes || 'No additional notes provided.'
-                                                    }]
-                                                  };
-                                                }
+                                                 if (spotCheckData && !error && Array.isArray(spotCheckData.observations)) {
+                                                   // Use spot check data if available with proper observations
+                                                   const transformedObservations = spotCheckData.observations.map((obs: any) => ({
+                                                     label: obs.label || 'Unknown Question',
+                                                     value: obs.value || 'Not Rated',
+                                                     comments: obs.comments || ''
+                                                   }));
+                                                   
+                                                   pdfData = {
+                                                     serviceUserName: spotCheckData.service_user_name || client.name || 'Unknown',
+                                                     date: spotCheckData.date || record.completion_date || '',
+                                                     completedBy: spotCheckData.performed_by || 'Not specified',
+                                                     observations: transformedObservations
+                                                   };
+                                                 } else {
+                                                   // Create basic PDF with compliance record data
+                                                   pdfData = {
+                                                     serviceUserName: client.name || 'Unknown',
+                                                     date: record.completion_date || new Date().toISOString().split('T')[0],
+                                                     completedBy: 'System Generated',
+                                                     observations: [{
+                                                       label: 'Compliance Status',
+                                                       value: 'completed',
+                                                       comments: record.notes || 'No additional notes provided.'
+                                                     }]
+                                                   };
+                                                 }
                                                    
                                                 // Generate PDF using client-specific generator
                                                 await generateClientSpotCheckPdf(pdfData, {
