@@ -348,6 +348,19 @@ export function ClientCompliancePeriodView({
         return;
       }
 
+      // Check if the record was completed using a form method (spotcheck or questionnaire)
+      // If it was only date entry, don't allow form editing
+      if (complianceRecord.completion_method && 
+          complianceRecord.completion_method !== 'spotcheck' && 
+          complianceRecord.completion_method !== 'questionnaire') {
+        toast({
+          title: "No form to edit",
+          description: "This compliance record was submitted as a date entry only. No form data is available to edit.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Try to fetch existing spot check record for this compliance record
       const { data: spotCheckRecord, error } = await supabase
         .from('client_spot_check_records')
@@ -369,7 +382,8 @@ export function ClientCompliancePeriodView({
         };
         setEditingSpotCheckData(formData);
       } else {
-        // No spot check record found, create basic form data from compliance record
+        // No spot check record found but completion method was spotcheck/questionnaire
+        // This means the record exists but no detailed form data - allow creating form
         const formData = {
           serviceUserName: client.name,
           date: complianceRecord.completion_date || '',
