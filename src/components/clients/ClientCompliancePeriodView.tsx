@@ -338,6 +338,16 @@ export function ClientCompliancePeriodView({
 
       if (typeError) throw typeError;
 
+      // If no questionnaire/form is configured, just show message that no form exists
+      if (!complianceType.has_questionnaire || !complianceType.questionnaire_id) {
+        toast({
+          title: "No form configured",
+          description: "This compliance type doesn't have a form configured. Only date/text submissions are available.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Check if compliance type name includes "spot" to determine if spot check form should be used
       if (!complianceTypeName?.toLowerCase().includes('spot')) {
         toast({
@@ -367,59 +377,21 @@ export function ClientCompliancePeriodView({
       }
 
       // Now fetch the existing spot check record for this compliance record
-      let { data: spotCheckRecord, error } = await supabase
+      const { data: spotCheckRecord, error } = await supabase
         .from('client_spot_check_records')
         .select('*')
         .eq('compliance_record_id', complianceRecord.id)
         .maybeSingle();
 
-      // If no record found by compliance_record_id, try to find by client_id and date
-      if (!spotCheckRecord && complianceRecord.completion_method === 'spotcheck') {
-        const { data: fallbackRecord, error: fallbackError } = await supabase
-          .from('client_spot_check_records')
-          .select('*')
-          .eq('client_id', client.id)
-          .eq('date', complianceRecord.completion_date)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (!fallbackError && fallbackRecord) {
-          spotCheckRecord = fallbackRecord;
-        }
-      }
-
       if (error) throw error;
 
       if (spotCheckRecord) {
-        // Parse observations from JSON if needed
-        let observations = [];
-        if (spotCheckRecord.observations) {
-          try {
-            if (Array.isArray(spotCheckRecord.observations)) {
-              observations = spotCheckRecord.observations;
-            } else if (typeof spotCheckRecord.observations === 'string') {
-              observations = JSON.parse(spotCheckRecord.observations);
-            } else if (typeof spotCheckRecord.observations === 'object') {
-              observations = Object.entries(spotCheckRecord.observations).map(([key, value]: [string, any]) => ({
-                id: key,
-                label: value.label || key,
-                value: value.value || value,
-                comments: value.comments || ''
-              }));
-            }
-          } catch (e) {
-            console.error('Error parsing observations:', e);
-            observations = [];
-          }
-        }
-
         // Transform the database record to match the form data structure
         const formData = {
           serviceUserName: spotCheckRecord.service_user_name || '',
           date: spotCheckRecord.date || '',
           completedBy: spotCheckRecord.performed_by || '',
-          observations: observations
+          observations: spotCheckRecord.observations || []
         };
         setEditingSpotCheckData(formData);
       } else {
