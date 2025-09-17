@@ -8,8 +8,13 @@ export async function initializeAdminUser() {
     
     if (!user) return;
 
-    // Check if user is admin@example.com
-    if (user.email === 'admin@example.com') {
+    // Get admin email from settings
+    const { data: emailSettings } = await supabase.rpc('get_email_settings');
+    const settings = emailSettings as any;
+    const adminEmail = settings?.admin_email || 'admin@yourcompany.com';
+
+    // Check if user is the configured admin
+    if (user.email === adminEmail) {
       // Check if user already has admin role
       const { data: existingRole } = await supabase
         .from('user_roles')
@@ -30,7 +35,7 @@ export async function initializeAdminUser() {
         if (error) {
           console.error('Error creating admin role:', error);
         } else {
-          console.log('Admin role created for admin@example.com');
+          console.log(`Admin role created for ${adminEmail}`);
         }
       }
     }
