@@ -917,13 +917,14 @@ export function ClientCompliancePeriodView({
                                </TableCell>
                                <TableCell>
                                   <div className="flex items-center gap-2">
-                                    {isCompleted && record?.completion_method === 'spotcheck' && (
+                                    {isCompleted && (
                                       <>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm" 
-                                          className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
-                                          title="Download PDF"
+                                        {record?.completion_method === 'spotcheck' && (
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                            title="Download PDF"
                                             onClick={async () => {
                                               try {
                                                 const record = getClientRecordForPeriod(client.id, selectedPeriod);
@@ -935,99 +936,75 @@ export function ClientCompliancePeriodView({
                                                   });
                                                   return;
                                                 }
+
+                                                // Get spot check data for this client and period
+                                                const { data: spotCheckData, error: spotCheckError } = await supabase
+                                                  .from('client_spot_check_records')
+                                                  .select('*')
+                                                  .eq('compliance_record_id', record.id)
+                                                  .maybeSingle();
+
+                                                if (spotCheckError) {
+                                                  console.error('Error fetching spot check data:', spotCheckError);
+                                                }
+
+                                                // If no direct link, try to find by client_id and date range
+                                                let finalSpotCheckData = spotCheckData;
+                                                if (!spotCheckData) {
+                                                  // Parse period to get date range
+                                                  const periodDate = parseFloat(selectedPeriod);
+                                                  if (!isNaN(periodDate)) {
+                                                    const startDate = new Date(periodDate, 0, 1).toISOString().split('T')[0];
+                                                    const endDate = new Date(periodDate, 11, 31).toISOString().split('T')[0];
+                                                    
+                                                    const { data: fallbackData, error: fallbackError } = await supabase
+                                                      .from('client_spot_check_records')
+                                                      .select('*')
+                                                      .eq('client_id', client.id)
+                                                      .gte('date', startDate)
+                                                      .lte('date', endDate)
+                                                      .order('created_at', { ascending: false })
+                                                      .limit(1)
+                                                      .maybeSingle();
+
+                                                    if (!fallbackError && fallbackData) {
+                                                      finalSpotCheckData = fallbackData;
+                                                    }
+                                                  }
+                                                }
+
+                                                // Generate client compliance PDF
+                                                const { generateClientSpotCheckPdf } = await import('@/lib/client-spot-check-pdf');
                                                 
-                                                 // Try nested spot check first
-                                                 const { data: recordWithSpot, error: nestedError } = await supabase
-                                                   .from('client_compliance_period_records')
-                                                   .select('id, completion_date, clients(name), client_spot_check_records(*)')
-                                                   .eq('id', record.id)
-                                                   .maybeSingle();
-                                                 
-                                                 let pdfData;
-                                                 let observationsArray: any[] = [];
-                                                 let sc: any = recordWithSpot?.client_spot_check_records?.[0];
-                                                 
-                                                 // Helper to parse observation JSON stored as text/array/object
-                                                 const parseObs = (raw: any) => {
-                                                   let obs: any = raw;
-                                                   if (typeof obs === 'string') {
-                                                     try { obs = JSON.parse(obs); } catch { obs = []; }
-                                                   }
-                                                   if (obs && !Array.isArray(obs) && typeof obs === 'object') {
-                                                     obs = Object.values(obs);
-                                                   }
-                                                   return Array.isArray(obs)
-                                                     ? obs.map((o: any) => ({
-                                                         label: o?.label || 'Unknown Question',
-                                                         value: o?.value || 'Not Rated',
-                                                         comments: o?.comments || ''
-                                                       }))
-                                                     : [];
-                                                 };
-                                                 
-                                                 if (!nestedError && sc) {
-                                                   observationsArray = parseObs(sc.observations);
-                                                 }
-                                                 
-                                                 // Fallback: fetch by client_id/date range when compliance_record_id is null
-                                                 if (!sc || observationsArray.length === 0) {
-                                                   const periodId = selectedPeriod;
-                                                   const freq = (frequency || '').toLowerCase();
-                                                   const toISO = (d: Date) => d.toISOString().slice(0,10);
-                                                   let start: string; let end: string;
-                                                   if (freq === 'quarterly' && /\d{4}-Q[1-4]/.test(periodId)) {
-                                                     const [y, qStr] = periodId.split('-Q');
-                                                     const year = parseInt(y, 10); const q = parseInt(qStr, 10);
-                                                     const mStart = (q - 1) * 3; // 0-indexed month
-                                                     start = toISO(new Date(year, mStart, 1));
-                                                     end = toISO(new Date(year, mStart + 3, 0)); // last day of quarter
-                                                   } else if (freq === 'monthly' && /\d{4}-\d{2}/.test(periodId)) {
-                                                     const [y, m] = periodId.split('-');
-                                                     const year = parseInt(y, 10); const month = parseInt(m, 10) - 1;
-                                                     start = toISO(new Date(year, month, 1));
-                                                     end = toISO(new Date(year, month + 1, 0));
-                                                   } else {
-                                                     const year = parseInt(periodId.slice(0,4), 10);
-                                                     start = toISO(new Date(year, 0, 1));
-                                                     end = toISO(new Date(year, 11, 31));
-                                                   }
-                                                   const { data: fallbackSC } = await supabase
-                                                     .from('client_spot_check_records')
-                                                     .select('*')
-                                                     .eq('client_id', client.id)
-                                                     .gte('date', start)
-                                                     .lte('date', end)
-                                                     .order('date', { ascending: false })
-                                                     .maybeSingle();
-                                                   if (fallbackSC) {
-                                                     sc = fallbackSC;
-                                                     observationsArray = parseObs(fallbackSC.observations);
-                                                   }
-                                                 }
-                                                 
-                                                 if (observationsArray.length > 0) {
-                                                   pdfData = {
-                                                     serviceUserName: sc?.service_user_name || client.name || 'Unknown',
-                                                     date: sc?.date || record.completion_date || '',
-                                                     completedBy: sc?.performed_by || 'Not specified',
-                                                     observations: observationsArray,
-                                                   };
-                                                 } else {
-                                                   // Create basic PDF with compliance record data
-                                                   pdfData = {
-                                                     serviceUserName: client.name || 'Unknown',
-                                                     date: record.completion_date || new Date().toISOString().split('T')[0],
-                                                     completedBy: 'System Generated',
-                                                     observations: [{
-                                                       label: 'Compliance Status',
-                                                       value: 'completed',
-                                                       comments: record.notes || 'No additional notes provided.'
-                                                     }]
-                                                   };
-                                                 }
-                                                   
-                                                // Generate PDF using client-specific generator
-                                                await generateClientSpotCheckPdf(pdfData, {
+                                                let observations = [];
+                                                if (finalSpotCheckData?.observations) {
+                                                  try {
+                                                    // Handle different data formats
+                                                    if (Array.isArray(finalSpotCheckData.observations)) {
+                                                      observations = finalSpotCheckData.observations;
+                                                    } else if (typeof finalSpotCheckData.observations === 'string') {
+                                                      observations = JSON.parse(finalSpotCheckData.observations);
+                                                    } else if (typeof finalSpotCheckData.observations === 'object') {
+                                                      // Convert object keys to array format
+                                                      observations = Object.entries(finalSpotCheckData.observations).map(([key, value]: [string, any]) => ({
+                                                        id: key,
+                                                        label: value.label || key,
+                                                        value: value.value || value,
+                                                        comments: value.comments || ''
+                                                      }));
+                                                    }
+                                                  } catch (e) {
+                                                    console.error('Error parsing observations:', e);
+                                                    observations = [];
+                                                  }
+                                                }
+
+                                                await generateClientSpotCheckPdf({
+                                                  serviceUserName: finalSpotCheckData?.service_user_name || client.name,
+                                                  date: finalSpotCheckData?.date || '',
+                                                  completedBy: finalSpotCheckData?.performed_by || '',
+                                                  observations: observations
+                                                }, {
                                                   name: companySettings?.name,
                                                   logo: companySettings?.logo
                                                 });
@@ -1049,34 +1026,15 @@ export function ClientCompliancePeriodView({
                                           >
                                             <Download className="w-4 h-4" />
                                           </Button>
+                                        )}
                                         <Button 
                                           variant="ghost" 
                                           size="sm" 
-                                          className="h-8 w-8 p-0"
-                                          onClick={async () => {
-                                            try {
-                                              const record = getClientRecordForPeriod(client.id, selectedPeriod);
-                                              if (!record) {
-                                                toast({
-                                                  title: "No record found",
-                                                  description: "No compliance record found for this client.",
-                                                  variant: "destructive",
-                                                });
-                                                return;
-                                              }
-                                              
-                                              setSelectedClient(client);
-                                              setSelectedComplianceRecord(record);
-                                              setGenericViewDialogOpen(true);
-                                              
-                                            } catch (error) {
-                                              console.error('Error viewing client record:', error);
-                                              toast({
-                                                title: "View failed",
-                                                description: "Could not load the client record. Please try again.",
-                                                variant: "destructive",
-                                              });
-                                            }
+                                          className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                          title="View Record"
+                                          onClick={() => {
+                                            setSelectedClient(client);
+                                            setViewDialogOpen(true);
                                           }}
                                         >
                                           <Eye className="w-4 h-4" />
@@ -1084,7 +1042,8 @@ export function ClientCompliancePeriodView({
                                         <Button 
                                           variant="ghost" 
                                           size="sm" 
-                                          className="h-8 w-8 p-0"
+                                          className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                          title="Edit Record"
                                           onClick={() => {
                                             handleEditSpotCheck(client);
                                           }}
@@ -1094,16 +1053,17 @@ export function ClientCompliancePeriodView({
                                         <Button 
                                           variant="ghost" 
                                           size="sm" 
-                                          className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                          className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          title="Delete Record"
                                           onClick={() => {
                                             setSelectedClient(client);
                                             setDeleteDialogOpen(true);
                                           }}
                                         >
                                           <Trash2 className="w-4 h-4" />
-                                         </Button>
-                                       </>
-                                     )}
+                                        </Button>
+                                      </>
+                                    )}
                                      {!isCompleted && (
                                       <AddClientComplianceRecordModal
                                         clientId={client.id}
