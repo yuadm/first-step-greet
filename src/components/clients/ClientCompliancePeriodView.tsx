@@ -342,7 +342,10 @@ export function ClientCompliancePeriodView({
         .eq('period_identifier', selectedPeriod)
         .maybeSingle();
 
-      if (complianceError) throw complianceError;
+      if (complianceError) {
+        console.error('❌ Compliance record error:', complianceError);
+        throw complianceError;
+      }
 
       console.log('📄 Compliance record:', complianceRecord);
 
@@ -356,18 +359,21 @@ export function ClientCompliancePeriodView({
       }
 
       // Try to fetch existing spot check record for this compliance record
-      const { data: spotCheckRecord, error } = await supabase
+      const { data: spotCheckRecord, error: spotCheckError } = await supabase
         .from('client_spot_check_records')
         .select('*')
         .eq('compliance_record_id', complianceRecord.id)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        throw error;
+      if (spotCheckError && spotCheckError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        console.error('❌ Spot check record error:', spotCheckError);
+        throw spotCheckError;
       }
 
       console.log('🎯 Spot check record:', spotCheckRecord);
 
+      let formData;
+      
       if (spotCheckRecord) {
         // Transform the database record to match the form data structure
         let observations = [];
@@ -388,33 +394,34 @@ export function ClientCompliancePeriodView({
           observations = [];
         }
 
-        const formData = {
+        formData = {
           serviceUserName: spotCheckRecord.service_user_name || client.name,
           date: spotCheckRecord.date || complianceRecord.completion_date || '',
           completedBy: spotCheckRecord.performed_by || '',
           observations: observations
         };
-        console.log('📝 Setting form data:', formData);
-        setEditingSpotCheckData(formData);
+        console.log('📝 Setting form data from spot check:', formData);
       } else {
         // No spot check record found, create basic form data from compliance record
-        const formData = {
+        formData = {
           serviceUserName: client.name,
           date: complianceRecord.completion_date || '',
           completedBy: '',
           observations: []
         };
         console.log('📝 No spot check found, setting basic form data:', formData);
-        setEditingSpotCheckData(formData);
       }
 
+      // Set state and wait for it to update
       setSelectedClient(client);
+      setEditingSpotCheckData(formData);
       
-      // Add a small delay to ensure state is set before opening dialog
-      setTimeout(() => {
-        console.log('🚀 Opening dialog with editing data:', editingSpotCheckData);
-        setSpotCheckDialogOpen(true);
-      }, 100);
+      // Wait for next tick to ensure state has updated
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      console.log('🚀 Opening dialog');
+      setSpotCheckDialogOpen(true);
+      
     } catch (error) {
       console.error('❌ Error fetching spot check data:', error);
       toast({

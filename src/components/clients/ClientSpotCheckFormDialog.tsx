@@ -181,9 +181,20 @@ export default function ClientSpotCheckFormDialog({
     setErrors(newErrors);
   };
 
-  // Initialize form on open
+  // Initialize form on open and reset on close
   React.useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      // Reset form when dialog closes
+      setForm({
+        serviceUserName: "",
+        date: "",
+        completedBy: "",
+        observations: [],
+      });
+      setErrors({});
+      setTouchedFields(new Set());
+      return;
+    }
 
     console.log('🎯 Dialog initializing with data:', initialData);
 
@@ -219,10 +230,12 @@ export default function ClientSpotCheckFormDialog({
       setForm(formData);
     } else {
       console.log('❌ No initial data, using empty form');
-      setForm((prev) => ({
-        ...prev,
+      setForm({
+        serviceUserName: "",
+        date: "",
+        completedBy: "",
         observations: baseObservations,
-      }));
+      });
     }
   }, [open, initialData, observationItems]);
 
