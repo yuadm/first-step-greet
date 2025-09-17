@@ -185,25 +185,40 @@ export default function ClientSpotCheckFormDialog({
   React.useEffect(() => {
     if (!open) return;
 
+    console.log('🎯 Dialog initializing with data:', initialData);
+
     const baseObservations = observationItems.map((item) => ({ 
       id: item.id, 
       label: item.label, 
       isRequired: item.isRequired 
     } as ClientSpotCheckObservation));
 
+    console.log('📋 Base observations template:', baseObservations);
+
     if (initialData) {
+      console.log('✅ Using initial data for form population');
+      console.log('📝 Initial observations:', initialData.observations);
+      
       const mergedObservations = baseObservations.map((base) => {
         const existing = initialData.observations.find((o) => o.id === base.id);
-        return existing ? { ...base, value: existing.value, comments: existing.comments } : base;
+        const merged = existing ? { ...base, value: existing.value, comments: existing.comments } : base;
+        if (existing) {
+          console.log(`🔗 Merged observation ${base.id}:`, merged);
+        }
+        return merged;
       });
 
-      setForm({
+      const formData = {
         serviceUserName: initialData.serviceUserName || "",
         date: initialData.date || "",
         completedBy: initialData.completedBy || "",
         observations: mergedObservations,
-      });
+      };
+
+      console.log('🚀 Setting form with merged data:', formData);
+      setForm(formData);
     } else {
+      console.log('❌ No initial data, using empty form');
       setForm((prev) => ({
         ...prev,
         observations: baseObservations,

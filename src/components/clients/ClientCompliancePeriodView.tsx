@@ -329,6 +329,10 @@ export function ClientCompliancePeriodView({
 
   const handleEditSpotCheck = async (client: Client) => {
     try {
+      console.log('🔍 Starting edit spot check for client:', client.name);
+      console.log('🔍 Period:', selectedPeriod);
+      console.log('🔍 Compliance Type ID:', complianceTypeId);
+
       // Fetch the compliance record for this client and period
       const { data: complianceRecord, error: complianceError } = await supabase
         .from('client_compliance_period_records')
@@ -340,8 +344,11 @@ export function ClientCompliancePeriodView({
 
       if (complianceError) throw complianceError;
 
+      console.log('📄 Compliance record:', complianceRecord);
+
       if (!complianceRecord) {
         // No existing record, create new one
+        console.log('❌ No compliance record found, creating new form');
         setEditingSpotCheckData(null);
         setSelectedClient(client);
         setSpotCheckDialogOpen(true);
@@ -359,20 +366,22 @@ export function ClientCompliancePeriodView({
         throw error;
       }
 
+      console.log('🎯 Spot check record:', spotCheckRecord);
+
       if (spotCheckRecord) {
         // Transform the database record to match the form data structure
-        // Parse observations if they're stored as JSON string
         let observations = [];
         try {
           if (spotCheckRecord.observations) {
+            console.log('📋 Raw observations:', spotCheckRecord.observations);
             if (typeof spotCheckRecord.observations === 'string') {
               observations = JSON.parse(spotCheckRecord.observations);
             } else if (Array.isArray(spotCheckRecord.observations)) {
               observations = spotCheckRecord.observations;
             } else if (typeof spotCheckRecord.observations === 'object') {
-              // Handle case where observations might be an object
               observations = Object.values(spotCheckRecord.observations);
             }
+            console.log('✅ Parsed observations:', observations);
           }
         } catch (e) {
           console.warn('Failed to parse observations:', e);
@@ -385,6 +394,7 @@ export function ClientCompliancePeriodView({
           completedBy: spotCheckRecord.performed_by || '',
           observations: observations
         };
+        console.log('📝 Setting form data:', formData);
         setEditingSpotCheckData(formData);
       } else {
         // No spot check record found, create basic form data from compliance record
@@ -394,13 +404,19 @@ export function ClientCompliancePeriodView({
           completedBy: '',
           observations: []
         };
+        console.log('📝 No spot check found, setting basic form data:', formData);
         setEditingSpotCheckData(formData);
       }
 
       setSelectedClient(client);
-      setSpotCheckDialogOpen(true);
+      
+      // Add a small delay to ensure state is set before opening dialog
+      setTimeout(() => {
+        console.log('🚀 Opening dialog with editing data:', editingSpotCheckData);
+        setSpotCheckDialogOpen(true);
+      }, 100);
     } catch (error) {
-      console.error('Error fetching spot check data:', error);
+      console.error('❌ Error fetching spot check data:', error);
       toast({
         title: "Error loading data",
         description: "Could not load existing compliance data for editing.",
