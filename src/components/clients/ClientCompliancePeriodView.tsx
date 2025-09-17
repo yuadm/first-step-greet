@@ -917,7 +917,7 @@ export function ClientCompliancePeriodView({
                                </TableCell>
                                <TableCell>
                                   <div className="flex items-center gap-2">
-                                    {isCompleted && (
+                                    {isCompleted && record?.completion_method === 'spotcheck' && (
                                       <>
                                         <Button 
                                           variant="ghost" 
