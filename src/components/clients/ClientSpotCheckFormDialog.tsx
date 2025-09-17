@@ -422,13 +422,13 @@ export default function ClientSpotCheckFormDialog({
                       aria-invalid={!!errors.date}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.date ? format(new Date(form.date), "PPP") : "Pick a date"}
+                      {form.date && !isNaN(Date.parse(form.date)) ? format(new Date(form.date), "PPP") : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={form.date ? new Date(form.date) : undefined}
+                      selected={form.date && !isNaN(Date.parse(form.date)) ? new Date(form.date) : undefined}
                       onSelect={(date) => date && updateField("date", format(date, "yyyy-MM-dd"))}
                       disabled={(date) => {
                         if (frequency?.toLowerCase() === 'quarterly' && periodIdentifier?.includes('-Q')) {
