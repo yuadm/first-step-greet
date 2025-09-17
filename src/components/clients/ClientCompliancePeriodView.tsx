@@ -350,27 +350,27 @@ export function ClientCompliancePeriodView({
       console.log('📄 Compliance record:', complianceRecord);
 
       if (!complianceRecord) {
-        // No existing record, create new one
-        console.log('❌ No compliance record found, creating new form');
-        setEditingSpotCheckData(null);
-        setSelectedClient(client);
-        setSpotCheckDialogOpen(true);
-        return;
+        // No existing compliance record; proceed to fallback lookup by client/date range
+        console.log('❌ No compliance record found. Proceeding with fallback lookup by client/date.');
       }
 
-      // Try to fetch existing spot check record for this compliance record
-      const { data: spotCheckRecord, error: spotCheckError } = await supabase
-        .from('client_spot_check_records')
-        .select('*')
-        .eq('compliance_record_id', complianceRecord.id)
-        .maybeSingle();
+      // Try to fetch existing spot check record for this compliance record when available
+      let spotCheckRecord: any = null;
+      if (complianceRecord?.id) {
+        const { data: scByCompliance, error: spotCheckError } = await supabase
+          .from('client_spot_check_records')
+          .select('*')
+          .eq('compliance_record_id', complianceRecord.id)
+          .maybeSingle();
 
-      if (spotCheckError && spotCheckError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        console.error('❌ Spot check record error:', spotCheckError);
-        throw spotCheckError;
+        if (spotCheckError && spotCheckError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          console.error('❌ Spot check record error:', spotCheckError);
+          throw spotCheckError;
+        }
+        spotCheckRecord = scByCompliance;
       }
 
-      console.log('🎯 Spot check record:', spotCheckRecord);
+      console.log('🎯 Spot check record (by compliance link):', spotCheckRecord);
 
       let formData;
       
@@ -402,14 +402,83 @@ export function ClientCompliancePeriodView({
         };
         console.log('📝 Setting form data from spot check:', formData);
       } else {
-        // No spot check record found, create basic form data from compliance record
-        formData = {
-          serviceUserName: client.name,
-          date: complianceRecord.completion_date || '',
-          completedBy: '',
-          observations: []
-        };
-        console.log('📝 No spot check found, setting basic form data:', formData);
+        // Try fallback: find spot check by client_id and date range when compliance_record_id is missing
+        try {
+          const periodId = selectedPeriod;
+          const freq = (frequency || '').toLowerCase();
+          const toISO = (d: Date) => d.toISOString().slice(0,10);
+          let start: string; let end: string;
+          if (freq === 'quarterly' && /\d{4}-Q[1-4]/.test(periodId)) {
+            const [y, qStr] = periodId.split('-Q');
+            const year = parseInt(y, 10); const q = parseInt(qStr, 10);
+            const mStart = (q - 1) * 3; // 0-indexed
+            start = toISO(new Date(year, mStart, 1));
+            end = toISO(new Date(year, mStart + 3, 0));
+          } else if (freq === 'monthly' && /\d{4}-\d{2}/.test(periodId)) {
+            const [y, m] = periodId.split('-');
+            const year = parseInt(y, 10); const month = parseInt(m, 10) - 1;
+            start = toISO(new Date(year, month, 1));
+            end = toISO(new Date(year, month + 1, 0));
+          } else {
+            const year = parseInt(periodId.slice(0,4), 10);
+            start = toISO(new Date(year, 0, 1));
+            end = toISO(new Date(year, 11, 31));
+          }
+
+          const { data: fallbackRecord, error: fbErr } = await supabase
+            .from('client_spot_check_records')
+            .select('*')
+            .eq('client_id', client.id)
+            .gte('date', start)
+            .lte('date', end)
+            .order('date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (fbErr && fbErr.code !== 'PGRST116') {
+            console.warn('⚠️ Fallback query error:', fbErr);
+          }
+
+          if (fallbackRecord) {
+            let observations: any[] = [];
+            try {
+              const raw = fallbackRecord.observations;
+              if (typeof raw === 'string') {
+                observations = JSON.parse(raw);
+              } else if (Array.isArray(raw)) {
+                observations = raw;
+              } else if (raw && typeof raw === 'object') {
+                observations = Object.values(raw as any);
+              }
+            } catch (e) {
+              console.warn('Failed to parse fallback observations:', e);
+            }
+            formData = {
+              serviceUserName: fallbackRecord.service_user_name || client.name,
+              date: fallbackRecord.date || complianceRecord?.completion_date || '',
+              completedBy: fallbackRecord.performed_by || '',
+              observations
+            };
+            console.log('📝 Using fallback spot check data:', formData);
+          } else {
+            // No spot check record found anywhere, create basic form data from compliance record
+            formData = {
+              serviceUserName: client.name,
+              date: complianceRecord.completion_date || '',
+              completedBy: '',
+              observations: []
+            };
+            console.log('📝 No spot check found, setting basic form data:', formData);
+          }
+        } catch (e) {
+          console.warn('Fallback retrieval failed, defaulting to basic form:', e);
+          formData = {
+            serviceUserName: client.name,
+            date: complianceRecord.completion_date || '',
+            completedBy: '',
+            observations: []
+          };
+        }
       }
 
       // Set state and wait for it to update
