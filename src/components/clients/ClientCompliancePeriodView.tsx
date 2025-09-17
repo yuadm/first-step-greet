@@ -361,11 +361,29 @@ export function ClientCompliancePeriodView({
 
       if (spotCheckRecord) {
         // Transform the database record to match the form data structure
+        // Parse observations if they're stored as JSON string
+        let observations = [];
+        try {
+          if (spotCheckRecord.observations) {
+            if (typeof spotCheckRecord.observations === 'string') {
+              observations = JSON.parse(spotCheckRecord.observations);
+            } else if (Array.isArray(spotCheckRecord.observations)) {
+              observations = spotCheckRecord.observations;
+            } else if (typeof spotCheckRecord.observations === 'object') {
+              // Handle case where observations might be an object
+              observations = Object.values(spotCheckRecord.observations);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to parse observations:', e);
+          observations = [];
+        }
+
         const formData = {
-          serviceUserName: spotCheckRecord.service_user_name || '',
+          serviceUserName: spotCheckRecord.service_user_name || client.name,
           date: spotCheckRecord.date || complianceRecord.completion_date || '',
           completedBy: spotCheckRecord.performed_by || '',
-          observations: spotCheckRecord.observations || []
+          observations: observations
         };
         setEditingSpotCheckData(formData);
       } else {
