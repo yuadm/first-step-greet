@@ -916,14 +916,14 @@ export function ClientCompliancePeriodView({
                                  </div>
                                </TableCell>
                                <TableCell>
-                                 <div className="flex items-center gap-2">
-                                      {isCompleted ? (
-                                        <>
-                                          <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
-                                            title="Download PDF"
+                                  <div className="flex items-center gap-2">
+                                    {isCompleted && (
+                                      <>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                          title="Download PDF"
                                             onClick={async () => {
                                               try {
                                                 const record = getClientRecordForPeriod(client.id, selectedPeriod);
@@ -1101,9 +1101,10 @@ export function ClientCompliancePeriodView({
                                           }}
                                         >
                                           <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                     </>
-                                    ) : (
+                                         </Button>
+                                       </>
+                                     )}
+                                     {!isCompleted && (
                                       <AddClientComplianceRecordModal
                                         clientId={client.id}
                                         clientName={client.name}
