@@ -348,7 +348,9 @@ const handleDownloadPdf = async () => {
       case 6:
         // Skills & Experience: At least one skill must be rated
         const skills = formData.skillsExperience.skills;
-        return Object.keys(skills).some(skillId => skills[skillId] && skills[skillId].trim() !== '');
+        return Object.keys(skills).some(skillName => 
+          skills[skillName] && skills[skillName] !== 'None' && skills[skillName].trim() !== ''
+        );
       case 7:
         // Declaration step validation
         const declaration = formData.declaration;
