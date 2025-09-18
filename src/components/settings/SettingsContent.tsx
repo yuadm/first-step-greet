@@ -1,5 +1,5 @@
 
-import { Calendar, FileText, Shield, Building2, Briefcase, Mail } from "lucide-react";
+import { Calendar, FileText, Shield, Building2, Briefcase } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanySettings } from "./CompanySettings";
 import { LeaveSettings } from "./LeaveSettings";
@@ -8,7 +8,6 @@ import { ComplianceSettings } from "./ComplianceSettings";
 import { BranchSettings } from "./BranchSettings";
 import { JobPositionSettings } from "./JobPositionSettings";
 import { ApplicationSettings } from "./ApplicationSettings";
-import { EmailSettings } from "./EmailSettings";
 
 export function SettingsContent() {
 
@@ -27,7 +26,7 @@ export function SettingsContent() {
       </div>
 
       <Tabs defaultValue="company" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Company
@@ -51,10 +50,6 @@ export function SettingsContent() {
           <TabsTrigger value="leave" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Leave Settings
-          </TabsTrigger>
-          <TabsTrigger value="email" className="flex items-center gap-2">
-            <Mail className="w-4 h-4" />
-            Email
           </TabsTrigger>
         </TabsList>
 
@@ -80,10 +75,6 @@ export function SettingsContent() {
 
         <TabsContent value="applications" className="space-y-6">
           <ApplicationSettings />
-        </TabsContent>
-
-        <TabsContent value="email" className="space-y-6">
-          <EmailSettings />
         </TabsContent>
       </Tabs>
     </div>
