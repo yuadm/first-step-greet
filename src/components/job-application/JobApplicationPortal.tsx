@@ -353,9 +353,15 @@ const handleDownloadPdf = async () => {
       case 6: {
         // Skills & Experience: At least one skill must be rated
         const skills = formData.skillsExperience.skills;
-        return Object.keys(skills).some(skillName => 
-          skills[skillName] && skills[skillName] !== 'None' && skills[skillName].trim() !== ''
-        );
+        console.log('Skills validation - skills data:', skills);
+        console.log('Skills validation - keys:', Object.keys(skills));
+        const hasRatedSkill = Object.keys(skills).some(skillName => {
+          const rating = skills[skillName];
+          console.log(`Skill "${skillName}" has rating:`, rating);
+          return rating && rating !== 'None' && rating.trim() !== '';
+        });
+        console.log('Skills validation result:', hasRatedSkill);
+        return hasRatedSkill;
       }
       case 7: {
         // Declaration step validation
