@@ -345,6 +345,10 @@ const handleDownloadPdf = async () => {
         return formData.employmentHistory.previouslyEmployed === 'no';
       case 5:
         return formData.references.reference1.name && formData.references.reference2.name;
+      case 6:
+        // Skills & Experience: At least one skill must be rated
+        const skills = formData.skillsExperience.skills;
+        return Object.keys(skills).some(skillId => skills[skillId] && skills[skillId].trim() !== '');
       case 7:
         // Declaration step validation
         const declaration = formData.declaration;
