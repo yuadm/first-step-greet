@@ -321,7 +321,7 @@ const handleDownloadPdf = async () => {
 
   const canProceed = () => {
     switch (currentStep) {
-      case 1:
+      case 1: {
         // Personal Info: All required except Street Address Second Line and languages
         const pi = formData.personalInfo;
         return pi.title && pi.fullName && pi.email && pi.confirmEmail && 
@@ -330,11 +330,14 @@ const handleDownloadPdf = async () => {
                pi.englishProficiency && pi.positionAppliedFor && 
                pi.personalCareWillingness && pi.hasDBS && pi.hasCarAndLicense && 
                pi.nationalInsuranceNumber;
-      case 2:
+      }
+      case 2: {
         return formData.availability.hoursPerWeek && formData.availability.hasRightToWork;
-      case 3:
+      }
+      case 3: {
         return formData.emergencyContact.fullName && formData.emergencyContact.relationship && formData.emergencyContact.contactNumber && formData.emergencyContact.howDidYouHear;
-      case 4:
+      }
+      case 4: {
         // Employment History: If previously employed = yes, must complete Most Recent Employer
         if (formData.employmentHistory.previouslyEmployed === 'yes') {
           const re = formData.employmentHistory.recentEmployer;
@@ -343,15 +346,18 @@ const handleDownloadPdf = async () => {
                  re.from && re.to && re.reasonForLeaving;
         }
         return formData.employmentHistory.previouslyEmployed === 'no';
-      case 5:
+      }
+      case 5: {
         return formData.references.reference1.name && formData.references.reference2.name;
-      case 6:
+      }
+      case 6: {
         // Skills & Experience: At least one skill must be rated
         const skills = formData.skillsExperience.skills;
         return Object.keys(skills).some(skillName => 
           skills[skillName] && skills[skillName] !== 'None' && skills[skillName].trim() !== ''
         );
-      case 7:
+      }
+      case 7: {
         // Declaration step validation
         const declaration = formData.declaration;
         const requiredFields = [
@@ -380,10 +386,13 @@ const handleDownloadPdf = async () => {
           }
           return true;
         });
-      case 8:
+      }
+      case 8: {
         return formData.termsPolicy.consentToTerms && formData.termsPolicy.signature && formData.termsPolicy.date;
-      default:
+      }
+      default: {
         return true;
+      }
     }
   };
 
