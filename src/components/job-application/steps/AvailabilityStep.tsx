@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
 import { Availability } from '../types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { useUnifiedJobApplicationSettings, transformShiftSettings } from '@/hooks/queries/useUnifiedJobApplicationSettings';
 
 interface AvailabilityStepProps {
   data: Availability;
@@ -26,30 +25,9 @@ const DAYS_OF_WEEK = [
 ];
 
 export function AvailabilityStep({ data, updateData }: AvailabilityStepProps) {
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchTimeSlots();
-  }, []);
-
-  const fetchTimeSlots = async () => {
-    try {
-      const { data: slotsData, error } = await supabase
-        .from('application_shift_settings')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (error) throw error;
-      setTimeSlots(slotsData || []);
-    } catch (error) {
-      console.error('Error fetching time slots:', error);
-      setTimeSlots([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: shiftSettings, isLoading } = useUnifiedJobApplicationSettings('shift');
+  
+  const timeSlots = shiftSettings ? transformShiftSettings(shiftSettings) : [];
 
   const handleDayToggle = (timeSlotId: string, day: string, checked: boolean) => {
     const currentTimeSlots = data.timeSlots || {};
@@ -70,7 +48,7 @@ export function AvailabilityStep({ data, updateData }: AvailabilityStepProps) {
     updateData('timeSlots', updatedTimeSlots);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading time slot options...</div>;
   }
 

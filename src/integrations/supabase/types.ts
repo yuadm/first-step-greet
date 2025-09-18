@@ -1562,6 +1562,42 @@ export type Database = {
           },
         ]
       }
+      job_application_settings: {
+        Row: {
+          category: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          setting_key: string
+          setting_type: string | null
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          setting_key: string
+          setting_type?: string | null
+          setting_value?: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          setting_key?: string
+          setting_type?: string | null
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           availability: Json | null
@@ -2523,6 +2559,10 @@ export type Database = {
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      migrate_application_settings_data: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       reset_all_leave_balances: {
         Args: Record<PropertyKey, never>
