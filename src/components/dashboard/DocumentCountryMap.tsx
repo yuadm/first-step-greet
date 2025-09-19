@@ -1,53 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import { useDocumentCountryMap } from "@/hooks/queries/useAnalyticsQueries";
+import { useActivitySync } from "@/hooks/useActivitySync";
 
 // World topojson
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
-type CountryCounts = Record<string, number>;
-
 export function DocumentCountryMap() {
-  const [counts, setCounts] = useState<CountryCounts>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("document_tracker")
-          .select("country, employee_id");
-        if (error) throw error;
-        
-        // Count unique employees per country
-        const employeesByCountry: Record<string, Set<string>> = {};
-        (data || []).forEach((row: any) => {
-          const country = (row?.country || "").trim();
-          const employeeId = row?.employee_id;
-          if (!country || !employeeId) return;
-          
-          const key = country.toLowerCase();
-          if (!employeesByCountry[key]) {
-            employeesByCountry[key] = new Set();
-          }
-          employeesByCountry[key].add(employeeId);
-        });
-        
-        // Convert to counts
-        const map: CountryCounts = {};
-        Object.entries(employeesByCountry).forEach(([country, employeeSet]) => {
-          map[country] = employeeSet.size;
-        });
-        
-        setCounts(map);
-      } catch (e) {
-        console.error("Failed to load employee country distribution", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  // Use React Query with advanced caching
+  const { data: counts = {}, isLoading: loading } = useDocumentCountryMap();
+  
+  // Initialize activity sync for background data sync
+  useActivitySync();
 
   const max = useMemo(() => {
     return Object.values(counts).reduce((a, b) => Math.max(a, b), 0) || 0;

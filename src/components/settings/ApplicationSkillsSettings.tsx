@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,69 +8,34 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-
-interface SkillsCategory {
-  id: string;
-  setting_key: string;
-  setting_value: {
-    name: string;
-    description: string | null;
-    display_order: number;
-    is_active: boolean;
-    id: string;
-  };
-  display_order: number;
-  is_active: boolean;
-}
-
-interface Skill {
-  id: string;
-  setting_key: string;
-  setting_value: {
-    name: string;
-    category_id: string | null;
-    display_order: number;
-    is_active: boolean;
-  };
-  display_order: number;
-  is_active: boolean;
-}
-
-interface SkillsCategoryDB {
-  id: string;
-  category: string;
-  setting_key: string;
-  setting_type: string;
-  setting_value: any;
-  display_order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface SkillDB {
-  id: string;
-  category: string;
-  setting_key: string;
-  setting_type: string;
-  setting_value: any;
-  display_order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { useSkillsCategories, useSkills, useJobApplicationSettingsActions, type SkillsCategory, type Skill } from '@/hooks/queries/useJobApplicationSettingsQueries';
+import { useActivitySync } from '@/hooks/useActivitySync';
 
 export function ApplicationSkillsSettings() {
-  const [categories, setCategories] = useState<SkillsCategory[]>([]);
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [loading, setLoading] = useState(true);
+  // React Query hooks with advanced caching
+  const categoriesQuery = useSkillsCategories();
+  const skillsQuery = useSkills();
+  const { 
+    createCategory, 
+    updateCategory, 
+    deleteCategory, 
+    createSkill, 
+    updateSkill, 
+    deleteSkill 
+  } = useJobApplicationSettingsActions();
+  
+  // Initialize activity sync for background data sync
+  const { syncNow } = useActivitySync();
+  
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [showSkillDialog, setShowSkillDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState<SkillsCategory | null>(null);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
-  const { toast } = useToast();
+
+  const categories = categoriesQuery.data || [];
+  const skills = skillsQuery.data || [];
+  const loading = categoriesQuery.isLoading || skillsQuery.isLoading;
 
   const [categoryFormData, setCategoryFormData] = useState({
     name: '',
@@ -87,97 +51,40 @@ export function ApplicationSkillsSettings() {
     display_order: 0
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [categoriesResponse, skillsResponse] = await Promise.all([
-        supabase.from('job_application_settings').select('*').eq('category', 'skills').eq('setting_type', 'category').order('display_order'),
-        supabase.from('job_application_settings').select('*').eq('category', 'skills').eq('setting_type', 'skill').order('display_order')
-      ]);
-
-      if (categoriesResponse.error) throw categoriesResponse.error;
-      if (skillsResponse.error) throw skillsResponse.error;
-
-      // Transform categories data
-      const transformedCategories: SkillsCategory[] = (categoriesResponse.data || []).map((item: SkillsCategoryDB) => ({
-        id: item.id,
-        setting_key: item.setting_key,
-        setting_value: item.setting_value as SkillsCategory['setting_value'],
-        display_order: item.display_order,
-        is_active: item.is_active
-      }));
-
-      // Transform skills data
-      const transformedSkills: Skill[] = (skillsResponse.data || []).map((item: SkillDB) => ({
-        id: item.id,
-        setting_key: item.setting_key,
-        setting_value: item.setting_value as Skill['setting_value'],
-        display_order: item.display_order,
-        is_active: item.is_active
-      }));
-
-      setCategories(transformedCategories);
-      setSkills(transformedSkills);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch skills data",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      const settingData = {
-        category: 'skills',
-        setting_type: 'category',
-        setting_key: categoryFormData.name,
-        setting_value: {
+      if (editingCategory) {
+        await updateCategory.mutateAsync({
+          id: editingCategory.id,
+          categoryData: {
+            name: categoryFormData.name,
+            description: categoryFormData.description,
+            display_order: categoryFormData.display_order,
+            is_active: categoryFormData.is_active,
+            originalId: editingCategory.setting_value.id
+          }
+        });
+      } else {
+        await createCategory.mutateAsync({
           name: categoryFormData.name,
           description: categoryFormData.description,
           display_order: categoryFormData.display_order,
-          is_active: categoryFormData.is_active,
-          id: editingCategory?.setting_value.id || crypto.randomUUID()
-        },
-        display_order: categoryFormData.display_order,
-        is_active: categoryFormData.is_active
-      };
-
-      if (editingCategory) {
-        const { error } = await supabase
-          .from('job_application_settings')
-          .update(settingData)
-          .eq('id', editingCategory.id);
-
-        if (error) throw error;
-        toast({ title: "Success", description: "Category updated successfully" });
-      } else {
-        const { error } = await supabase
-          .from('job_application_settings')
-          .insert([settingData]);
-
-        if (error) throw error;
-        toast({ title: "Success", description: "Category created successfully" });
+          is_active: categoryFormData.is_active
+        });
       }
 
       setShowCategoryDialog(false);
       setEditingCategory(null);
       resetCategoryForm();
-      fetchData();
+      
+      // Trigger manual sync after successful operation
+      syncNow();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save category",
-        variant: "destructive"
-      });
+      // Error handling is done by the mutation hooks
+      console.error('Error handling category:', error);
     }
   };
 
@@ -185,47 +92,34 @@ export function ApplicationSkillsSettings() {
     e.preventDefault();
     
     try {
-      const settingData = {
-        category: 'skills',
-        setting_type: 'skill',
-        setting_key: skillFormData.name,
-        setting_value: {
+      if (editingSkill) {
+        await updateSkill.mutateAsync({
+          id: editingSkill.id,
+          skillData: {
+            name: skillFormData.name,
+            category_id: skillFormData.category_id,
+            display_order: skillFormData.display_order,
+            is_active: skillFormData.is_active
+          }
+        });
+      } else {
+        await createSkill.mutateAsync({
           name: skillFormData.name,
           category_id: skillFormData.category_id,
           display_order: skillFormData.display_order,
           is_active: skillFormData.is_active
-        },
-        display_order: skillFormData.display_order,
-        is_active: skillFormData.is_active
-      };
-
-      if (editingSkill) {
-        const { error } = await supabase
-          .from('job_application_settings')
-          .update(settingData)
-          .eq('id', editingSkill.id);
-
-        if (error) throw error;
-        toast({ title: "Success", description: "Skill updated successfully" });
-      } else {
-        const { error } = await supabase
-          .from('job_application_settings')
-          .insert([settingData]);
-
-        if (error) throw error;
-        toast({ title: "Success", description: "Skill created successfully" });
+        });
       }
 
       setShowSkillDialog(false);
       setEditingSkill(null);
       resetSkillForm();
-      fetchData();
+      
+      // Trigger manual sync after successful operation
+      syncNow();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save skill",
-        variant: "destructive"
-      });
+      // Error handling is done by the mutation hooks
+      console.error('Error handling skill:', error);
     }
   };
 
@@ -253,39 +147,25 @@ export function ApplicationSkillsSettings() {
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('job_application_settings')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      toast({ title: "Success", description: "Category deleted successfully" });
-      fetchData();
+      await deleteCategory.mutateAsync(id);
+      
+      // Trigger manual sync after successful deletion
+      syncNow();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete category",
-        variant: "destructive"
-      });
+      // Error handling is done by the mutation hook
+      console.error('Error deleting category:', error);
     }
   };
 
   const handleDeleteSkill = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('job_application_settings')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      toast({ title: "Success", description: "Skill deleted successfully" });
-      fetchData();
+      await deleteSkill.mutateAsync(id);
+      
+      // Trigger manual sync after successful deletion
+      syncNow();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete skill",
-        variant: "destructive"
-      });
+      // Error handling is done by the mutation hook
+      console.error('Error deleting skill:', error);
     }
   };
 

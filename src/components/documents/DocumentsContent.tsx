@@ -95,7 +95,7 @@ export function DocumentsContent() {
   const { createDocument, updateDocument, deleteDocuments } = useDocumentActions();
   const { toast } = useToast();
   
-  // Initialize activity sync and prefetching
+  // Initialize activity sync and prefetching for background data sync
   const { syncNow } = useActivitySync();
   usePrefetching();
 
