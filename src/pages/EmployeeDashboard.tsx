@@ -326,12 +326,12 @@ function EmployeeDashboardContent() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="leaves" className="flex items-center gap-2">
+              <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-50 to-purple-50 p-1 rounded-xl border-0">
+                <TabsTrigger value="leaves" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 rounded-lg font-medium">
                   <Calendar className="w-4 h-4" />
                   Leaves
                 </TabsTrigger>
-                <TabsTrigger value="statements" className="flex items-center gap-2">
+                <TabsTrigger value="statements" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 transition-all duration-300 rounded-lg font-medium">
                   <FileText className="w-4 h-4" />
                   Statements
                 </TabsTrigger>

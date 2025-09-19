@@ -87,9 +87,9 @@ export function useEmployeeCompliance(employeeId: string | undefined): Complianc
 
               let status: 'completed' | 'due' | 'upcoming';
               if (q < currentQuarter) {
-                status = record?.status === 'completed' ? 'completed' : 'due';
+                status = (record?.status === 'completed' || record?.status === 'compliant') ? 'completed' : 'due';
               } else if (q === currentQuarter) {
-                status = record?.status === 'completed' ? 'completed' : 'due';
+                status = (record?.status === 'completed' || record?.status === 'compliant') ? 'completed' : 'due';
               } else {
                 status = 'upcoming';
               }
@@ -114,13 +114,13 @@ export function useEmployeeCompliance(employeeId: string | undefined): Complianc
               name: type.name,
               frequency: type.frequency,
               period: `${currentYear}-Q${currentQuarter}`,
-              status: currentQuarterRecord?.status === 'completed' ? 'completed' : 'due',
+              status: (currentQuarterRecord?.status === 'completed' || currentQuarterRecord?.status === 'compliant') ? 'completed' : 'due',
               isOverdue: currentQuarterRecord?.is_overdue || false,
               completedDate: currentQuarterRecord?.updated_at,
               quarterlyTimeline
             };
 
-            if (currentQuarterRecord?.status === 'completed') {
+            if (currentQuarterRecord?.status === 'completed' || currentQuarterRecord?.status === 'compliant') {
               completedItems.push(complianceItem);
             } else {
               dueItems.push(complianceItem);
@@ -159,7 +159,7 @@ export function useEmployeeCompliance(employeeId: string | undefined): Complianc
             };
 
             if (currentRecord) {
-              if (currentRecord.status === 'completed') {
+              if (currentRecord.status === 'completed' || currentRecord.status === 'compliant') {
                 complianceItem.status = 'completed';
                 completedItems.push(complianceItem);
               } else if (currentRecord.status === 'overdue' || currentRecord.is_overdue) {
@@ -178,7 +178,7 @@ export function useEmployeeCompliance(employeeId: string | undefined): Complianc
 
         // Also get recently completed items from previous periods (last 3 months)
         const recentCompleted = complianceRecords?.filter(record => {
-          if (record.status !== 'completed') return false;
+          if (record.status !== 'completed' && record.status !== 'compliant') return false;
           const recordDate = new Date(record.updated_at);
           const threeMonthsAgo = new Date();
           threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
