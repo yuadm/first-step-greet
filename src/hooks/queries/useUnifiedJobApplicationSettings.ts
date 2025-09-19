@@ -85,15 +85,16 @@ export const transformShiftSettings = (settings: UnifiedJobApplicationSetting[])
 
 export const transformSkillsSettings = (settings: UnifiedJobApplicationSetting[]) => {
   const skillsSettings = settings.filter(s => s.category === 'skills');
-  const categories = skillsSettings.filter(s => s.setting_type === 'category');
+  const categories = skillsSettings.filter(s => s.setting_type === 'category' && s.setting_value?.id);
   const skills = skillsSettings.filter(s => s.setting_type === 'skill');
   
   const skillsByCategory: Record<string, any[]> = {};
   
   categories.forEach(category => {
     const categoryName = category.setting_value.name;
+    const categoryId = category.setting_value.id;
     skillsByCategory[categoryName] = skills
-      .filter(skill => skill.setting_value.category_id === category.id)
+      .filter(skill => skill.setting_value.category_id === categoryId)
       .map(skill => ({
         id: skill.id,
         name: skill.setting_value.name,
