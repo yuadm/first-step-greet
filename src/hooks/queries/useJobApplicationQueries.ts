@@ -75,14 +75,19 @@ export const fetchJobApplications = async (filters?: {
 
 export const fetchStatusOptions = async () => {
   const { data, error } = await supabase
-    .from('application_status_settings')
-    .select('status_name, display_order, is_active')
+    .from('job_application_settings')
+    .select('*')
+    .eq('category', 'status')
     .eq('is_active', true)
     .order('display_order', { ascending: true });
     
   if (error) throw error;
   
-  const statusOptions = data?.map(d => d.status_name).filter(Boolean) || [];
+  const statusOptions = data?.map(d => 
+    typeof d.setting_value === 'object' && d.setting_value && 'status_name' in d.setting_value
+      ? (d.setting_value as any).status_name
+      : d.setting_key
+  ).filter(Boolean) || [];
   return statusOptions.length > 0 ? statusOptions : ['new', 'reviewing', 'interviewed', 'accepted', 'rejected'];
 };
 

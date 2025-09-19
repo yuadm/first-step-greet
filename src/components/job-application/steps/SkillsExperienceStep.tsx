@@ -36,34 +36,61 @@ export function SkillsExperienceStep({ data, updateData }: SkillsExperienceStepP
 
   const fetchSkills = async () => {
     try {
-      const [categoriesResponse, skillsResponse] = await Promise.all([
-        supabase.from('application_skills_categories').select('*').eq('is_active', true).order('display_order'),
-        supabase.from('application_skills').select('*').eq('is_active', true).order('display_order')
-      ]);
+      setLoading(true);
+      
+      // Fetch skills from unified settings
+      const { data: skillsData, error } = await supabase
+        .from('job_application_settings')
+        .select('*')
+        .eq('category', 'skills')
+        .eq('is_active', true)
+        .order('display_order');
 
-      if (categoriesResponse.error) throw categoriesResponse.error;
-      if (skillsResponse.error) throw skillsResponse.error;
+      if (error) throw error;
 
-      const categories = categoriesResponse.data || [];
-      const skills = skillsResponse.data || [];
+      // Separate categories and skills
+      const categories = skillsData?.filter(s => s.setting_type === 'category') || [];
+      const skills = skillsData?.filter(s => s.setting_type === 'skill') || [];
 
       // Group skills by category
       const grouped: SkillsByCategory = {};
       
       categories.forEach(category => {
-        grouped[category.name] = skills.filter(skill => skill.category_id === category.id);
+        const categoryName = typeof category.setting_value === 'object' && category.setting_value && 'name' in category.setting_value
+          ? (category.setting_value as any).name
+          : category.setting_key;
+          
+        const categorySkills = skills.filter(skill => 
+          typeof skill.setting_value === 'object' && skill.setting_value && 'category_id' in skill.setting_value &&
+          (skill.setting_value as any).category_id === category.id
+        );
+        
+        if (categorySkills.length > 0) {
+          grouped[categoryName] = categorySkills.map(skill => ({
+            id: skill.id,
+            name: typeof skill.setting_value === 'object' && skill.setting_value && 'name' in skill.setting_value
+              ? (skill.setting_value as any).name
+              : skill.setting_key,
+            category_id: category.id
+          }));
+        }
       });
-
-      // Add uncategorized skills
-      const uncategorizedSkills = skills.filter(skill => !skill.category_id);
-      if (uncategorizedSkills.length > 0) {
-        grouped['Other'] = uncategorizedSkills;
-      }
 
       setSkillsByCategory(grouped);
     } catch (error) {
       console.error('Error fetching skills:', error);
-      setSkillsByCategory({});
+      // Set some fallback skills if the fetch fails
+      setSkillsByCategory({
+        'Personal Care': [
+          { id: '1', name: 'Washing and Bathing', category_id: '1' },
+          { id: '2', name: 'Feeding Assistance', category_id: '1' },
+          { id: '3', name: 'Medication Administration', category_id: '1' }
+        ],
+        'Communication': [
+          { id: '4', name: 'Active Listening', category_id: '2' },
+          { id: '5', name: 'Verbal Communication', category_id: '2' }
+        ]
+      });
     } finally {
       setLoading(false);
     }

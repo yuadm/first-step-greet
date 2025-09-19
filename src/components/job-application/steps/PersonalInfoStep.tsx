@@ -42,13 +42,24 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
   const fetchJobPositions = async () => {
     try {
       const { data: positionsData, error } = await supabase
-        .from('job_positions')
-        .select('id, title, is_active')
+        .from('job_application_settings')
+        .select('*')
+        .eq('category', 'position')
         .eq('is_active', true)
-        .order('title');
+        .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setPositions(positionsData || []);
+      
+      // Transform the unified settings data
+      const transformed = positionsData?.map(setting => ({
+        id: setting.id,
+        title: typeof setting.setting_value === 'object' && setting.setting_value && 'title' in setting.setting_value 
+          ? (setting.setting_value as any).title 
+          : setting.setting_key,
+        is_active: setting.is_active
+      })) || [];
+      
+      setPositions(transformed);
     } catch (error) {
       console.error('Error fetching job positions:', error);
       // Fallback to default positions if database fetch fails
@@ -70,14 +81,27 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
   const fetchPersonalSettings = async () => {
     try {
       const { data: settingsData, error } = await supabase
-        .from('application_personal_settings')
+        .from('job_application_settings')
         .select('*')
+        .eq('category', 'personal')
         .eq('is_active', true)
         .order('setting_type', { ascending: true })
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setPersonalSettings(settingsData || []);
+      
+      // Transform the unified settings data
+      const transformed = settingsData?.map(setting => ({
+        id: setting.id,
+        setting_type: setting.setting_type || 'default',
+        value: typeof setting.setting_value === 'object' && setting.setting_value && 'value' in setting.setting_value
+          ? (setting.setting_value as any).value
+          : setting.setting_key,
+        is_active: setting.is_active,
+        display_order: setting.display_order
+      })) || [];
+      
+      setPersonalSettings(transformed);
     } catch (error) {
       console.error('Error fetching personal settings:', error);
       // Fallback to default values if database fetch fails
