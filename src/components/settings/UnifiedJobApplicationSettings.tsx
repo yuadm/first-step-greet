@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit, Plus, Settings } from "lucide-react";
+import { Trash2, Edit, Plus, Settings, Clock, Flag, User, Phone, Award, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { FormRenderer } from './forms/FormRenderer';
 
 interface JobApplicationSetting {
   id: string;
@@ -42,14 +38,62 @@ export function UnifiedJobApplicationSettings() {
   const { toast } = useToast();
 
   const categories = [
-    { key: 'personal', label: 'Personal Info', description: 'Personal information settings' },
-    { key: 'emergency', label: 'Emergency Contact', description: 'Emergency contact options' },
-    { key: 'shift', label: 'Shifts', description: 'Available shift patterns' },
-    { key: 'skills', label: 'Skills', description: 'Skills and categories' },
-    { key: 'status', label: 'Status', description: 'Application status options' },
-    { key: 'steps', label: 'Steps', description: 'Application step configuration' },
-    { key: 'fields', label: 'Fields', description: 'Form field settings' },
-    { key: 'reference', label: 'References', description: 'Reference requirements' },
+    { 
+      key: 'personal', 
+      label: 'Personal Info', 
+      description: 'Personal information settings',
+      icon: User,
+      color: 'from-blue-500/10 to-blue-600/5 border-blue-200/50'
+    },
+    { 
+      key: 'emergency', 
+      label: 'Emergency Contact', 
+      description: 'Emergency contact options',
+      icon: Phone,
+      color: 'from-red-500/10 to-red-600/5 border-red-200/50'
+    },
+    { 
+      key: 'shift', 
+      label: 'Shifts', 
+      description: 'Available shift patterns',
+      icon: Clock,
+      color: 'from-green-500/10 to-green-600/5 border-green-200/50'
+    },
+    { 
+      key: 'skills', 
+      label: 'Skills', 
+      description: 'Skills and categories',
+      icon: Award,
+      color: 'from-purple-500/10 to-purple-600/5 border-purple-200/50'
+    },
+    { 
+      key: 'status', 
+      label: 'Status', 
+      description: 'Application status options',
+      icon: Flag,
+      color: 'from-orange-500/10 to-orange-600/5 border-orange-200/50'
+    },
+    { 
+      key: 'steps', 
+      label: 'Steps', 
+      description: 'Application step configuration',
+      icon: Settings,
+      color: 'from-gray-500/10 to-gray-600/5 border-gray-200/50'
+    },
+    { 
+      key: 'fields', 
+      label: 'Fields', 
+      description: 'Form field settings',
+      icon: FileText,
+      color: 'from-teal-500/10 to-teal-600/5 border-teal-200/50'
+    },
+    { 
+      key: 'reference', 
+      label: 'References', 
+      description: 'Reference requirements',
+      icon: FileText,
+      color: 'from-indigo-500/10 to-indigo-600/5 border-indigo-200/50'
+    },
   ];
 
   useEffect(() => {
@@ -220,6 +264,8 @@ export function UnifiedJobApplicationSettings() {
     return <div className="flex justify-center p-8">Loading settings...</div>;
   }
 
+  const getCurrentCategory = () => categories.find(cat => cat.key === activeCategory);
+
   return (
     <Card className="card-premium animate-fade-in">
       <CardHeader>
@@ -242,112 +288,103 @@ export function UnifiedJobApplicationSettings() {
             ))}
           </TabsList>
 
-          {categories.map((category) => (
-            <TabsContent key={category.key} value={category.key} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">{category.label}</h3>
-                  <p className="text-sm text-muted-foreground">{category.description}</p>
-                </div>
-                <Button
-                  onClick={() => {
-                    setFormData({ ...formData, category: category.key });
-                    setShowAddForm(true);
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add {category.label}
-                </Button>
-              </div>
-
-              {showAddForm && formData.category === category.key && (
-                <Card className="border-dashed">
-                  <CardContent className="p-4 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="setting_key">Setting Key</Label>
-                        <Input
-                          id="setting_key"
-                          value={formData.setting_key}
-                          onChange={(e) => setFormData({ ...formData, setting_key: e.target.value })}
-                          placeholder="Enter setting key"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="display_order">Display Order</Label>
-                        <Input
-                          id="display_order"
-                          type="number"
-                          value={formData.display_order}
-                          onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
-                          placeholder="0"
-                        />
-                      </div>
+          {categories.map((category) => {
+            const Icon = category.icon;
+            const categorySettings = getCategorySettings(category.key);
+            
+            return (
+              <TabsContent key={category.key} value={category.key} className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${category.color} flex items-center justify-center border`}>
+                      <Icon className="w-6 h-6 text-primary" />
                     </div>
-                    
                     <div>
-                      <Label htmlFor="setting_value">Setting Value (JSON)</Label>
-                      <Textarea
-                        id="setting_value"
-                        value={JSON.stringify(formData.setting_value, null, 2)}
-                        onChange={(e) => {
-                          try {
-                            setFormData({ ...formData, setting_value: JSON.parse(e.target.value) });
-                          } catch (error) {
-                            // Invalid JSON, keep the raw value
-                          }
+                      <h3 className="text-xl font-semibold">{category.label}</h3>
+                      <p className="text-sm text-muted-foreground">{category.description}</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setFormData({ 
+                        category: category.key,
+                        setting_type: '',
+                        setting_key: '',
+                        setting_value: {},
+                        display_order: 0,
+                        is_active: true
+                      });
+                      setShowAddForm(true);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add {category.label}
+                  </Button>
+                </div>
+
+                {showAddForm && formData.category === category.key && (
+                  <FormRenderer
+                    category={category.key}
+                    formData={formData}
+                    onFormDataChange={setFormData}
+                    onSave={handleSave}
+                    onCancel={resetForm}
+                    isEditing={!!editingId}
+                    existingSettings={settings}
+                  />
+                )}
+
+                <div className="grid gap-4">
+                  {categorySettings.length === 0 ? (
+                    <Card className="p-8 text-center border-dashed">
+                      <Icon className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="font-medium text-lg mb-2">No {category.label} Settings</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Start by adding your first {category.label.toLowerCase()} setting.
+                      </p>
+                      <Button
+                        onClick={() => {
+                          setFormData({ 
+                            category: category.key,
+                            setting_type: '',
+                            setting_key: '',
+                            setting_value: {},
+                            display_order: 0,
+                            is_active: true
+                          });
+                          setShowAddForm(true);
                         }}
-                        placeholder='{"key": "value"}'
-                        rows={4}
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={formData.is_active}
-                        onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                      />
-                      <Label>Active</Label>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button onClick={handleSave}>
-                        {editingId ? 'Update' : 'Create'}
+                        variant="outline"
+                        className="gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add {category.label}
                       </Button>
-                      <Button variant="outline" onClick={resetForm}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Key</TableHead>
-                      <TableHead>Value</TableHead>
-                      <TableHead>Order</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {getCategorySettings(category.key).map((setting) => (
-                      <TableRow key={setting.id}>
-                        <TableCell className="font-medium">{setting.setting_key}</TableCell>
-                        <TableCell>{renderSettingValue(setting)}</TableCell>
-                        <TableCell>{setting.display_order}</TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={setting.is_active}
-                            onCheckedChange={() => toggleActive(setting.id, setting.is_active)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
+                    </Card>
+                  ) : (
+                    categorySettings.map((setting) => (
+                      <Card key={setting.id} className={`p-4 transition-all hover:shadow-md ${setting.is_active ? 'border-primary/20' : 'border-muted opacity-60'}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h4 className="font-medium">{setting.setting_key}</h4>
+                              <Badge variant={setting.is_active ? "default" : "secondary"} className="text-xs">
+                                {setting.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                #{setting.display_order}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {renderSettingValue(setting)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={setting.is_active}
+                              onCheckedChange={() => toggleActive(setting.id, setting.is_active)}
+                            />
                             <Button
                               variant="outline"
                               size="sm"
@@ -363,14 +400,14 @@ export function UnifiedJobApplicationSettings() {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-          ))}
+                        </div>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </TabsContent>
+            );
+          })}
         </Tabs>
       </CardContent>
     </Card>
