@@ -26,6 +26,9 @@ export interface MedicationCompetencyData {
   completedAt: string;
   questionnaireName?: string;
   overallResult?: 'competent' | 'not-yet-competent' | 'requires-training';
+  assessorName?: string;
+  assessorSignatureData?: string;
+  employeeSignatureData?: string;
 }
 
 interface CompanyInfo {
@@ -62,6 +65,7 @@ export async function generateMedicationCompetencyPdf(
 
     let page = pdfDoc.addPage([595, 842]); // A4 size
     let yPosition = 820;
+    let pageIndex = 1; // Track page numbers
     
     const pageWidth = page.getWidth();
     const pageHeight = page.getHeight();
@@ -84,16 +88,17 @@ export async function generateMedicationCompetencyPdf(
 
     // Helper functions
     const drawText = (text: string, x: number, y: number, options: any = {}) => {
-      page.drawText(text, {
+      const { size = 10, bold = false, color = colors.text, maxWidth, lineHeight, ...rest } = options;
+      const drawOptions: any = {
         x,
         y,
-        size: options.size || 10,
-        font: options.bold ? boldFont : regularFont,
-        color: options.color || colors.text,
-        maxWidth: options.maxWidth || contentWidth,
-        lineHeight: options.lineHeight || (options.size || 10) * 1.2,
-        ...options
-      });
+        size,
+        font: bold ? boldFont : regularFont,
+        color,
+      };
+      if (typeof maxWidth !== 'undefined') drawOptions.maxWidth = maxWidth;
+      if (typeof lineHeight !== 'undefined') drawOptions.lineHeight = lineHeight;
+      page.drawText(text, { ...drawOptions, ...rest });
     };
 
     const drawRectangle = (x: number, y: number, width: number, height: number, color: any) => {
@@ -106,8 +111,27 @@ export async function generateMedicationCompetencyPdf(
       });
     };
 
+    const drawFooter = () => {
+      const footerY = 30; // Position from bottom
+      // Draw divider line
+      page.drawLine({
+        start: { x: margin, y: footerY + 12 },
+        end: { x: pageWidth - margin, y: footerY + 12 },
+        thickness: 0.5,
+        color: colors.border
+      });
+      // Draw page number
+      const footerText = `Page ${pageIndex}`;
+      drawText(footerText, margin, footerY, {
+        size: 10,
+        color: colors.textLight
+      });
+    };
+
     const addNewPage = () => {
+      drawFooter(); // Draw footer on current page before creating new page
       page = pdfDoc.addPage([595, 842]);
+      pageIndex++; // Increment page number
       yPosition = 800;
       drawPageHeader();
     };
@@ -119,119 +143,130 @@ export async function generateMedicationCompetencyPdf(
     };
 
     const wrapText = (text: string, maxWidth: number, font: any, fontSize: number): string[] => {
-      const words = text.split(' ');
       const lines: string[] = [];
-      let currentLine = '';
+      const paragraphs = String(text || '').split(/\r?\n/);
 
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        const testWidth = font.widthOfTextAtSize(testLine, fontSize);
-        
-        if (testWidth <= maxWidth) {
-          currentLine = testLine;
-        } else {
-          if (currentLine) {
-            lines.push(currentLine);
-            currentLine = word;
+      const pushBrokenWord = (word: string) => {
+        let remainder = word;
+        while (font.widthOfTextAtSize(remainder, fontSize) > maxWidth && remainder.length > 1) {
+          let sliceEnd = 1;
+          for (let i = 1; i <= remainder.length; i++) {
+            const part = remainder.slice(0, i);
+            if (font.widthOfTextAtSize(part, fontSize) > maxWidth) {
+              sliceEnd = i - 1;
+              break;
+            }
+            sliceEnd = i;
+          }
+          const part = remainder.slice(0, sliceEnd);
+          if (!part) break;
+          lines.push(part);
+          remainder = remainder.slice(sliceEnd);
+        }
+        if (remainder) lines.push(remainder);
+      };
+
+      for (let p = 0; p < paragraphs.length; p++) {
+        const para = paragraphs[p];
+        const words = para.split(/\s+/).filter(Boolean);
+        let currentLine = '';
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+
+          if (testWidth <= maxWidth) {
+            currentLine = testLine;
           } else {
-            lines.push(word);
+            if (currentLine) lines.push(currentLine);
+            // If the word alone is too wide, break it into pieces
+            if (font.widthOfTextAtSize(word, fontSize) > maxWidth) {
+              pushBrokenWord(word);
+              currentLine = '';
+            } else {
+              currentLine = word;
+            }
           }
         }
+
+        if (currentLine) lines.push(currentLine);
+        // Keep paragraph spacing (but avoid trailing empty line)
+        if (p < paragraphs.length - 1) lines.push('');
       }
-      
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-      
+
       return lines;
     };
 
-    // Page header (for subsequent pages)
+    // Page header (for subsequent pages) - removed per user request
     const drawPageHeader = () => {
-      if (page !== pdfDoc.getPage(0)) {
-        drawRectangle(0, pageHeight - 25, pageWidth, 25, colors.primary);
-        drawText('Medication Competency Assessment', margin, pageHeight - 18, {
-          color: colors.white,
-          size: 10,
-          bold: true
-        });
-        drawText(`${data.employeeName} - ${data.periodIdentifier}`, pageWidth - margin - 200, pageHeight - 18, {
-          color: colors.white,
-          size: 9
-        });
-        yPosition = pageHeight - 40;
-      }
+      // Header removed - no longer drawing page headers
+      yPosition = pageHeight - 20;
     };
 
     // Modern header with gradient effect simulation
     const drawModernHeader = () => {
       // Header background with gradient effect (simulated with multiple rectangles)
+      // Start from the very top of the page
+      const headerHeight = 180;
+      const headerStartY = pageHeight - headerHeight; // Start from top
+      
       for (let i = 0; i < 8; i++) {
         const intensity = 0.2 + (i * 0.1);
-        drawRectangle(0, yPosition - 140 + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
+        drawRectangle(0, headerStartY + (i * 4), pageWidth, 4, rgb(intensity * 0.2, intensity * 0.4, intensity * 0.7));
       }
 
-      // Main header background
-      drawRectangle(0, yPosition - 140, pageWidth, 140, colors.primary);
+      // Main header background - start from very top
+      drawRectangle(0, headerStartY, pageWidth, headerHeight, colors.primary);
 
-      // Company logo and info
+      let headerY = pageHeight - 40;
+
+      // Centered company logo
       if (logoImage) {
-        const logoSize = 50;
+        const logoW = 60;
+        const logoH = (logoImage.height / logoImage.width) * logoW;
+        const logoX = (pageWidth - logoW) / 2;
         page.drawImage(logoImage, {
-          x: margin,
-          y: yPosition - 80,
-          width: logoSize * 2,
-          height: logoSize,
+          x: logoX,
+          y: headerY - logoH,
+          width: logoW,
+          height: logoH,
         });
+        headerY -= logoH + 15;
       }
 
-      // Company name
+      // Centered company name
       if (company?.name) {
-        drawText(company.name, margin + (logoImage ? 120 : 0), yPosition - 30, {
+        const companyNameWidth = boldFont.widthOfTextAtSize(company.name, 18);
+        const companyX = (pageWidth - companyNameWidth) / 2;
+        drawText(company.name, companyX, headerY, {
           color: colors.white,
-          size: 14,
+          size: 18,
           bold: true
         });
+        headerY -= 25;
       }
 
-      // Main title
-      drawText('MEDICATION COMPETENCY ASSESSMENT', margin, yPosition - 65, {
+      // Centered compliance type name
+      const complianceName = 'MEDICATION COMPETENCY';
+      const complianceNameWidth = boldFont.widthOfTextAtSize(complianceName, 22);
+      const complianceX = (pageWidth - complianceNameWidth) / 2;
+      drawText(complianceName, complianceX, headerY, {
         color: colors.white,
-        size: 20,
+        size: 22,
         bold: true
       });
+      headerY -= 30;
 
-      // Subtitle
-      drawText('Professional Healthcare Certification', margin, yPosition - 85, {
+      // Centered frequency period
+      const frequencyText = `Assessment Period: ${data.periodIdentifier}`;
+      const frequencyWidth = regularFont.widthOfTextAtSize(frequencyText, 14);
+      const frequencyX = (pageWidth - frequencyWidth) / 2;
+      drawText(frequencyText, frequencyX, headerY, {
         color: rgb(0.9, 0.9, 0.9),
-        size: 11
+        size: 14
       });
 
-      // Assessment info box
-      const infoBoxY = yPosition - 130;
-      drawRectangle(pageWidth - 220, infoBoxY, 180, 35, rgb(0.9, 0.9, 1.0));
-      
-      drawText('Assessment ID:', pageWidth - 210, infoBoxY + 20, {
-        color: colors.text,
-        size: 8,
-        bold: true
-      });
-      drawText(data.periodIdentifier, pageWidth - 130, infoBoxY + 20, {
-        color: colors.text,
-        size: 8
-      });
-      
-      drawText('Generated:', pageWidth - 210, infoBoxY + 8, {
-        color: colors.text,
-        size: 8,
-        bold: true
-      });
-      drawText(format(new Date(), 'MMM dd, yyyy'), pageWidth - 130, infoBoxY + 8, {
-        color: colors.text,
-        size: 8
-      });
-
-      yPosition -= 160;
+      yPosition = headerStartY - 20;
     };
 
     // Employee information card
@@ -276,56 +311,6 @@ export async function generateMedicationCompetencyPdf(
       yPosition = cardY - 20;
     };
 
-    // Competency results summary
-    const drawCompetencySummary = () => {
-      checkPageSpace(80);
-      
-      const competentCount = data.responses.filter(r => r.answer === 'yes').length;
-      const totalCount = data.responses.length;
-      const percentage = Math.round((competentCount / totalCount) * 100);
-      
-      // Summary card
-      const summaryHeight = 60;
-      const summaryY = yPosition - summaryHeight;
-      
-      drawRectangle(margin, summaryY, contentWidth, summaryHeight, colors.background);
-      
-      // Progress indicator
-      const progressWidth = 300;
-      const progressHeight = 8;
-      const progressX = margin + 20;
-      const progressY = summaryY + 25;
-      
-      // Progress background
-      drawRectangle(progressX, progressY, progressWidth, progressHeight, rgb(0.9, 0.9, 0.9));
-      
-      // Progress fill
-      const fillWidth = (progressWidth * percentage) / 100;
-      const progressColor = percentage >= 80 ? colors.success : percentage >= 60 ? colors.warning : colors.accent;
-      drawRectangle(progressX, progressY, fillWidth, progressHeight, progressColor);
-      
-      // Summary text
-      drawText('📊 COMPETENCY SUMMARY', margin + 20, summaryY + 45, {
-        bold: true,
-        size: 12,
-        color: colors.primary
-      });
-      
-      drawText(`${competentCount}/${totalCount} competencies demonstrated (${percentage}%)`, 
-        progressX + progressWidth + 20, summaryY + 45, { size: 11 });
-      
-      // Overall result
-      const resultText = percentage >= 80 ? 'COMPETENT' : percentage >= 60 ? 'REQUIRES REVIEW' : 'ADDITIONAL TRAINING REQUIRED';
-      const resultColor = percentage >= 80 ? colors.success : percentage >= 60 ? colors.warning : colors.accent;
-      
-      drawText(resultText, margin + 20, summaryY + 10, {
-        bold: true,
-        size: 10,
-        color: resultColor
-      });
-
-      yPosition = summaryY - 20;
-    };
 
     // Individual competency assessments
     const drawCompetencyAssessments = () => {
@@ -346,7 +331,14 @@ export async function generateMedicationCompetencyPdf(
         return acc;
       }, {} as Record<string, CompetencyResponse[]>);
 
+      let questionNumber = 1;
+
       Object.entries(sections).forEach(([sectionName, responses]) => {
+        // Skip the Acknowledgement section header - we handle signatures separately
+        if (sectionName === 'Acknowledgement') {
+          return;
+        }
+        
         checkPageSpace(40);
         
         // Section header
@@ -358,62 +350,98 @@ export async function generateMedicationCompetencyPdf(
         });
         yPosition -= 30;
 
-        responses.forEach((response, index) => {
-          const itemHeight = 70;
-          checkPageSpace(itemHeight);
+        responses.forEach((response) => {
+          // Skip signature-related questions from competency assessment
+          if (response.question.toLowerCase().includes('signature')) {
+            return;
+          }
+          // Calculate required height for this item
+          const questionLines = wrapText(response.question, contentWidth - 100, regularFont, 10);
+          const examplesText = response.helpText || 'Direct observation / discussion';
+          const exampleLines = wrapText(examplesText, contentWidth - 100, regularFont, 8);
+          const commentLines = response.comment ? wrapText(response.comment, contentWidth - 120, regularFont, 9) : [];
           
-          const itemY = yPosition - itemHeight;
+          const requiredHeight = 25 + // base height
+            (questionLines.length * 12) + // question text
+            (exampleLines.length * 10) + 5 + // examples text + spacing
+            20 + // assessment label + answer
+            (commentLines.length * 11) + 15; // comments + spacing
+          
+          checkPageSpace(requiredHeight);
+          
+          const itemY = yPosition - requiredHeight;
           
           // Competency item background
           const bgColor = response.answer === 'yes' ? rgb(0.95, 1, 0.95) : 
                          response.answer === 'not-yet' ? rgb(1, 0.97, 0.95) : 
                          rgb(0.98, 0.98, 0.98);
           
-          drawRectangle(margin, itemY, contentWidth, itemHeight, bgColor);
+          drawRectangle(margin, itemY, contentWidth, requiredHeight, bgColor);
           
-          // Status indicator
-          const statusIcon = response.answer === 'yes' ? '✅' : 
-                           response.answer === 'not-yet' ? '⚠️' : '❓';
+          // Question number instead of status icon
+          const questionNumberText = `${questionNumber}.`;
           const statusColor = response.answer === 'yes' ? colors.success : 
                             response.answer === 'not-yet' ? colors.warning : 
                             colors.textLight;
           
-          drawText(statusIcon, margin + 10, itemY + itemHeight - 15, { size: 12 });
+          let currentY = itemY + requiredHeight - 10;
+          
+          drawText(questionNumberText, margin + 10, currentY, { 
+            size: 12, 
+            bold: true,
+            color: colors.text
+          });
           
           // Question text
-          const questionLines = wrapText(response.question, contentWidth - 100, regularFont, 10);
           questionLines.forEach((line, lineIndex) => {
-            drawText(line, margin + 30, itemY + itemHeight - 15 - (lineIndex * 12), {
+            drawText(line, margin + 30, currentY - (lineIndex * 12), {
               size: 10,
               bold: true,
               color: colors.text
             });
           });
           
-          // Answer
-          drawText('Assessment:', margin + 30, itemY + itemHeight - 40, {
+          // Move Y position after question
+          currentY -= (questionLines.length * 12) + 5;
+          
+          // Examples/Evidence text
+          if (examplesText) {
+            exampleLines.forEach((line, lineIndex) => {
+              drawText(line, margin + 30, currentY - (lineIndex * 10), {
+                size: 8,
+                color: colors.textLight,
+                bold: false
+              });
+            });
+            currentY -= (exampleLines.length * 10) + 8;
+          }
+          
+          // Assessment label and answer
+          drawText('Assessment:', margin + 30, currentY, {
             size: 9,
             bold: true,
             color: colors.textLight
           });
+          
           drawText(response.answer === 'yes' ? 'Competent' : 
                   response.answer === 'not-yet' ? 'Not Yet Competent' : 
-                  'Not Assessed', margin + 100, itemY + itemHeight - 40, {
+                  'Not Assessed', margin + 100, currentY, {
             size: 9,
             color: statusColor,
             bold: true
           });
           
-          // Comment
+          currentY -= 14;
+          
+          // Comments
           if (response.comment) {
-            drawText('Comments:', margin + 30, itemY + itemHeight - 54, {
+            drawText('Comments:', margin + 30, currentY, {
               size: 9,
               bold: true,
               color: colors.textLight
             });
-            const commentLines = wrapText(response.comment, contentWidth - 120, regularFont, 9);
             commentLines.forEach((line, lineIndex) => {
-              drawText(line, margin + 100, itemY + itemHeight - 54 - (lineIndex * 11), {
+              drawText(line, margin + 100, currentY - (lineIndex * 11), {
                 size: 9,
                 color: colors.text
               });
@@ -421,6 +449,7 @@ export async function generateMedicationCompetencyPdf(
           }
           
           yPosition = itemY - 10;
+          questionNumber++;
         });
         
         yPosition -= 10;
@@ -428,82 +457,121 @@ export async function generateMedicationCompetencyPdf(
     };
 
     // Signature section
-    const drawSignatureSection = () => {
-      checkPageSpace(100);
+    const drawSignatureSection = async () => {
+      checkPageSpace(160);
       
-      const signatureResponse = data.responses.find(r => r.question.toLowerCase().includes('signature'));
+      const sectionHeight = 140;
+      const sectionY = yPosition - sectionHeight;
       
-      if (signatureResponse || data.signature) {
-        drawRectangle(margin, yPosition - 80, contentWidth, 80, colors.background);
+      // Section background
+      drawRectangle(margin, sectionY, contentWidth, sectionHeight, colors.background);
+      
+      // Section header
+      drawRectangle(margin, sectionY + sectionHeight - 25, contentWidth, 25, colors.primary);
+      drawText('✍️ SIGNATURES', margin + 15, sectionY + sectionHeight - 17, {
+        color: colors.white,
+        size: 12,
+        bold: true
+      });
+      
+      const signaturesY = sectionY + sectionHeight - 45;
+      
+      // Assessor signature section
+      if (data.assessorName || data.assessorSignatureData) {
+        drawText('Assessor Name:', margin + 20, signaturesY, { bold: true, size: 10 });
+        drawText(data.assessorName || '', margin + 120, signaturesY, { size: 10, color: colors.primary });
         
-        drawText('✍️ EMPLOYEE ACKNOWLEDGMENT', margin + 15, yPosition - 20, {
-          bold: true,
-          size: 12,
-          color: colors.primary
-        });
+        drawText('Assessor Signature:', margin + 20, signaturesY - 25, { bold: true, size: 10 });
         
-        drawText('Employee Signature:', margin + 15, yPosition - 45, {
-          bold: true,
-          size: 10
-        });
-        
-        const signature = data.signature || signatureResponse?.comment || '';
-        drawText(signature, margin + 130, yPosition - 45, {
-          size: 11,
-          color: colors.primary,
-          bold: true
-        });
-        
-        drawText('Date:', margin + 350, yPosition - 45, {
-          bold: true,
-          size: 10
-        });
-        drawText(format(new Date(data.completedAt), 'MMM dd, yyyy'), margin + 385, yPosition - 45, {
-          size: 11
-        });
-        
-        // Signature line
+        // Draw signature line for assessor
         page.drawLine({
-          start: { x: margin + 130, y: yPosition - 50 },
-          end: { x: margin + 340, y: yPosition - 50 },
+          start: { x: margin + 130, y: signaturesY - 30 },
+          end: { x: margin + 300, y: signaturesY - 30 },
           thickness: 0.5,
           color: colors.border
         });
         
-        yPosition -= 100;
+        // Embed actual signature image if available
+        if (data.assessorSignatureData) {
+          try {
+            // Convert data URL to image
+            const signatureImage = await pdfDoc.embedPng(data.assessorSignatureData);
+            const signatureWidth = 150;
+            const signatureHeight = (signatureImage.height / signatureImage.width) * signatureWidth;
+            
+            page.drawImage(signatureImage, {
+              x: margin + 130,
+              y: signaturesY - 35,
+              width: signatureWidth,
+              height: Math.min(signatureHeight, 30), // Limit height to keep it proportional
+            });
+          } catch (error) {
+            console.warn('Could not embed assessor signature image:', error);
+            drawText('[Digital Signature Present]', margin + 130, signaturesY - 25, { 
+              size: 8, 
+              color: colors.textLight,
+              bold: true 
+            });
+          }
+        }
       }
+      
+      // Employee signature section
+      if (data.employeeName || data.employeeSignatureData) {
+        drawText('Employee Name:', margin + 20, signaturesY - 50, { bold: true, size: 10 });
+        drawText(data.employeeName || '', margin + 120, signaturesY - 50, { size: 10, color: colors.primary });
+        
+        drawText('Employee Signature:', margin + 20, signaturesY - 75, { bold: true, size: 10 });
+        
+        // Draw signature line for employee
+        page.drawLine({
+          start: { x: margin + 130, y: signaturesY - 80 },
+          end: { x: margin + 300, y: signaturesY - 80 },
+          thickness: 0.5,
+          color: colors.border
+        });
+        
+        // Embed actual signature image if available
+        if (data.employeeSignatureData) {
+          try {
+            // Convert data URL to image
+            const signatureImage = await pdfDoc.embedPng(data.employeeSignatureData);
+            const signatureWidth = 150;
+            const signatureHeight = (signatureImage.height / signatureImage.width) * signatureWidth;
+            
+            page.drawImage(signatureImage, {
+              x: margin + 130,
+              y: signaturesY - 85,
+              width: signatureWidth,
+              height: Math.min(signatureHeight, 30), // Limit height to keep it proportional
+            });
+          } catch (error) {
+            console.warn('Could not embed employee signature image:', error);
+            drawText('[Digital Signature Present]', margin + 130, signaturesY - 75, { 
+              size: 8, 
+              color: colors.textLight,
+              bold: true 
+            });
+          }
+        }
+      }
+      
+      // Date
+      drawText('Date:', margin + 350, signaturesY - 25, { bold: true, size: 10 });
+      drawText(format(new Date(data.completedAt), 'MMM dd, yyyy'), margin + 390, signaturesY - 25, { size: 10 });
+      
+      yPosition = sectionY - 20;
     };
 
-    // Footer
-    const drawFooter = () => {
-      const footerY = 30;
-      drawRectangle(0, 0, pageWidth, footerY, colors.primary);
-      
-      drawText('Confidential Medical Document - Generated by Compliance Management System', 
-        margin, 18, {
-          color: colors.white,
-          size: 8
-        });
-      
-      drawText(`Page ${pdfDoc.getPageCount()} • ${format(new Date(), 'PPP')}`, 
-        pageWidth - 200, 18, {
-          color: colors.white,
-          size: 8
-        });
-    };
 
     // Generate the PDF content
     drawModernHeader();
     drawEmployeeCard();
-    drawCompetencySummary();
     drawCompetencyAssessments();
-    drawSignatureSection();
+    await drawSignatureSection();
     
-    // Add footer to all pages
-    for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-      page = pdfDoc.getPage(i);
-      drawFooter();
-    }
+    // Draw footer on the last page
+    drawFooter();
 
     // Save and download the PDF
     const pdfBytes = await pdfDoc.save();

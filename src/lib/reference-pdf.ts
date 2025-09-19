@@ -42,6 +42,8 @@ interface CompletedReference {
   reference_type: string;
   form_data: ReferenceData;
   completed_at: string;
+  created_at: string;
+  sent_at: string;
   application_id: string;
 }
 
@@ -362,25 +364,8 @@ export const generateReferencePDF = async (
   yPosition = addWrappedText(`${reference.form_data.additionalComments || 'Not provided'}`, margin, yPosition, pageWidth - 2 * margin);
   yPosition += 10;
 
-  // Referee Information
-  ensureSpace(40);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('REFEREE INFORMATION', margin, yPosition);
-  yPosition += lineHeight + 3;
-  
-  pdf.text('Referee Name:', margin, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(reference.form_data.refereeFullName || '', margin + 70, yPosition);
-  yPosition += lineHeight;
-
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Referee Job Title:', margin, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(reference.form_data.refereeJobTitle || '', margin + 85, yPosition);
-  yPosition += lineHeight + 5;
-
   // Declaration and Date
-  ensureSpace(50);
+  ensureSpace(30);
   pdf.setFont('helvetica', 'bold');
   pdf.text('DECLARATION', margin, yPosition);
   yPosition += lineHeight + 3;
@@ -388,11 +373,42 @@ export const generateReferencePDF = async (
   const declarationText = 'I certify that, to the best of my knowledge, the information I have given is true and complete. I understand that any deliberate omission, falsification or misrepresentation may lead to refusal of appointment or dismissal.';
   yPosition = addWrappedText(declarationText, margin, yPosition, pageWidth - 2 * margin);
   yPosition += 8;
+
+  // Referee Information
+  ensureSpace(70);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('REFEREE INFORMATION', margin, yPosition);
+  yPosition += lineHeight + 3;
   
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Date of completion:', margin, yPosition);
+  pdf.text('Referee Name:', margin, yPosition);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(reference.form_data.signatureDate || new Date(reference.completed_at).toLocaleDateString(), margin + 100, yPosition);
+  pdf.text(reference.form_data.refereeFullName || '', margin + 110, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Referee Job Title:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(reference.form_data.refereeJobTitle || '', margin + 110, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Reference Created:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(new Date(reference.created_at).toLocaleDateString(), margin + 110, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Reference Sent:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(new Date(reference.sent_at).toLocaleDateString(), margin + 110, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Reference Completed:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(new Date(reference.completed_at).toLocaleDateString(), margin + 110, yPosition);
+  yPosition += lineHeight + 5;
 
   return pdf;
 };
@@ -702,25 +718,8 @@ export const generateManualReferencePDF = async (
   yPosition = addWrappedText('Not provided', margin, yPosition, pageWidth - 2 * margin);
   yPosition += 10;
 
-  // Referee Information
-  ensureSpace(40);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('REFEREE INFORMATION', margin, yPosition);
-  yPosition += lineHeight + 3;
-  
-  pdf.text('Referee Name:', margin, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(data.referee.name || '', margin + 70, yPosition);
-  yPosition += lineHeight;
-
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Referee Job Title:', margin, yPosition);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(data.referee.jobTitle || '', margin + 85, yPosition);
-  yPosition += lineHeight + 5;
-
   // Declaration and Date
-  ensureSpace(50);
+  ensureSpace(30);
   pdf.setFont('helvetica', 'bold');
   pdf.text('DECLARATION', margin, yPosition);
   yPosition += lineHeight + 3;
@@ -728,12 +727,44 @@ export const generateManualReferencePDF = async (
   const declarationText = 'I certify that, to the best of my knowledge, the information I have given is true and complete. I understand that any deliberate omission, falsification or misrepresentation may lead to refusal of appointment or dismissal.';
   yPosition = addWrappedText(declarationText, margin, yPosition, pageWidth - 2 * margin);
   yPosition += 8;
+
+  // Referee Information
+  ensureSpace(70);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('REFEREE INFORMATION', margin, yPosition);
+  yPosition += lineHeight + 3;
   
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Referee Name:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(data.referee.name || '', margin + 110, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Referee Job Title:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(data.referee.jobTitle || '', margin + 110, yPosition);
+  yPosition += lineHeight;
+
+  const createdKey = `{R${data.referenceNumber || 1}_Created}`;
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Reference Created:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(createdKey, margin + 110, yPosition);
+  yPosition += lineHeight;
+
   const signatureKey = `{R${data.referenceNumber || 1}_Signed}`;
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Date of completion:', margin, yPosition);
+  pdf.text('Reference Sent:', margin, yPosition);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(signatureKey, margin + 100, yPosition);
+  pdf.text(signatureKey, margin + 110, yPosition);
+  yPosition += lineHeight;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Reference Completed:', margin, yPosition);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(signatureKey, margin + 110, yPosition);
+  yPosition += lineHeight + 5;
 
   return pdf;
 };

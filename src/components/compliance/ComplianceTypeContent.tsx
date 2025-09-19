@@ -52,6 +52,7 @@ import { generateSpotCheckPdf } from "@/lib/spot-check-pdf";
 import { generateSupervisionPdf } from "@/lib/supervision-pdf";
 import SpotCheckFormDialog, { SpotCheckFormData } from "./SpotCheckFormDialog";
 import SupervisionFormDialog, { SupervisionFormData } from "./SupervisionFormDialog";
+import { MedicationCompetencyForm } from "./MedicationCompetencyForm";
 
 interface ComplianceType {
   id: string;
@@ -79,6 +80,7 @@ interface ComplianceRecord {
   period_identifier: string;
   completion_date: string;
   notes: string;
+  form_data?: any | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -130,6 +132,10 @@ const [spotcheckTarget, setSpotcheckTarget] = useState<{ employeeId: string; per
 const [supervisionEditOpen, setSupervisionEditOpen] = useState(false);
 const [supervisionInitialData, setSupervisionInitialData] = useState<SupervisionFormData | null>(null);
 const [supervisionTarget, setSupervisionTarget] = useState<{ recordId: string } | null>(null);
+// Medication competency edit state
+const [medicationEditOpen, setMedicationEditOpen] = useState(false);
+const [medicationInitialData, setMedicationInitialData] = useState<any | null>(null);
+const [medicationTarget, setMedicationTarget] = useState<{ recordId: string; employeeName: string } | null>(null);
 
   // Get unique branches for filter - filtered by user access
   const uniqueBranches = useMemo(() => {
@@ -583,7 +589,11 @@ const handleDownloadSpotCheck = async (employeeId: string, period: string) => {
 
 const handleDownloadMedicationCompetency = async (record: any, employeeName: string) => {
   try {
-    if (!record.notes) {
+    const parsedData = record.form_data
+      ? record.form_data
+      : (record.notes ? JSON.parse(record.notes) : null);
+
+    if (!parsedData) {
       toast({ 
         title: 'No questionnaire data found', 
         description: 'This medication competency record does not have questionnaire data.',
@@ -592,27 +602,36 @@ const handleDownloadMedicationCompetency = async (record: any, employeeName: str
       return;
     }
 
-    const parsedData = JSON.parse(record.notes);
-    
     // Transform legacy data to new format
-    const responses = parsedData.competencyItems ? 
-      Object.entries(parsedData.competencyItems).map(([key, value]: [string, any]) => ({
-        question: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-        answer: value?.competent === 'yes' ? 'yes' : 
-               value?.competent === 'not-yet' ? 'not-yet' : 'yes',
-        comment: value?.comments || value || 'No comment provided',
-        section: 'Competency Assessment'
-      })) : [];
+      const items = parsedData.competencyItems;
+      const responses = Array.isArray(items)
+        ? items.map((item: any) => ({
+          question: item?.performanceCriteria || item?.id || 'Competency Item',
+          answer: item?.competent === 'yes' ? 'yes' : item?.competent === 'not-yet' ? 'not-yet' : 'yes',
+          comment: item?.comments || 'No comment provided',
+          section: 'Competency Assessment',
+          helpText: item?.examples || 'Direct observation / discussion'
+        }))
+        : items && typeof items === 'object'
+        ? Object.values(items).map((value: any) => ({
+          question: value?.performanceCriteria || value?.id || 'Competency Item',
+          answer: value?.competent === 'yes' ? 'yes' : value?.competent === 'not-yet' ? 'not-yet' : 'yes',
+          comment: value?.comments || 'No comment provided',
+          section: 'Competency Assessment',
+          helpText: value?.examples || 'Direct observation / discussion'
+        }))
+        : [];
 
     // Add signature if available
-    if (parsedData.acknowledgement?.signature) {
-      responses.push({
-        question: 'Employee Signature',
-        answer: 'yes',
-        comment: parsedData.acknowledgement.signature,
-        section: 'Acknowledgement'
-      });
-    }
+      if (parsedData.acknowledgement?.signature) {
+        responses.push({
+          question: 'Employee Signature',
+          answer: 'yes',
+          comment: parsedData.acknowledgement.signature,
+          section: 'Acknowledgement',
+          helpText: 'Employee acknowledgement'
+        });
+      }
     
     const competencyData = {
       employeeId: record.employee_id,
@@ -622,7 +641,10 @@ const handleDownloadMedicationCompetency = async (record: any, employeeName: str
       responses: responses,
       signature: parsedData.acknowledgement?.signature || '',
       completedAt: record.created_at,
-      questionnaireName: 'Medication Competency Assessment'
+      questionnaireName: 'Medication Competency Assessment',
+      assessorName: parsedData.signatures?.assessorName || '',
+      assessorSignatureData: parsedData.signatures?.assessorSignatureData || '',
+      employeeSignatureData: parsedData.signatures?.employeeSignatureData || ''
     };
 
     // Import and call the PDF generator
@@ -670,6 +692,18 @@ const handleOpenSupervisionEdit = (record: ComplianceRecord) => {
   } catch (err) {
     console.error('Error loading supervision form:', err);
     toast({ title: 'Error', description: 'Could not load supervision form.', variant: 'destructive' });
+  }
+};
+
+const handleOpenMedicationEdit = (record: ComplianceRecord, employeeName: string) => {
+  try {
+    const init = record.form_data || null;
+    setMedicationInitialData(init);
+    setMedicationTarget({ recordId: record.id, employeeName });
+    setMedicationEditOpen(true);
+  } catch (err) {
+    console.error('Error loading medication competency form:', err);
+    toast({ title: 'Error', description: 'Could not load medication competency form.', variant: 'destructive' });
   }
 };
 
@@ -1202,6 +1236,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                           </TableCell>
                           <TableCell className="max-w-xs">
                              <div className="truncate" title={(() => {
+                               if (!item.record) return '';
+                               if (item.record?.completion_method === 'medication_competency') return '';
                                if (!item.record?.notes) return '';
                                if (item.record?.completion_method === 'supervision' || item.record?.completion_method === 'annual_appraisal') {
                                  try {
@@ -1215,6 +1251,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                return item.record?.notes || '';
                              })()}>
                                {(() => {
+                                 if (!item.record) return '-';
+                                 if (item.record?.completion_method === 'medication_competency') return '-';
                                  if (!item.record?.notes) return '-';
                                  if (item.record?.completion_method === 'supervision' || item.record?.completion_method === 'annual_appraisal') {
                                    try {
@@ -1299,7 +1337,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
         <Download className="w-4 h-4" />
       </Button>
     )}
-    {item.record.completion_method === 'medication_competency' && item.record.status === 'completed' && item.record.notes && (
+    {item.record.completion_method === 'medication_competency' && item.record.status === 'completed' && (item.record.form_data || item.record.notes) && (
       <Button
         variant="ghost"
         size="sm"
@@ -1373,24 +1411,34 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                             </div>
                                           </div>
                                         )}
-                                        {item.record.notes && (
+                                        {item.record.notes && item.record.completion_method !== 'medication_competency' && (
                                           <div>
                                             <h4 className="font-semibold text-sm text-muted-foreground mb-2">Notes</h4>
-                                             <p className="text-sm bg-muted p-3 rounded-md">
-                                               {(() => {
-                                                 if (!item.record?.notes) return '';
-                                                 if (item.record?.completion_method === 'supervision' || item.record?.completion_method === 'annual_appraisal') {
-                                                   try {
-                                                     const j = JSON.parse(item.record.notes);
-                                                     const txt = (j?.freeTextNotes || '').toString().trim();
-                                                     return txt || '';
-                                                   } catch {
-                                                     return '';
-                                                   }
-                                                 }
-                                                 return item.record?.notes || '';
-                                               })()}
-                                             </p>
+                                            {(() => {
+                                              if (item.record?.completion_method === 'supervision' || item.record?.completion_method === 'annual_appraisal') {
+                                                try {
+                                                  const j = JSON.parse(item.record.notes);
+                                                  const txt = (j?.freeTextNotes || '').toString().trim();
+                                                  return (
+                                                    <p className="text-sm bg-muted p-3 rounded-md">
+                                                      {txt || 'No additional notes provided'}
+                                                    </p>
+                                                  );
+                                                } catch {
+                                                  return (
+                                                    <p className="text-sm bg-muted p-3 rounded-md">
+                                                      {item.record?.notes || ''}
+                                                    </p>
+                                                  );
+                                                }
+                                              }
+                                              
+                                              return (
+                                                <p className="text-sm bg-muted p-3 rounded-md">
+                                                  {item.record?.notes || ''}
+                                                </p>
+                                              );
+                                            })()}
                                           </div>
                                         )}
                                       </div>
@@ -1413,6 +1461,15 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
     size="sm"
     className="hover-scale"
     onClick={() => handleOpenSupervisionEdit(item.record!)}
+  >
+    <Edit className="w-4 h-4" />
+  </Button>
+) : item.record.completion_method === 'questionnaire' && item.record.form_data ? (
+  <Button
+    variant="ghost"
+    size="sm"
+    className="hover-scale"
+    onClick={() => handleOpenMedicationEdit(item.record!, item.employee.name)}
   >
     <Edit className="w-4 h-4" />
   </Button>
@@ -1557,6 +1614,52 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
   initialData={supervisionInitialData || undefined}
   onSubmit={handleSaveSupervisionEdit}
 />
+
+{/* Medication Competency Edit Dialog */}
+<Dialog open={medicationEditOpen} onOpenChange={setMedicationEditOpen}>
+  <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle>Edit Medication Competency Assessment</DialogTitle>
+      <DialogDescription>
+        View and edit the completed medication competency assessment for {medicationTarget?.employeeName}
+      </DialogDescription>
+    </DialogHeader>
+    
+    <MedicationCompetencyForm
+      complianceTypeId=""
+      employeeName={medicationTarget?.employeeName}
+      periodIdentifier={medicationInitialData?.periodIdentifier || ""}
+      initialData={medicationInitialData || undefined}
+      recordId={medicationTarget?.recordId}
+      onComplete={() => {
+        setMedicationEditOpen(false);
+        fetchData();
+      }}
+    />
+
+    <div className="flex justify-end gap-3 pt-4 border-t">
+      <Button variant="outline" onClick={() => setMedicationEditOpen(false)}>
+        Close
+      </Button>
+      {medicationInitialData && (
+        <Button
+          onClick={() => {
+            // Generate PDF download
+            import("@/lib/medication-competency-pdf").then(({ generateMedicationCompetencyPdf }) => {
+              generateMedicationCompetencyPdf(medicationInitialData, { 
+                name: companySettings?.name, 
+                logo: companySettings?.logo 
+              });
+            });
+          }}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Download PDF
+        </Button>
+      )}
+    </div>
+  </DialogContent>
+</Dialog>
     </div>
   );
 }

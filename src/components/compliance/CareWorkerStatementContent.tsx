@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Filter, Download, Eye, Edit, Check, X, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CareWorkerStatementModal } from "./CareWorkerStatementModal";
 import { CareWorkerStatementForm } from "./CareWorkerStatementForm";
@@ -22,6 +21,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { generateCareWorkerStatementPDF } from "@/lib/care-worker-statement-pdf";
+import { useCareWorkerStatements, useStatementBranches, useCompliancePeriodActions } from "@/hooks/queries/useCompliancePeriodQueries";
 
 interface CareWorkerStatement {
   id: string;
@@ -60,9 +60,6 @@ export type StatementSortField = 'care_worker_name' | 'client_name' | 'client_ad
 export type StatementSortDirection = 'asc' | 'desc';
 
 export function CareWorkerStatementContent() {
-  const [statements, setStatements] = useState<CareWorkerStatement[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStatement, setSelectedStatement] = useState<CareWorkerStatement | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -82,123 +79,47 @@ export function CareWorkerStatementContent() {
     canDeleteCompliance
   } = usePagePermissions();
 
-  // Debug logging
-  console.log('CareWorkerStatementContent - Debug Info:', {
-    isAdmin,
-    canViewCompliance: canViewCompliance(),
-    canCreateCompliance: canCreateCompliance(),
-    canEditCompliance: canEditCompliance(),
-    accessibleBranches: getAccessibleBranches(),
-    user: user?.id
-  });
+  // Fetch data using React Query
+  const { data: statementsData, isLoading: statementsLoading } = useCareWorkerStatements();
+  const { data: branchesData, isLoading: branchesLoading } = useStatementBranches();
+  const { updateStatementStatus } = useCompliancePeriodActions();
 
-  useEffect(() => {
-    fetchStatements();
-    fetchBranches();
-  }, []);
-
-  const fetchStatements = async () => {
-    try {
-      console.log('Fetching statements...');
-      const { data, error } = await supabase
-        .from('care_worker_statements')
-        .select(`
-          *,
-          employees:assigned_employee_id (name),
-          branches:branch_id (name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      console.log('Raw statements data:', data);
-      
-      // Filter statements by accessible branches for non-admin users
-      let filteredData = data || [];
-      const accessibleBranches = getAccessibleBranches();
-      
-      console.log('Before filtering - statements count:', filteredData.length);
-      console.log('Accessible branches:', accessibleBranches);
-      console.log('Is admin:', isAdmin);
-      
-      if (!isAdmin && accessibleBranches.length > 0) {
-        filteredData = (data || []).filter(statement => {
-          console.log('Checking statement branch_id:', statement.branch_id, 'against accessible:', accessibleBranches);
-          return accessibleBranches.includes(statement.branch_id);
-        });
-        console.log('After filtering - statements count:', filteredData.length);
-      }
-      
-      setStatements((filteredData as any) || []);
-    } catch (error) {
-      console.error('Error fetching statements:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load care worker statements",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchBranches = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('branches')
-        .select('id, name')
-        .order('name');
-
-      if (error) throw error;
-      
-      // Filter branches by accessible branches for non-admin users
-      let filteredBranches = data || [];
-      const accessibleBranches = getAccessibleBranches();
-      
-      if (!isAdmin && accessibleBranches.length > 0) {
-        filteredBranches = (data || []).filter(branch => 
-          accessibleBranches.includes(branch.id)
-        );
-      }
-      
-      setBranches((filteredBranches as Branch[]) || []);
-    } catch (error) {
-      console.error('Error fetching branches:', error);
-    }
-  };
-
-  const handleStatusUpdate = async (statementId: string, status: string, rejectionReason?: string) => {
-    try {
-      const updateData: any = {
-        status,
-        approved_by: user?.id,
-        approved_at: new Date().toISOString(),
-      };
-
-      if (rejectionReason) {
-        updateData.rejection_reason = rejectionReason;
-      }
-
-      const { error } = await supabase
-        .from('care_worker_statements')
-        .update(updateData)
-        .eq('id', statementId);
-
-      if (error) throw error;
-
-      await fetchStatements();
-      toast({
-        title: "Success",
-        description: `Statement ${status} successfully`,
-      });
-    } catch (error) {
-      console.error('Error updating statement:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update statement status",
-        variant: "destructive",
+  // Filter statements based on user permissions
+  const statements = useMemo(() => {
+    if (!statementsData) return [];
+    
+    let filteredData = statementsData;
+    const accessibleBranches = getAccessibleBranches();
+    
+    if (!isAdmin && accessibleBranches.length > 0) {
+      filteredData = statementsData.filter(statement => {
+        return accessibleBranches.includes(statement.branch_id);
       });
     }
+    
+    return filteredData;
+  }, [statementsData, isAdmin, getAccessibleBranches]);
+
+  // Filter branches based on user permissions
+  const branches = useMemo(() => {
+    if (!branchesData) return [];
+    
+    let filteredBranches = branchesData;
+    const accessibleBranches = getAccessibleBranches();
+    
+    if (!isAdmin && accessibleBranches.length > 0) {
+      filteredBranches = branchesData.filter(branch => 
+        accessibleBranches.includes(branch.id)
+      );
+    }
+    
+    return filteredBranches;
+  }, [branchesData, isAdmin, getAccessibleBranches]);
+
+  const loading = statementsLoading || branchesLoading;
+
+  const handleStatusUpdate = (statementId: string, status: string, rejectionReason?: string) => {
+    updateStatementStatus.mutate({ statementId, status, rejectionReason });
   };
 
   const exportToPDF = async (statement: CareWorkerStatement) => {
@@ -551,7 +472,6 @@ export function CareWorkerStatementContent() {
         statement={selectedStatement}
         branches={branches}
         onSuccess={() => {
-          fetchStatements();
           setSelectedStatement(null);
         }}
       />
@@ -561,7 +481,6 @@ export function CareWorkerStatementContent() {
         onOpenChange={setIsFormOpen}
         statement={selectedStatement}
         onSuccess={() => {
-          fetchStatements();
           setSelectedStatement(null);
         }}
         readOnly={!canEditCompliance() && selectedStatement?.status !== 'draft' && selectedStatement?.status !== 'rejected'}

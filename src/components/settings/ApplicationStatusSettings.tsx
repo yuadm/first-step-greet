@@ -12,12 +12,29 @@ import { useToast } from '@/hooks/use-toast';
 
 interface StatusSetting {
   id: string;
-  status_name: string;
-  status_label: string;
-  status_color: string;
-  is_active: boolean;
-  is_default: boolean;
+  setting_key: string;
+  setting_value: {
+    status_name: string;
+    status_label: string;
+    status_color: string;
+    is_default: boolean;
+    display_order: number;
+    is_active: boolean;
+  };
   display_order: number;
+  is_active: boolean;
+}
+
+interface StatusSettingDB {
+  id: string;
+  category: string;
+  setting_key: string;
+  setting_type: string;
+  setting_value: any;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export function ApplicationStatusSettings() {
@@ -39,12 +56,24 @@ export function ApplicationStatusSettings() {
   const fetchStatuses = async () => {
     try {
       const { data, error } = await supabase
-        .from('application_status_settings')
+        .from('job_application_settings')
         .select('*')
+        .eq('category', 'status')
+        .eq('is_active', true)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setStatuses(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData: StatusSetting[] = (data || []).map((item: StatusSettingDB) => ({
+        id: item.id,
+        setting_key: item.setting_key,
+        setting_value: item.setting_value as StatusSetting['setting_value'],
+        display_order: item.display_order,
+        is_active: item.is_active
+      }));
+      
+      setStatuses(transformedData);
     } catch (error) {
       console.error('Error fetching status settings:', error);
       toast({
@@ -63,14 +92,25 @@ export function ApplicationStatusSettings() {
     try {
       const maxOrder = Math.max(...statuses.map(s => s.display_order), 0);
 
-      const { error } = await supabase
-        .from('application_status_settings')
-        .insert({
+      const settingData = {
+        category: 'status',
+        setting_type: 'status',
+        setting_key: formData.status_name.trim(),
+        setting_value: {
           status_name: formData.status_name.trim(),
           status_label: formData.status_label.trim(),
           status_color: formData.status_color,
+          is_default: false,
           display_order: maxOrder + 1,
-        });
+          is_active: true
+        },
+        display_order: maxOrder + 1,
+        is_active: true
+      };
+
+      const { error } = await supabase
+        .from('job_application_settings')
+        .insert(settingData);
 
       if (error) throw error;
 
@@ -92,19 +132,40 @@ export function ApplicationStatusSettings() {
     }
   };
 
-  const updateStatus = async (id: string, updates: Partial<StatusSetting>) => {
+  const updateStatus = async (id: string, updates: { is_active?: boolean; is_default?: boolean; display_order?: number }) => {
     try {
+      const currentStatus = statuses.find(s => s.id === id);
+      if (!currentStatus) return;
+
       // If setting as default, first remove default from all others
       if (updates.is_default === true) {
-        await supabase
-          .from('application_status_settings')
-          .update({ is_default: false })
-          .neq('id', id);
+        const otherStatuses = statuses.filter(s => s.id !== id);
+        for (const status of otherStatuses) {
+          await supabase
+            .from('job_application_settings')
+            .update({ 
+              setting_value: { ...status.setting_value, is_default: false },
+              is_active: status.is_active,
+              display_order: status.display_order
+            })
+            .eq('id', status.id);
+        }
       }
 
+      const updatedSettingValue = {
+        ...currentStatus.setting_value,
+        ...(updates.is_active !== undefined && { is_active: updates.is_active }),
+        ...(updates.is_default !== undefined && { is_default: updates.is_default }),
+        ...(updates.display_order !== undefined && { display_order: updates.display_order })
+      };
+
       const { error } = await supabase
-        .from('application_status_settings')
-        .update(updates)
+        .from('job_application_settings')
+        .update({
+          setting_value: updatedSettingValue,
+          is_active: updates.is_active !== undefined ? updates.is_active : currentStatus.is_active,
+          display_order: updates.display_order !== undefined ? updates.display_order : currentStatus.display_order
+        })
         .eq('id', id);
 
       if (error) throw error;
@@ -127,7 +188,7 @@ export function ApplicationStatusSettings() {
 
   const deleteStatus = async (id: string) => {
     const status = statuses.find(s => s.id === id);
-    if (status?.is_default) {
+    if (status?.setting_value.is_default) {
       toast({
         title: "Error",
         description: "Cannot delete the default status",
@@ -138,7 +199,7 @@ export function ApplicationStatusSettings() {
 
     try {
       const { error } = await supabase
-        .from('application_status_settings')
+        .from('job_application_settings')
         .delete()
         .eq('id', id);
 
@@ -244,20 +305,20 @@ export function ApplicationStatusSettings() {
           <TableBody>
             {statuses.map((status) => (
               <TableRow key={status.id}>
-                <TableCell className="font-mono text-sm">{status.status_name}</TableCell>
-                <TableCell>{status.status_label}</TableCell>
+                <TableCell className="font-mono text-sm">{status.setting_value.status_name}</TableCell>
+                <TableCell>{status.setting_value.status_label}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <div
                       className="w-4 h-4 rounded border"
-                      style={{ backgroundColor: status.status_color }}
+                      style={{ backgroundColor: status.setting_value.status_color }}
                     />
-                    <span className="text-sm font-mono">{status.status_color}</span>
+                    <span className="text-sm font-mono">{status.setting_value.status_color}</span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <Switch
-                    checked={status.is_active}
+                    checked={status.setting_value.is_active}
                     onCheckedChange={(checked) =>
                       updateStatus(status.id, { is_active: checked })
                     }
@@ -265,19 +326,19 @@ export function ApplicationStatusSettings() {
                 </TableCell>
                 <TableCell>
                   <Switch
-                    checked={status.is_default}
+                    checked={status.setting_value.is_default}
                     onCheckedChange={(checked) =>
                       updateStatus(status.id, { is_default: checked })
                     }
                   />
-                  {status.is_default && (
+                  {status.setting_value.is_default && (
                     <Badge variant="secondary" className="ml-2">Default</Badge>
                   )}
                 </TableCell>
                 <TableCell>
                   <Input
                     type="number"
-                    value={status.display_order}
+                    value={status.setting_value.display_order}
                     onChange={(e) =>
                       updateStatus(status.id, { display_order: parseInt(e.target.value) })
                     }
@@ -289,7 +350,7 @@ export function ApplicationStatusSettings() {
                     size="sm"
                     variant="destructive"
                     onClick={() => deleteStatus(status.id)}
-                    disabled={status.is_default}
+                    disabled={status.setting_value.is_default}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

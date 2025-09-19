@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Shield, Plus, Calendar, AlertTriangle, Users, Building, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,19 +10,22 @@ import { useNavigate } from "react-router-dom";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { CareWorkerStatementContent } from "./CareWorkerStatementContent";
+import { useComplianceData } from "@/hooks/useComplianceData";
 
 interface ComplianceType {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   frequency: string;
-  target_table: 'employees' | 'clients';
+  target_table: string;
+  has_questionnaire?: boolean;
+  questionnaire_id?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export function ComplianceContent() {
-  const [complianceTypes, setComplianceTypes] = useState<ComplianceType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { complianceTypes, loading, refetchData } = useComplianceData();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { hasPageAccess } = usePermissions();
@@ -43,90 +46,14 @@ export function ComplianceContent() {
     canDeleteCompliance: canDeleteCompliance()
   });
 
-  useEffect(() => {
-    fetchComplianceTypes();
+  // REMOVED old useEffect and fetchComplianceTypes - now using React Query hooks
 
-    // Listen for storage events to refresh when settings change (cross-tab)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'compliance-types-updated') {
-        console.log('Compliance types updated (cross-tab), refreshing...');
-        fetchComplianceTypes();
-        // Clear the storage item after handling
-        localStorage.removeItem('compliance-types-updated');
-      }
-    };
-
-    // Listen for custom events on the same tab
-    const handleCustomRefresh = () => {
-      console.log('Compliance types updated (same tab), refreshing...');
-      fetchComplianceTypes();
-    };
-
-    // Listen for focus events to refresh when returning to the page
-    const handleFocus = () => {
-      console.log('Window focused, checking for updates...');
-      const lastUpdate = localStorage.getItem('compliance-types-updated');
-      if (lastUpdate) {
-        console.log('Found pending updates, refreshing...');
-        fetchComplianceTypes();
-        localStorage.removeItem('compliance-types-updated');
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('compliance-types-updated', handleCustomRefresh);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('compliance-types-updated', handleCustomRefresh);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
-
-  const fetchComplianceTypes = async () => {
-    try {
-      console.log('Fetching compliance types...');
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('compliance_types')
-        .select('*')
-        .order('name');
-
-      console.log('Supabase response:', { data, error });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        toast({
-          title: "Error loading compliance types",
-          description: `Database error: ${error.message}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Compliance types fetched:', data);
-      setComplianceTypes((data || []).map(item => ({
-        ...item,
-        target_table: (item.target_table || 'employees') as 'employees' | 'clients'
-      })));
-    } catch (error) {
-      console.error('Error fetching compliance types:', error);
-      toast({
-        title: "Error loading compliance types",
-        description: "Could not fetch compliance types. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Force refresh function
+  // REMOVED fetchComplianceTypes function - now using React Query hooks in useComplianceData
+  
+  // Force refresh function - now uses React Query refetch
   const handleRefresh = () => {
     console.log('Manual refresh triggered');
-    fetchComplianceTypes();
+    refetchData();
   };
 
   const getFrequencyIcon = (frequency: string) => {

@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
 import { Availability } from '../types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { useUnifiedJobApplicationSettings, transformShiftSettings } from '@/hooks/queries/useUnifiedJobApplicationSettings';
 
 interface AvailabilityStepProps {
   data: Availability;
@@ -26,30 +25,9 @@ const DAYS_OF_WEEK = [
 ];
 
 export function AvailabilityStep({ data, updateData }: AvailabilityStepProps) {
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchTimeSlots();
-  }, []);
-
-  const fetchTimeSlots = async () => {
-    try {
-      const { data: slotsData, error } = await supabase
-        .from('application_shift_settings')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (error) throw error;
-      setTimeSlots(slotsData || []);
-    } catch (error) {
-      console.error('Error fetching time slots:', error);
-      setTimeSlots([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: shiftSettings, isLoading } = useUnifiedJobApplicationSettings('shift');
+  
+  const timeSlots = shiftSettings ? transformShiftSettings(shiftSettings) : [];
 
   const handleDayToggle = (timeSlotId: string, day: string, checked: boolean) => {
     const currentTimeSlots = data.timeSlots || {};
@@ -70,7 +48,7 @@ export function AvailabilityStep({ data, updateData }: AvailabilityStepProps) {
     updateData('timeSlots', updatedTimeSlots);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading time slot options...</div>;
   }
 
@@ -95,17 +73,18 @@ export function AvailabilityStep({ data, updateData }: AvailabilityStepProps) {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
               {DAYS_OF_WEEK.map(day => (
-                <div key={`${timeSlot.id}-${day}`} className="flex items-center space-x-2">
+                <div key={`${timeSlot.id}-${day}`} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                   <Checkbox
                     id={`${timeSlot.id}-${day}`}
                     checked={data.timeSlots?.[timeSlot.id]?.includes(day) || false}
                     onCheckedChange={(checked) => handleDayToggle(timeSlot.id, day, checked === true)}
+                    className="h-5 w-5"
                   />
                   <Label 
                     htmlFor={`${timeSlot.id}-${day}`} 
-                    className="text-sm font-medium cursor-pointer"
+                    className="text-sm font-medium cursor-pointer flex-1 min-h-[44px] flex items-center"
                   >
                     {day}
                   </Label>
@@ -120,7 +99,7 @@ export function AvailabilityStep({ data, updateData }: AvailabilityStepProps) {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <Label htmlFor="hoursPerWeek">How many hours per week are you willing to work? *</Label>
           <Input

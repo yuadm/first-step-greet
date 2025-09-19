@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCompany } from "@/contexts/CompanyContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { EmailSettings } from "./EmailSettings";
 
 export function CompanySettings() {
   const { companySettings, updateCompanySettings, loading } = useCompany();
@@ -246,13 +247,14 @@ export function CompanySettings() {
   }
 
   return (
-    <Card className="card-premium animate-fade-in">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3">
-          <Building2 className="w-6 h-6 text-primary" />
-          Company Information
-        </CardTitle>
-      </CardHeader>
+    <div className="space-y-8">
+      <Card className="card-premium animate-fade-in">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
+            <Building2 className="w-6 h-6 text-primary" />
+            Company Information
+          </CardTitle>
+        </CardHeader>
       <CardContent className="space-y-6">
         {/* Logo Upload Section */}
         <div className="space-y-4">
@@ -354,16 +356,6 @@ export function CompanySettings() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="company-email">Email Address</Label>
-            <Input
-              id="company-email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder="Enter email address"
-            />
-          </div>
         </div>
 
         <div className="flex justify-end">
@@ -374,5 +366,8 @@ export function CompanySettings() {
         </div>
       </CardContent>
     </Card>
+    
+    <EmailSettings />
+    </div>
   );
 }

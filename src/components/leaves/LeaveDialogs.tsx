@@ -196,7 +196,7 @@ export function LeaveDialogs({
 
       {/* Edit Leave Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={onEditDialogClose}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Leave Request</DialogTitle>
             <DialogDescription>
@@ -204,17 +204,18 @@ export function LeaveDialogs({
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="employee">Employee</Label>
                 <Select
                   value={editData.employee_id}
                   onValueChange={(value) => setEditData({...editData, employee_id: value})}
+                  disabled
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11">
                     <SelectValue placeholder="Select employee" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50 bg-background">
                     {employees.map((employee) => (
                       <SelectItem key={employee.id} value={employee.id}>
                         {employee.name} ({employee.employee_code})
@@ -229,10 +230,10 @@ export function LeaveDialogs({
                   value={editData.leave_type_id}
                   onValueChange={(value) => setEditData({...editData, leave_type_id: value})}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11">
                     <SelectValue placeholder="Select leave type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50 bg-background">
                     {leaveTypes.map((type) => (
                       <SelectItem key={type.id} value={type.id}>
                         {type.name}
@@ -243,7 +244,7 @@ export function LeaveDialogs({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Start Date</Label>
                 <Popover>
@@ -251,7 +252,7 @@ export function LeaveDialogs({
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full h-11 justify-start text-left font-normal",
                         !startDate && "text-muted-foreground"
                       )}
                     >
@@ -259,7 +260,7 @@ export function LeaveDialogs({
                       {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0 z-50" align="start">
                     <CalendarComponent
                       mode="single"
                       selected={startDate}
@@ -277,7 +278,7 @@ export function LeaveDialogs({
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full h-11 justify-start text-left font-normal",
                         !endDate && "text-muted-foreground"
                       )}
                     >
@@ -285,7 +286,7 @@ export function LeaveDialogs({
                       {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0 z-50" align="start">
                     <CalendarComponent
                       mode="single"
                       selected={endDate}
@@ -305,6 +306,7 @@ export function LeaveDialogs({
                 value={editData.notes}
                 onChange={(e) => setEditData({...editData, notes: e.target.value})}
                 placeholder="Additional notes about the leave request..."
+                className="min-h-[80px] resize-none"
               />
             </div>
 
@@ -316,11 +318,11 @@ export function LeaveDialogs({
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={onEditDialogClose}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button variant="outline" onClick={onEditDialogClose} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleUpdateLeave} className="bg-gradient-primary hover:opacity-90">
+            <Button onClick={handleUpdateLeave} className="w-full sm:w-auto bg-gradient-primary hover:opacity-90">
               Update Request
             </Button>
           </DialogFooter>

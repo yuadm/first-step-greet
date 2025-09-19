@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,9 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ChevronDown, ChevronRight, Check, Shield, Users, Heart, FileText, Clock, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ChevronDown, ChevronRight, Check, Shield, Users, Heart, FileText, Clock, AlertTriangle, Signature } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import SignatureCanvas from 'react-signature-canvas';
 import { format } from "date-fns";
 
 interface CompetencyItem {
@@ -39,6 +41,14 @@ interface MedicationCompetencyData {
   signature: string;
   signatureDate: string;
   
+  // Assessor fields
+  assessorName?: string;
+  assessorSignature?: string;
+  assessorSignatureData?: string;
+  
+  // Employee signature data
+  employeeSignatureData?: string;
+  
   // Status
   status: "draft" | "completed";
 }
@@ -48,6 +58,8 @@ interface MedicationCompetencyFormProps {
   employeeId?: string;
   employeeName?: string;
   periodIdentifier: string;
+  initialData?: any;
+  recordId?: string; // Add record ID for editing
   onComplete: () => void;
 }
 
@@ -154,28 +166,119 @@ export function MedicationCompetencyForm({
   employeeId,
   employeeName,
   periodIdentifier,
+  initialData,
+  recordId,
   onComplete
 }: MedicationCompetencyFormProps) {
   const [overviewExpanded, setOverviewExpanded] = useState(false);
-  const [formData, setFormData] = useState<MedicationCompetencyData>({
-    employeeId,
-    employeeName: employeeName || "",
-    procedureAcknowledged: false,
-    checklistCompleted: false,
-    competencyItems: competencyFramework.map(item => ({
-      ...item,
-      competent: "",
-      comments: ""
-    })),
-    acknowledgementConfirmed: false,
-    signature: "",
-    signatureDate: format(new Date(), "yyyy-MM-dd"),
-    status: "draft"
+  const [formData, setFormData] = useState<MedicationCompetencyData>(() => {
+    // If we have initial data (editing mode), use it
+    if (initialData) {
+      return {
+        employeeId,
+        employeeName: employeeName || "",
+        procedureAcknowledged: true,
+        checklistCompleted: true,
+        competencyItems: initialData.competencyItems || competencyFramework.map(item => ({
+          ...item,
+          competent: "",
+          comments: ""
+        })),
+        acknowledgementConfirmed: initialData.acknowledgement?.confirmed || false,
+        signature: initialData.acknowledgement?.signature || "",
+        signatureDate: initialData.acknowledgement?.date || format(new Date(), "yyyy-MM-dd"),
+        assessorName: initialData.assessorName || "",
+        assessorSignature: initialData.assessorSignature || "",
+        assessorSignatureData: initialData.assessorSignatureData || "",
+        employeeSignatureData: initialData.employeeSignatureData || "",
+        status: "completed"
+      };
+    }
+    
+    // Default state for new form
+    return {
+      employeeId,
+      employeeName: employeeName || "",
+      procedureAcknowledged: true,
+      checklistCompleted: false,
+      competencyItems: competencyFramework.map(item => ({
+        ...item,
+        competent: "",
+        comments: ""
+      })),
+      acknowledgementConfirmed: false,
+      signature: "",
+      signatureDate: format(new Date(), "yyyy-MM-dd"),
+      assessorName: "",
+      assessorSignature: "",
+      assessorSignatureData: "",
+      employeeSignatureData: "",
+      status: "draft"
+    };
   });
   
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  
+  // Signature canvas state
+  const [showEmployeeSignature, setShowEmployeeSignature] = useState(false);
+  const [showAssessorSignature, setShowAssessorSignature] = useState(false);
+  const employeeSignatureRef = useRef<SignatureCanvas>(null);
+  const assessorSignatureRef = useRef<SignatureCanvas>(null);
+
+  // Signature handling functions
+  const handleSaveEmployeeSignature = () => {
+    if (employeeSignatureRef.current) {
+      const signatureData = employeeSignatureRef.current.toDataURL();
+      setFormData(prev => ({ ...prev, employeeSignatureData: signatureData }));
+      // Clear error if previously set
+      if (formErrors.signature) {
+        setFormErrors(prev => {
+          const e = { ...prev };
+          delete e.signature;
+          return e;
+        });
+      }
+      setShowEmployeeSignature(false);
+      toast({
+        title: "Success",
+        description: "Employee signature saved successfully",
+      });
+    }
+  };
+
+  const handleSaveAssessorSignature = () => {
+    if (assessorSignatureRef.current) {
+      const signatureData = assessorSignatureRef.current.toDataURL();
+      setFormData(prev => ({ ...prev, assessorSignatureData: signatureData }));
+      // Clear error if previously set
+      if (formErrors.assessorSignature) {
+        setFormErrors(prev => {
+          const e = { ...prev };
+          delete e.assessorSignature;
+          return e;
+        });
+      }
+      setShowAssessorSignature(false);
+      toast({
+        title: "Success", 
+        description: "Assessor signature saved successfully",
+      });
+    }
+  };
+
+  const clearEmployeeSignature = () => {
+    if (employeeSignatureRef.current) {
+      employeeSignatureRef.current.clear();
+    }
+  };
+
+  const clearAssessorSignature = () => {
+    if (assessorSignatureRef.current) {
+      assessorSignatureRef.current.clear();
+    }
+  };
 
   const handleCompetencyChange = (id: string, field: 'competent' | 'comments', value: string) => {
     setFormData(prev => ({
@@ -208,18 +311,26 @@ export function MedicationCompetencyForm({
       if (!item.competent) {
         errors[`${item.id}_competent`] = "Competency assessment required";
       }
-      if (!item.comments.trim()) {
-        errors[`${item.id}_comments`] = "Comments required for all items";
+      if (item.competent === 'not-yet' && !item.comments.trim()) {
+        errors[`${item.id}_comments`] = "Comments required when marked 'Not Yet'";
       }
     });
 
-    // Validate acknowledgement
-    if (!formData.acknowledgementConfirmed) {
-      errors.acknowledgementConfirmed = "Final acknowledgement is required";
+    // Validate signatures and names
+    if (!formData.assessorName?.trim()) {
+      errors.assessorName = "Assessor name is required";
     }
     
-    if (!formData.signature.trim()) {
-      errors.signature = "Signature is required";
+    if (!formData.assessorSignatureData?.trim()) {
+      errors.assessorSignature = "Assessor signature is required";
+    }
+    
+    if (!formData.employeeName?.trim()) {
+      errors.employeeName = "Employee name is required";
+    }
+    
+    if (!formData.employeeSignatureData?.trim()) {
+      errors.signature = "Employee signature is required";
     }
 
     setFormErrors(errors);
@@ -253,7 +364,43 @@ export function MedicationCompetencyForm({
 
     setIsLoading(true);
     try {
-      // Create compliance record
+      const formDataToSave = {
+        competencyItems: formData.competencyItems,
+        acknowledgement: {
+          confirmed: formData.acknowledgementConfirmed,
+          signature: formData.signature,
+          date: formData.signatureDate
+        },
+        signatures: {
+          assessorName: formData.assessorName,
+          assessorSignatureData: formData.assessorSignatureData,
+          employeeName: formData.employeeName,
+          employeeSignatureData: formData.employeeSignatureData
+        }
+      };
+
+      // If we have initial data, we're editing - update the existing record
+      if (initialData && recordId) {
+        const { error: updateError } = await supabase
+          .from('compliance_period_records')
+          .update({
+            form_data: JSON.parse(JSON.stringify(formDataToSave)),
+            updated_at: new Date().toISOString(),
+            completion_method: 'medication_competency'
+          })
+          .eq('id', recordId);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: "Medication competency updated",
+          description: "Your medication competency assessment has been updated successfully",
+        });
+        onComplete();
+        return;
+      }
+
+      // Create new compliance record
       const { error: recordError } = await supabase
         .from('compliance_period_records')
         .insert({
@@ -263,14 +410,8 @@ export function MedicationCompetencyForm({
           completion_date: format(new Date(), 'yyyy-MM-dd'),
           completion_method: 'medication_competency',
           status: 'completed',
-          notes: JSON.stringify({
-            competencyItems: formData.competencyItems,
-            acknowledgement: {
-              confirmed: formData.acknowledgementConfirmed,
-              signature: formData.signature,
-              date: formData.signatureDate
-            }
-          })
+          form_data: JSON.parse(JSON.stringify(formDataToSave)),
+          notes: null
         });
 
       if (recordError) throw recordError;
@@ -298,19 +439,19 @@ export function MedicationCompetencyForm({
   const progressPercentage = (completedCount / totalCount) * 100;
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <Card className="card-premium">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center px-4 sm:px-6">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <Heart className="h-8 w-8 text-primary" />
+            <div className="bg-primary/10 p-2 sm:p-3 rounded-full">
+              <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          <CardTitle className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             Medication Assessment and Competency Procedure
           </CardTitle>
-          <CardDescription className="text-lg">
+          <CardDescription className="text-base sm:text-lg">
             Complete your medication administration competency assessment
           </CardDescription>
         </CardHeader>
@@ -318,9 +459,9 @@ export function MedicationCompetencyForm({
 
       {/* Progress Indicator */}
       <Card className="border-primary/20">
-        <CardContent className="pt-6">
+        <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
           <div className="space-y-3">
-            <div className="flex justify-between text-sm">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-sm">
               <span>Competency Checklist Progress</span>
               <span className="font-medium">{completedCount}/{totalCount} items completed</span>
             </div>
@@ -338,19 +479,19 @@ export function MedicationCompetencyForm({
       <Card>
         <Collapsible open={overviewExpanded} onOpenChange={setOverviewExpanded}>
           <CollapsibleTrigger className="w-full">
-            <CardHeader className="hover:bg-accent/50 transition-colors cursor-pointer">
+            <CardHeader className="hover:bg-accent/50 transition-colors cursor-pointer px-4 sm:px-6">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-primary" />
-                  Procedure Overview
+                <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+                  <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                  <span>Procedure Overview</span>
                 </CardTitle>
-                {overviewExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {overviewExpanded ? <ChevronDown className="h-4 w-4 flex-shrink-0" /> : <ChevronRight className="h-4 w-4 flex-shrink-0" />}
               </div>
             </CardHeader>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent className="pt-0">
-              <div className="bg-blue-50/50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+            <CardContent className="pt-0 px-4 sm:px-6">
+              <div className="bg-blue-50/50 dark:bg-blue-900/20 p-3 sm:p-4 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
                 <p className="text-foreground leading-relaxed">
                   All Care/Support staff must complete training in the Administration of Medication as part of their induction. 
                   Training includes delivered sessions and a competency assessment. Staff who successfully complete the training 
@@ -368,13 +509,13 @@ export function MedicationCompetencyForm({
 
       {/* 2. Key Requirements Section */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <Users className="h-5 w-5 text-primary" />
-            Key Requirements for Staff
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+            <span>Key Requirements for Staff</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
           {[
             {
               title: "Infection Control",
@@ -442,15 +583,15 @@ export function MedicationCompetencyForm({
 
       {/* 3. Competency Assessment Section */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <FileText className="h-5 w-5 text-primary" />
-            Competency Assessment
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+            <span>Competency Assessment</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="bg-amber-50/50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
-            <p className="text-foreground leading-relaxed">
+        <CardContent className="px-4 sm:px-6">
+          <div className="bg-amber-50/50 dark:bg-amber-900/20 p-3 sm:p-4 rounded-lg border border-amber-200/50 dark:border-amber-800/50">
+            <p className="text-foreground leading-relaxed text-sm sm:text-base">
               Assessments will be carried out by approved assessors. Competence will be judged through direct observation, 
               discussion, and record checks. Staff not yet competent will receive additional training and reassessment.
             </p>
@@ -460,14 +601,14 @@ export function MedicationCompetencyForm({
 
       {/* 4. Responsibilities of Staff Section */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-primary" />
-            Responsibilities of Staff
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+            <span>Responsibilities of Staff</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="bg-red-50/50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200/50 dark:border-red-800/50">
+        <CardContent className="px-4 sm:px-6">
+          <div className="bg-red-50/50 dark:bg-red-900/20 p-3 sm:p-4 rounded-lg border border-red-200/50 dark:border-red-800/50">
             <p className="text-foreground font-semibold mb-3">Health and Social Care staff must:</p>
             <ul className="space-y-2">
               {[
@@ -485,77 +626,80 @@ export function MedicationCompetencyForm({
         </CardContent>
       </Card>
 
-      {/* 5. Compliance Action Required Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <Clock className="h-5 w-5 text-primary" />
-            Compliance Action Required
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Acknowledge Procedure */}
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="acknowledge-procedure"
-              checked={formData.procedureAcknowledged}
-              onCheckedChange={(checked) => 
-                setFormData(prev => ({ ...prev, procedureAcknowledged: !!checked }))
-              }
-              className="mt-1"
-            />
-            <div className="space-y-1">
-              <Label 
-                htmlFor="acknowledge-procedure"
-                className={`text-base font-medium cursor-pointer ${formErrors.procedureAcknowledged ? 'text-red-500' : ''}`}
-              >
-                Acknowledge they have read and understood this procedure
-              </Label>
-              {formErrors.procedureAcknowledged && (
-                <p className="text-red-500 text-sm">{formErrors.procedureAcknowledged}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Competency Checklist Status */}
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="checklist-completed"
-              checked={formData.checklistCompleted}
-              disabled={true}
-              className="mt-1"
-            />
-            <div className="space-y-1">
-              <Label 
-                htmlFor="checklist-completed"
-                className="text-base font-medium cursor-default"
-              >
-                Complete the digital competency checklist (see section below)
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {formData.checklistCompleted 
-                  ? "✓ Competency checklist completed" 
-                  : `${completedCount}/${totalCount} items completed`
-                }
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 6. Digital Competency Checklist */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <FileText className="h-5 w-5 text-primary" />
-            Digital Competency Checklist
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+            <span>Digital Competency Checklist</span>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm sm:text-base">
             Complete the competency assessment for each performance criteria
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
+        <CardContent className="px-4 sm:px-6">
+          {/* Mobile view - stacked cards */}
+          <div className="block md:hidden space-y-4">
+            {formData.competencyItems.map((item, index) => (
+              <Card key={item.id} className="p-4 border border-border">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">
+                      Performance Criteria #{index + 1}
+                    </h4>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {item.performanceCriteria}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h5 className="font-medium text-xs text-muted-foreground uppercase tracking-wide">
+                      Examples / Evidence
+                    </h5>
+                    <p className="text-xs text-muted-foreground">
+                      {item.examples}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Competent</Label>
+                    <Select
+                      value={item.competent}
+                      onValueChange={(value) => handleCompetencyChange(item.id, 'competent', value)}
+                    >
+                      <SelectTrigger className={`w-full ${formErrors[`${item.id}_competent`] ? "border-red-500" : ""}`}>
+                        <SelectValue placeholder="Select assessment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes - Competent</SelectItem>
+                        <SelectItem value="not-yet">Not Yet Competent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {formErrors[`${item.id}_competent`] && (
+                      <p className="text-red-500 text-xs">{formErrors[`${item.id}_competent`]}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Comments / Further Training Needs</Label>
+                    <Textarea
+                      placeholder="Add comments or training needs..."
+                      value={item.comments}
+                      onChange={(e) => handleCompetencyChange(item.id, 'comments', e.target.value)}
+                      className={`min-h-[80px] text-sm ${formErrors[`${item.id}_comments`] ? "border-red-500" : ""}`}
+                    />
+                    {formErrors[`${item.id}_comments`] && (
+                      <p className="text-red-500 text-xs">{formErrors[`${item.id}_comments`]}</p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop view - table */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -608,45 +752,121 @@ export function MedicationCompetencyForm({
 
       {/* 7. Employee Acknowledgement Section */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <Check className="h-5 w-5 text-primary" />
-            Employee Acknowledgement
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+            <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+            <span>Employee Acknowledgement</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Final Confirmation */}
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="final-acknowledgement"
-              checked={formData.acknowledgementConfirmed}
-              onCheckedChange={(checked) => 
-                setFormData(prev => ({ ...prev, acknowledgementConfirmed: !!checked }))
-              }
-              className="mt-1"
-            />
-            <div className="space-y-1">
-              <Label 
-                htmlFor="final-acknowledgement"
-                className={`text-base font-medium cursor-pointer ${formErrors.acknowledgementConfirmed ? 'text-red-500' : ''}`}
-              >
-                I confirm that I have read, understood, and agree to comply with the Medication Assessment and Competency Procedure.
+        <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
+          <div className="space-y-2">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="procedureAck"
+                checked={formData.procedureAcknowledged}
+                onCheckedChange={(checked) => {
+                  setFormData(prev => ({ ...prev, procedureAcknowledged: !!checked }));
+                  if (formErrors.procedureAcknowledged) {
+                    setFormErrors(prev => {
+                      const e = { ...prev };
+                      delete e.procedureAcknowledged;
+                      return e;
+                    });
+                  }
+                }}
+                className="mt-1 flex-shrink-0"
+              />
+              <Label htmlFor="procedureAck" className="text-sm leading-6">
+                I confirm I have read and understood the Medication Assessment and Competency Procedure.
               </Label>
-              {formErrors.acknowledgementConfirmed && (
-                <p className="text-red-500 text-sm">{formErrors.acknowledgementConfirmed}</p>
-              )}
             </div>
+            {formErrors.procedureAcknowledged && (
+              <p className="text-red-500 text-sm">{formErrors.procedureAcknowledged}</p>
+            )}
+          </div>
+          {/* Assessor Name */}
+          <div className="space-y-2">
+            <Label className="text-base font-medium">Assessor Name</Label>
+            <Input
+              placeholder="Enter assessor's full name"
+              value={formData.assessorName || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, assessorName: e.target.value }))}
+              className={formErrors.assessorName ? "border-red-500" : ""}
+            />
+            {formErrors.assessorName && (
+              <p className="text-red-500 text-sm">{formErrors.assessorName}</p>
+            )}
           </div>
 
-          {/* Signature */}
+          {/* Assessor Signature */}
           <div className="space-y-2">
-            <Label className="text-base font-medium">Signature (typed or drawn)</Label>
+            <Label className="text-base font-medium">Assessor Signature</Label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                placeholder="Type assessor's full name as signature"
+                value={formData.assessorSignature || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, assessorSignature: e.target.value }))}
+                className={`flex-1 ${formErrors.assessorSignature ? "border-red-500" : ""}`}
+              />
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => setShowAssessorSignature(true)}
+                className="w-full sm:w-auto"
+              >
+                <Signature className="mr-2 h-4 w-4" />
+                Draw Signature
+              </Button>
+            </div>
+            {formData.assessorSignatureData && (
+              <div className="p-2 border rounded">
+                <img src={formData.assessorSignatureData} alt="Assessor Signature" className="max-h-16" />
+              </div>
+            )}
+            {formErrors.assessorSignature && (
+              <p className="text-red-500 text-sm">{formErrors.assessorSignature}</p>
+            )}
+          </div>
+
+          {/* Employee Name */}
+          <div className="space-y-2">
+            <Label className="text-base font-medium">Employee Name</Label>
             <Input
-              placeholder="Type your full name as signature"
-              value={formData.signature}
-              onChange={(e) => setFormData(prev => ({ ...prev, signature: e.target.value }))}
-              className={formErrors.signature ? "border-red-500" : ""}
+              placeholder="Enter employee's full name"
+              value={formData.employeeName || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, employeeName: e.target.value }))}
+              className={formErrors.employeeName ? "border-red-500" : ""}
             />
+            {formErrors.employeeName && (
+              <p className="text-red-500 text-sm">{formErrors.employeeName}</p>
+            )}
+          </div>
+
+          {/* Employee Signature */}
+          <div className="space-y-2">
+            <Label className="text-base font-medium">Employee Signature</Label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                placeholder="Type employee's full name as signature"
+                value={formData.signature}
+                onChange={(e) => setFormData(prev => ({ ...prev, signature: e.target.value }))}
+                className={`flex-1 ${formErrors.signature ? "border-red-500" : ""}`}
+              />
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => setShowEmployeeSignature(true)}
+                className="w-full sm:w-auto"
+              >
+                <Signature className="mr-2 h-4 w-4" />
+                Draw Signature
+              </Button>
+            </div>
+            {formData.employeeSignatureData && (
+              <div className="p-2 border rounded">
+                <img src={formData.employeeSignatureData} alt="Employee Signature" className="max-h-16" />
+              </div>
+            )}
             {formErrors.signature && (
               <p className="text-red-500 text-sm">{formErrors.signature}</p>
             )}
@@ -675,23 +895,96 @@ export function MedicationCompetencyForm({
       )}
 
       {/* Submit Button */}
-      <div className="flex justify-end gap-4">
+      <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 px-4 sm:px-0">
         <Button
           variant="outline"
           onClick={onComplete}
           disabled={isLoading}
+          className="w-full sm:w-auto order-2 sm:order-1"
         >
           Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-gradient-primary hover:opacity-90"
+          className="bg-gradient-primary hover:opacity-90 w-full sm:w-auto order-1 sm:order-2"
         >
           <Check className="mr-2 h-4 w-4" />
           {isLoading ? "Submitting..." : "Submit Competency Assessment"}
         </Button>
       </div>
+
+      {/* Employee Signature Canvas Dialog */}
+      {showEmployeeSignature && (
+        <Dialog open={showEmployeeSignature} onOpenChange={setShowEmployeeSignature}>
+          <DialogContent className="max-w-[95vw] w-full sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="text-base sm:text-lg">Employee Digital Signature</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="border rounded-lg overflow-hidden">
+                <SignatureCanvas
+                  ref={employeeSignatureRef}
+                  canvasProps={{
+                    width: Math.min(500, window.innerWidth - 80),
+                    height: 200,
+                    className: 'signature-canvas w-full'
+                  }}
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row justify-between gap-3">
+                <Button type="button" variant="outline" onClick={clearEmployeeSignature} className="w-full sm:w-auto">
+                  Clear Signature
+                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setShowEmployeeSignature(false)} className="w-full sm:w-auto">
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={handleSaveEmployeeSignature} className="w-full sm:w-auto">
+                    Save Signature
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Assessor Signature Canvas Dialog */}
+      {showAssessorSignature && (
+        <Dialog open={showAssessorSignature} onOpenChange={setShowAssessorSignature}>
+          <DialogContent className="max-w-[95vw] w-full sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="text-base sm:text-lg">Assessor Digital Signature</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="border rounded-lg overflow-hidden">
+                <SignatureCanvas
+                  ref={assessorSignatureRef}
+                  canvasProps={{
+                    width: Math.min(500, window.innerWidth - 80),
+                    height: 200,
+                    className: 'signature-canvas w-full'
+                  }}
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row justify-between gap-3">
+                <Button type="button" variant="outline" onClick={clearAssessorSignature} className="w-full sm:w-auto">
+                  Clear Signature
+                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setShowAssessorSignature(false)} className="w-full sm:w-auto">
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={handleSaveAssessorSignature} className="w-full sm:w-auto">
+                    Save Signature
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

@@ -63,7 +63,7 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
       <div>
         <Label htmlFor="previouslyEmployed">Were you previously employed? *</Label>
         <Select value={data.previouslyEmployed} onValueChange={(value) => updateData('previouslyEmployed', value)}>
-          <SelectTrigger>
+          <SelectTrigger className="min-h-[44px]">
             <SelectValue placeholder="Select" />
           </SelectTrigger>
           <SelectContent>
@@ -80,7 +80,7 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
               <CardTitle>Most Recent Employer</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <Label>Company *</Label>
                   <Input
@@ -233,7 +233,7 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <div>
                       <Label>Company *</Label>
                       <Input

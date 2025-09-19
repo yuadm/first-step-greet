@@ -846,6 +846,7 @@ export type Database = {
           compliance_type_id: string
           created_at: string
           employee_id: string
+          form_data: Json | null
           grace_period_end: string | null
           id: string
           is_overdue: boolean | null
@@ -864,6 +865,7 @@ export type Database = {
           compliance_type_id: string
           created_at?: string
           employee_id: string
+          form_data?: Json | null
           grace_period_end?: string | null
           id?: string
           is_overdue?: boolean | null
@@ -882,6 +884,7 @@ export type Database = {
           compliance_type_id?: string
           created_at?: string
           employee_id?: string
+          form_data?: Json | null
           grace_period_end?: string | null
           id?: string
           is_overdue?: boolean | null
@@ -1558,6 +1561,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_application_settings: {
+        Row: {
+          category: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          setting_key: string
+          setting_type: string | null
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          setting_key: string
+          setting_type?: string | null
+          setting_value?: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          setting_key?: string
+          setting_type?: string | null
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       job_applications: {
         Row: {
@@ -2413,6 +2452,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_employee_leave_balance: {
+        Args: { p_days: number; p_employee_id: string; p_operation: string }
+        Returns: Json
+      }
       backfill_annual_appraisal_responses: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -2459,6 +2502,10 @@ export type Database = {
       generate_employee_accounts: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_email_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_leave_automation_status: {
         Args: Record<PropertyKey, never>
@@ -2513,6 +2560,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      migrate_application_settings_data: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       reset_all_leave_balances: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -2528,6 +2579,15 @@ export type Database = {
       update_compliance_statuses: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      update_leave_status_with_balance: {
+        Args: {
+          p_leave_id: string
+          p_manager_notes?: string
+          p_new_status: string
+          p_user_id?: string
+        }
+        Returns: Json
       }
       user_has_permission: {
         Args: { perm_key: string; perm_type: string; user_id: string }
