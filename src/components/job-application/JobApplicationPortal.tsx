@@ -345,6 +345,9 @@ const handleDownloadPdf = async () => {
         return formData.employmentHistory.previouslyEmployed === 'no';
       case 5:
         return formData.references.reference1.name && formData.references.reference2.name;
+      case 6:
+        // Skills & Experience step - always allow to proceed as it's optional
+        return true;
       case 7:
         // Declaration step validation
         const declaration = formData.declaration;
