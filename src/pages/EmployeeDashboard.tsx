@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, FileText, User, LogOut, Clock, CheckCircle, XCircle, Shield } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, FileText, User, LogOut, Clock, CheckCircle, XCircle, Shield, Plus } from 'lucide-react';
 import { LeaveRequestDialog } from '@/components/employee/LeaveRequestDialog';
 import { DocumentUploadDialog } from '@/components/employee/DocumentUploadDialog';
 import { ComplianceOverview } from '@/components/employee/ComplianceOverview';
@@ -35,7 +36,7 @@ function EmployeeDashboardContent() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
-  const [showStatements, setShowStatements] = useState(false);
+  const [activeTab, setActiveTab] = useState('leaves');
   const [statements, setStatements] = useState([]);
   const [selectedStatement, setSelectedStatement] = useState(null);
   const [isStatementFormOpen, setIsStatementFormOpen] = useState(false);
@@ -309,7 +310,7 @@ function EmployeeDashboardContent() {
           </div>
         </div>
 
-        {/* Enhanced Leave Management */}
+        {/* Leave Management & Statements Tabs */}
         <Card className="hover:shadow-lg transition-all duration-300 animate-fade-in" style={{
         animationDelay: '0.5s'
       }}>
@@ -319,122 +320,126 @@ function EmployeeDashboardContent() {
                 <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Calendar className="w-5 h-5 text-white" />
                 </div>
-                Leave Management
+                Leave Management & Statements
               </CardTitle>
-              <div className="flex flex-wrap gap-2 sm:gap-3">
-                <Button onClick={() => setShowLeaveDialog(true)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200 text-sm flex-1 sm:flex-none">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Request Leave
-                </Button>
-                <Button variant="outline" onClick={() => setShowStatements(!showStatements)} className="hover:bg-primary/5 hover:border-primary/20 text-sm flex-1 sm:flex-none">
-                  <FileText className="w-4 h-4 mr-2" />
-                  {showStatements ? 'Hide Statements' : 'Statements'}
-                </Button>
-                {/* Hidden Upload Document Button - keeping for future use */}
-                {/* <Button variant="outline" onClick={() => setShowDocumentDialog(true)} className="hover:bg-primary/5 hover:border-primary/20">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Upload Document
-                </Button> */}
-              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-                {leaveRequests.length === 0 ? <div className="text-center py-12">
-                  <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Calendar className="w-8 h-8 text-gray-400" />
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="leaves" className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Leaves
+                </TabsTrigger>
+                <TabsTrigger value="statements" className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Statements
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="leaves" className="mt-6">
+                <div className="space-y-4">
+                  <div className="flex justify-end">
+                    <Button onClick={() => setShowLeaveDialog(true)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Request Leave
+                    </Button>
                   </div>
-                  <p className="text-gray-500 mb-2">No leave requests found</p>
-                  <p className="text-sm text-gray-400">Your leave requests will appear here</p>
-                </div> : leaveRequests.map((leave, index) => <div key={leave.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200" style={{
-              animationDelay: `${0.1 * index}s`
-            }}>
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
-                        {getStatusIcon(leave.status)}
+                  
+                  {leaveRequests.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Calendar className="w-8 h-8 text-gray-400" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                          <span className="font-semibold text-gray-900 truncate">{leave.leave_type.name}</span>
-                          <Badge variant={getStatusColor(leave.status)} className="flex items-center gap-1 px-3 py-1 w-fit">
-                            {getStatusIcon(leave.status)}
-                            <span className="text-xs">{leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}</span>
-                          </Badge>
-                        </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-600 mb-1">
-                          <span className="truncate">{new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}</span>
-                          <span className="hidden sm:inline">•</span>
-                          <span className="text-xs sm:text-sm">Duration: {Math.ceil((new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} days</span>
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-500">
-                          Applied on {new Date(leave.created_at).toLocaleDateString()}
-                        </div>
-                        {leave.notes && <p className="text-xs sm:text-sm text-gray-500 mt-2 italic truncate">{leave.notes}</p>}
-                      </div>
+                      <p className="text-gray-500 mb-2">No leave requests found</p>
+                      <p className="text-sm text-gray-400">Your leave requests will appear here</p>
                     </div>
-                  </div>)}
-            </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {leaveRequests.map((leave, index) => (
+                        <div key={leave.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200" style={{
+                          animationDelay: `${0.1 * index}s`
+                        }}>
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                              {getStatusIcon(leave.status)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                                <span className="font-semibold text-gray-900 truncate">{leave.leave_type.name}</span>
+                                <Badge variant={getStatusColor(leave.status)} className="flex items-center gap-1 px-3 py-1 w-fit">
+                                  {getStatusIcon(leave.status)}
+                                  <span className="text-xs">{leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}</span>
+                                </Badge>
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-600 mb-1">
+                                <span className="truncate">{new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}</span>
+                                <span className="hidden sm:inline">•</span>
+                                <span className="text-xs sm:text-sm">Duration: {Math.ceil((new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} days</span>
+                              </div>
+                              <div className="text-xs sm:text-sm text-gray-500">
+                                Applied on {new Date(leave.created_at).toLocaleDateString()}
+                              </div>
+                              {leave.notes && <p className="text-xs sm:text-sm text-gray-500 mt-2 italic truncate">{leave.notes}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="statements" className="mt-6">
+                <div className="space-y-4">
+                  {statements.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FileText className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-gray-500 mb-2">No statements assigned</p>
+                      <p className="text-sm text-gray-400">Your care worker statements will appear here</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {statements.map((statement) => (
+                        <div key={statement.id} className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-6 h-6 text-gray-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="font-semibold text-gray-900 truncate">{statement.care_worker_name}</span>
+                                <Badge variant={statement.status === 'approved' ? 'default' : statement.status === 'submitted' ? 'secondary' : statement.status === 'rejected' ? 'destructive' : 'outline'}>
+                                  {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 truncate">Client: {statement.client_name}</p>
+                              <p className="text-xs text-gray-500">Report Date: {new Date(statement.report_date).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant={statement.status === 'draft' || statement.status === 'rejected' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                              setSelectedStatement(statement);
+                              setIsStatementFormOpen(true);
+                            }}
+                            className="flex items-center gap-1 ml-4"
+                          >
+                            <FileText className="h-4 w-4" />
+                            {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete' : 'View'}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
-
-        {/* Statements Section */}
-        {showStatements && (
-          <Card className="hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-white" />
-                </div>
-                My Care Worker Statements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {statements.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FileText className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 mb-2">No statements assigned</p>
-                  <p className="text-sm text-gray-400">Your care worker statements will appear here</p>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {statements.map((statement) => (
-                    <div key={statement.id} className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200">
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-6 h-6 text-gray-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="font-semibold text-gray-900 truncate">{statement.care_worker_name}</span>
-                            <Badge variant={statement.status === 'approved' ? 'default' : statement.status === 'submitted' ? 'secondary' : statement.status === 'rejected' ? 'destructive' : 'outline'}>
-                              {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-600 truncate">Client: {statement.client_name}</p>
-                          <p className="text-xs text-gray-500">Report Date: {new Date(statement.report_date).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant={statement.status === 'draft' || statement.status === 'rejected' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                          setSelectedStatement(statement);
-                          setIsStatementFormOpen(true);
-                        }}
-                        className="flex items-center gap-1 ml-4"
-                      >
-                        <FileText className="h-4 w-4" />
-                        {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete' : 'View'}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
       </main>
 
       {/* Dialogs */}
