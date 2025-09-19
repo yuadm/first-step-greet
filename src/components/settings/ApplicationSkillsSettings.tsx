@@ -14,18 +14,53 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 
 interface SkillsCategory {
   id: string;
-  name: string;
-  description: string | null;
-  is_active: boolean;
+  setting_key: string;
+  setting_value: {
+    name: string;
+    description: string | null;
+    display_order: number;
+    is_active: boolean;
+    id: string;
+  };
   display_order: number;
+  is_active: boolean;
 }
 
 interface Skill {
   id: string;
-  category_id: string | null;
-  name: string;
-  is_active: boolean;
+  setting_key: string;
+  setting_value: {
+    name: string;
+    category_id: string | null;
+    display_order: number;
+    is_active: boolean;
+  };
   display_order: number;
+  is_active: boolean;
+}
+
+interface SkillsCategoryDB {
+  id: string;
+  category: string;
+  setting_key: string;
+  setting_type: string;
+  setting_value: any;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SkillDB {
+  id: string;
+  category: string;
+  setting_key: string;
+  setting_type: string;
+  setting_value: any;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export function ApplicationSkillsSettings() {
@@ -59,15 +94,33 @@ export function ApplicationSkillsSettings() {
   const fetchData = async () => {
     try {
       const [categoriesResponse, skillsResponse] = await Promise.all([
-        supabase.from('application_skills_categories').select('*').order('display_order'),
-        supabase.from('application_skills').select('*').order('display_order')
+        supabase.from('job_application_settings').select('*').eq('category', 'skills').eq('setting_type', 'category').order('display_order'),
+        supabase.from('job_application_settings').select('*').eq('category', 'skills').eq('setting_type', 'skill').order('display_order')
       ]);
 
       if (categoriesResponse.error) throw categoriesResponse.error;
       if (skillsResponse.error) throw skillsResponse.error;
 
-      setCategories(categoriesResponse.data || []);
-      setSkills(skillsResponse.data || []);
+      // Transform categories data
+      const transformedCategories: SkillsCategory[] = (categoriesResponse.data || []).map((item: SkillsCategoryDB) => ({
+        id: item.id,
+        setting_key: item.setting_key,
+        setting_value: item.setting_value as SkillsCategory['setting_value'],
+        display_order: item.display_order,
+        is_active: item.is_active
+      }));
+
+      // Transform skills data
+      const transformedSkills: Skill[] = (skillsResponse.data || []).map((item: SkillDB) => ({
+        id: item.id,
+        setting_key: item.setting_key,
+        setting_value: item.setting_value as Skill['setting_value'],
+        display_order: item.display_order,
+        is_active: item.is_active
+      }));
+
+      setCategories(transformedCategories);
+      setSkills(transformedSkills);
     } catch (error) {
       toast({
         title: "Error",
@@ -83,18 +136,33 @@ export function ApplicationSkillsSettings() {
     e.preventDefault();
     
     try {
+      const settingData = {
+        category: 'skills',
+        setting_type: 'category',
+        setting_key: categoryFormData.name,
+        setting_value: {
+          name: categoryFormData.name,
+          description: categoryFormData.description,
+          display_order: categoryFormData.display_order,
+          is_active: categoryFormData.is_active,
+          id: editingCategory?.setting_value.id || crypto.randomUUID()
+        },
+        display_order: categoryFormData.display_order,
+        is_active: categoryFormData.is_active
+      };
+
       if (editingCategory) {
         const { error } = await supabase
-          .from('application_skills_categories')
-          .update(categoryFormData)
+          .from('job_application_settings')
+          .update(settingData)
           .eq('id', editingCategory.id);
 
         if (error) throw error;
         toast({ title: "Success", description: "Category updated successfully" });
       } else {
         const { error } = await supabase
-          .from('application_skills_categories')
-          .insert([categoryFormData]);
+          .from('job_application_settings')
+          .insert([settingData]);
 
         if (error) throw error;
         toast({ title: "Success", description: "Category created successfully" });
@@ -117,18 +185,32 @@ export function ApplicationSkillsSettings() {
     e.preventDefault();
     
     try {
+      const settingData = {
+        category: 'skills',
+        setting_type: 'skill',
+        setting_key: skillFormData.name,
+        setting_value: {
+          name: skillFormData.name,
+          category_id: skillFormData.category_id,
+          display_order: skillFormData.display_order,
+          is_active: skillFormData.is_active
+        },
+        display_order: skillFormData.display_order,
+        is_active: skillFormData.is_active
+      };
+
       if (editingSkill) {
         const { error } = await supabase
-          .from('application_skills')
-          .update(skillFormData)
+          .from('job_application_settings')
+          .update(settingData)
           .eq('id', editingSkill.id);
 
         if (error) throw error;
         toast({ title: "Success", description: "Skill updated successfully" });
       } else {
         const { error } = await supabase
-          .from('application_skills')
-          .insert([skillFormData]);
+          .from('job_application_settings')
+          .insert([settingData]);
 
         if (error) throw error;
         toast({ title: "Success", description: "Skill created successfully" });
@@ -150,10 +232,10 @@ export function ApplicationSkillsSettings() {
   const handleEditCategory = (category: SkillsCategory) => {
     setEditingCategory(category);
     setCategoryFormData({
-      name: category.name,
-      description: category.description || '',
-      is_active: category.is_active,
-      display_order: category.display_order
+      name: category.setting_value.name,
+      description: category.setting_value.description || '',
+      is_active: category.setting_value.is_active,
+      display_order: category.setting_value.display_order
     });
     setShowCategoryDialog(true);
   };
@@ -161,10 +243,10 @@ export function ApplicationSkillsSettings() {
   const handleEditSkill = (skill: Skill) => {
     setEditingSkill(skill);
     setSkillFormData({
-      category_id: skill.category_id || '',
-      name: skill.name,
-      is_active: skill.is_active,
-      display_order: skill.display_order
+      category_id: skill.setting_value.category_id || '',
+      name: skill.setting_value.name,
+      is_active: skill.setting_value.is_active,
+      display_order: skill.setting_value.display_order
     });
     setShowSkillDialog(true);
   };
@@ -172,7 +254,7 @@ export function ApplicationSkillsSettings() {
   const handleDeleteCategory = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('application_skills_categories')
+        .from('job_application_settings')
         .delete()
         .eq('id', id);
 
@@ -191,7 +273,7 @@ export function ApplicationSkillsSettings() {
   const handleDeleteSkill = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('application_skills')
+        .from('job_application_settings')
         .delete()
         .eq('id', id);
 
@@ -227,8 +309,8 @@ export function ApplicationSkillsSettings() {
 
   const getCategoryName = (categoryId: string | null) => {
     if (!categoryId) return 'Uncategorized';
-    const category = categories.find(c => c.id === categoryId);
-    return category?.name || 'Unknown';
+    const category = categories.find(c => c.setting_value.id === categoryId);
+    return category?.setting_value.name || 'Unknown';
   };
 
   if (loading) return <div>Loading...</div>;
@@ -320,11 +402,11 @@ export function ApplicationSkillsSettings() {
               <TableBody>
                 {categories.map((category) => (
                   <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>{category.description}</TableCell>
-                    <TableCell>{category.display_order}</TableCell>
+                    <TableCell className="font-medium">{category.setting_value.name}</TableCell>
+                    <TableCell>{category.setting_value.description}</TableCell>
+                    <TableCell>{category.setting_value.display_order}</TableCell>
                     <TableCell>
-                      <Switch checked={category.is_active} disabled />
+                      <Switch checked={category.setting_value.is_active} disabled />
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
@@ -386,8 +468,8 @@ export function ApplicationSkillsSettings() {
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
+                            <SelectItem key={category.id} value={category.setting_value.id}>
+                              {category.setting_value.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -442,11 +524,11 @@ export function ApplicationSkillsSettings() {
               <TableBody>
                 {skills.map((skill) => (
                   <TableRow key={skill.id}>
-                    <TableCell className="font-medium">{skill.name}</TableCell>
-                    <TableCell>{getCategoryName(skill.category_id)}</TableCell>
-                    <TableCell>{skill.display_order}</TableCell>
+                    <TableCell className="font-medium">{skill.setting_value.name}</TableCell>
+                    <TableCell>{getCategoryName(skill.setting_value.category_id)}</TableCell>
+                    <TableCell>{skill.setting_value.display_order}</TableCell>
                     <TableCell>
-                      <Switch checked={skill.is_active} disabled />
+                      <Switch checked={skill.setting_value.is_active} disabled />
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
