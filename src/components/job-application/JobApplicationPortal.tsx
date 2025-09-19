@@ -378,11 +378,6 @@ const handleDownloadPdf = async () => {
           return true;
         });
       case 8:
-        console.log('Step 8 validation:', {
-          consentToTerms: formData.termsPolicy.consentToTerms,
-          signature: formData.termsPolicy.signature,
-          date: formData.termsPolicy.date
-        });
         return formData.termsPolicy.consentToTerms && formData.termsPolicy.signature && formData.termsPolicy.date;
       default:
         return true;
@@ -475,11 +470,7 @@ const handleDownloadPdf = async () => {
               <div className="flex gap-2">
                 {currentStep === totalSteps ? (
                   <Button
-                    onClick={() => {
-                      console.log('Button clicked, canProceed:', canProceed());
-                      console.log('Form data:', formData.termsPolicy);
-                      setIsReviewOpen(true);
-                    }}
+                    onClick={() => setIsReviewOpen(true)}
                     disabled={!canProceed() || isSubmitting}
                     className="w-full sm:w-auto min-h-[44px]"
                   >

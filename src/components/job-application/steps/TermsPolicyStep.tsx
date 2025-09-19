@@ -66,7 +66,6 @@ export function TermsPolicyStep({ data, updateData }: TermsPolicyStepProps) {
               updateData('date', date ? date.toISOString().split('T')[0] : '');
             }}
             placeholder="Select today's date"
-            className="w-full"
           />
         </div>
       </div>
