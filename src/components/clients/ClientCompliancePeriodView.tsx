@@ -1043,7 +1043,7 @@ export function ClientCompliancePeriodView({
                                         complianceTypeName={complianceTypeName || ''}
                                         frequency={frequency}
                                         periodIdentifier={selectedPeriod}
-                                        onRecordAdded={fetchData}
+                                        onRecordAdded={syncNow}
                                         trigger={
                                           <Button variant="outline" size="sm">
                                             Add Record

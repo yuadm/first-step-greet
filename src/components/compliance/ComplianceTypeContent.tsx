@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Calendar, Users, CheckCircle, AlertTriangle, Clock, Shield, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Filter, Download, Search } from "lucide-react";
 import { usePermissions } from "@/contexts/PermissionsContext";
