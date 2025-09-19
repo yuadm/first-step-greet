@@ -10,6 +10,7 @@ import { LeaveRequestDialog } from '@/components/employee/LeaveRequestDialog';
 import { DocumentUploadDialog } from '@/components/employee/DocumentUploadDialog';
 import { ComplianceOverview } from '@/components/employee/ComplianceOverview';
 import { CompanyProvider, useCompany } from '@/contexts/CompanyContext';
+import { CareWorkerStatementForm } from '@/components/compliance/CareWorkerStatementForm';
 interface LeaveRequest {
   id: string;
   start_date: string;
@@ -34,6 +35,10 @@ function EmployeeDashboardContent() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
+  const [showStatements, setShowStatements] = useState(false);
+  const [statements, setStatements] = useState([]);
+  const [selectedStatement, setSelectedStatement] = useState(null);
+  const [isStatementFormOpen, setIsStatementFormOpen] = useState(false);
   useEffect(() => {
     if (!loading && !employee) {
       navigate('/employee-login');
@@ -41,6 +46,7 @@ function EmployeeDashboardContent() {
     }
     if (employee) {
       fetchLeaveRequests();
+      fetchStatements();
     }
   }, [employee, loading, navigate]);
   const fetchLeaveRequests = async () => {
@@ -60,6 +66,22 @@ function EmployeeDashboardContent() {
       setLeaveRequests(leaveData || []);
     } catch (error) {
       console.error('Error fetching leave requests:', error);
+    }
+  };
+
+  const fetchStatements = async () => {
+    if (!employee) return;
+    try {
+      const { data, error } = await supabase
+        .from('care_worker_statements')
+        .select('*')
+        .eq('assigned_employee_id', employee.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setStatements(data || []);
+    } catch (error) {
+      console.error('Error fetching statements:', error);
     }
   };
   const handleSignOut = async () => {
@@ -304,9 +326,9 @@ function EmployeeDashboardContent() {
                   <Calendar className="w-4 h-4 mr-2" />
                   Request Leave
                 </Button>
-                <Button variant="outline" onClick={() => navigate('/employee-statements')} className="hover:bg-primary/5 hover:border-primary/20 text-sm flex-1 sm:flex-none">
+                <Button variant="outline" onClick={() => setShowStatements(!showStatements)} className="hover:bg-primary/5 hover:border-primary/20 text-sm flex-1 sm:flex-none">
                   <FileText className="w-4 h-4 mr-2" />
-                  Statements
+                  {showStatements ? 'Hide Statements' : 'Statements'}
                 </Button>
                 {/* Hidden Upload Document Button - keeping for future use */}
                 {/* <Button variant="outline" onClick={() => setShowDocumentDialog(true)} className="hover:bg-primary/5 hover:border-primary/20">
@@ -354,12 +376,82 @@ function EmployeeDashboardContent() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Statements Section */}
+        {showStatements && (
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                My Care Worker Statements
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {statements.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 mb-2">No statements assigned</p>
+                  <p className="text-sm text-gray-400">Your care worker statements will appear here</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {statements.map((statement) => (
+                    <div key={statement.id} className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="font-semibold text-gray-900 truncate">{statement.care_worker_name}</span>
+                            <Badge variant={statement.status === 'approved' ? 'default' : statement.status === 'submitted' ? 'secondary' : statement.status === 'rejected' ? 'destructive' : 'outline'}>
+                              {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 truncate">Client: {statement.client_name}</p>
+                          <p className="text-xs text-gray-500">Report Date: {new Date(statement.report_date).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant={statement.status === 'draft' || statement.status === 'rejected' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => {
+                          setSelectedStatement(statement);
+                          setIsStatementFormOpen(true);
+                        }}
+                        className="flex items-center gap-1 ml-4"
+                      >
+                        <FileText className="h-4 w-4" />
+                        {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete' : 'View'}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       {/* Dialogs */}
       <LeaveRequestDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog} employeeId={employee.id} onSuccess={fetchLeaveRequests} />
       
       <DocumentUploadDialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog} employeeId={employee.id} />
+      
+      <CareWorkerStatementForm
+        open={isStatementFormOpen}
+        onOpenChange={setIsStatementFormOpen}
+        statement={selectedStatement}
+        onSuccess={() => {
+          fetchStatements();
+          setSelectedStatement(null);
+        }}
+        readOnly={selectedStatement?.status === 'approved' || selectedStatement?.status === 'submitted'}
+      />
     </div>;
 }
 export default function EmployeeDashboard() {
