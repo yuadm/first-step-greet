@@ -129,6 +129,29 @@ export function useJobApplicationActions() {
 
       if (error) throw error;
     },
+    // Optimistic update for immediate UI feedback
+    onMutate: async (applicationId) => {
+      await queryClient.cancelQueries({ queryKey: jobApplicationQueryKeys.all });
+      
+      const previousApplications = queryClient.getQueryData(jobApplicationQueryKeys.all);
+      
+      // Update all list queries to remove the application
+      queryClient.setQueriesData(
+        { queryKey: jobApplicationQueryKeys.all },
+        (old: any) => {
+          if (old?.applications) {
+            return {
+              ...old,
+              applications: old.applications.filter((app: any) => app.id !== applicationId),
+              totalCount: Math.max(0, old.totalCount - 1)
+            };
+          }
+          return old;
+        }
+      );
+      
+      return { previousApplications };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobApplicationQueryKeys.all });
       toast({
@@ -136,7 +159,10 @@ export function useJobApplicationActions() {
         description: "The job application has been deleted successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousApplications) {
+        queryClient.setQueryData(jobApplicationQueryKeys.all, context.previousApplications);
+      }
       console.error('Error deleting application:', error);
       toast({
         title: "Error",
@@ -146,7 +172,66 @@ export function useJobApplicationActions() {
     },
   });
 
+  const updateApplicationStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { data, error } = await supabase
+        .from('job_applications')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    // Optimistic update for immediate UI feedback
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: jobApplicationQueryKeys.all });
+      
+      const previousApplications = queryClient.getQueryData(jobApplicationQueryKeys.all);
+      
+      // Update all list queries with new status
+      queryClient.setQueriesData(
+        { queryKey: jobApplicationQueryKeys.all },
+        (old: any) => {
+          if (old?.applications) {
+            return {
+              ...old,
+              applications: old.applications.map((app: any) => 
+                app.id === id 
+                  ? { ...app, status, updated_at: new Date().toISOString() }
+                  : app
+              )
+            };
+          }
+          return old;
+        }
+      );
+      
+      return { previousApplications };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: jobApplicationQueryKeys.all });
+      toast({
+        title: "Status Updated",
+        description: "Application status has been updated successfully.",
+      });
+    },
+    onError: (error: any, variables, context) => {
+      if (context?.previousApplications) {
+        queryClient.setQueryData(jobApplicationQueryKeys.all, context.previousApplications);
+      }
+      console.error('Error updating application status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     deleteApplication,
+    updateApplicationStatus,
   };
 }

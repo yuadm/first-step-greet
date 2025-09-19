@@ -25,6 +25,10 @@ import { usePagePermissions } from "@/hooks/usePagePermissions";
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import countries from "world-countries";
+import { useDocumentData } from "@/hooks/useDocumentData";
+import { useDocumentActions } from "@/hooks/queries/useDocumentQueries";
+import { useActivitySync } from "@/hooks/useActivitySync";
+import { usePrefetching } from "@/hooks/usePrefetching";
 
 // Precomputed country list for the Country select
 const COUNTRY_NAMES = countries.map((c) => c.name.common).sort();
@@ -87,11 +91,14 @@ interface ImportDocument {
 }
 
 export function DocumentsContent() {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { documents, employees, documentTypes, branches, loading, refetchData } = useDocumentData();
+  const { createDocument, updateDocument, deleteDocuments } = useDocumentActions();
+  const { toast } = useToast();
+  
+  // Initialize activity sync and prefetching
+  const { syncNow } = useActivitySync();
+  usePrefetching();
+
   const { getAccessibleBranches, isAdmin } = usePermissions();
   const { 
     canViewDocuments,
@@ -132,84 +139,12 @@ export function DocumentsContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
-  const { toast } = useToast();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Effect to handle pre-population when both employee and document type are selected
   useEffect(() => {
     if (newDocument.employee_id && newDocument.document_type_id) {
       prePopulateDocumentFields();
     }
   }, [newDocument.employee_id, newDocument.document_type_id]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: documentsData, error: documentsError } = await supabase
-        .from('document_tracker')
-        .select(`
-          *,
-          employees (name, email, branch),
-          document_types (name)
-        `)
-        .order('expiry_date', { ascending: true });
-
-      if (documentsError) throw documentsError;
-
-      const { data: employeesData, error: employeesError } = await supabase
-        .from('employees')
-        .select('id, name, email, branch, branch_id, employee_code, sponsored, twenty_hours')
-        .order('name');
-
-      if (employeesError) throw employeesError;
-
-      const { data: documentTypesData, error: documentTypesError } = await supabase
-        .from('document_types')
-        .select('id, name')
-        .order('name');
-
-      if (documentTypesError) throw documentTypesError;
-
-      const { data: branchesData, error: branchesError } = await supabase
-        .from('branches')
-        .select('id, name')
-        .order('name');
-
-      if (branchesError) throw branchesError;
-
-      console.log('Document Types fetched:', documentTypesData);
-      console.log('Employees fetched:', employeesData);
-
-      // Filter employees based on branch access for non-admin users
-      const accessibleBranches = getAccessibleBranches();
-      let filteredEmployees = employeesData || [];
-      
-      if (!isAdmin && accessibleBranches.length > 0) {
-        filteredEmployees = employeesData?.filter(employee => {
-          const employeeBranchId = branchesData?.find(b => b.name === employee.branch)?.id;
-          return accessibleBranches.includes(employeeBranchId || '');
-        }) || [];
-      }
-
-      setDocuments(documentsData || []);
-      setEmployees(filteredEmployees);
-      setDocumentTypes(documentTypesData || []);
-      setBranches(branchesData || []);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: "Error loading data",
-        description: "Could not fetch document data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Helper function to check if a string is a valid date
   const isValidDate = (dateStr: string) => {
@@ -371,22 +306,8 @@ export function DocumentsContent() {
         status
       };
       
-      console.log('About to insert document:', documentData);
-      
-      const { data, error } = await supabase
-        .from('document_tracker')
-        .insert(documentData)
-        .select();
-
-      if (error) {
-        console.error('Insert error:', error);
-        throw error;
-      }
-
-      toast({
-        title: "Document added",
-        description: "The document has been added successfully.",
-      });
+      // Use optimistic mutation from hook
+      await createDocument.mutateAsync(documentData);
 
       setDialogOpen(false);
       setNewDocument({
@@ -402,14 +323,12 @@ export function DocumentsContent() {
       });
       setSponsored(false);
       setTwentyHours(false);
-      fetchData();
+      
+      // Trigger manual sync after successful creation
+      syncNow();
     } catch (error) {
       console.error('Error adding document:', error);
-      toast({
-        title: "Error adding document",
-        description: "Could not add document. Please try again.",
-        variant: "destructive",
-      });
+      // Error handling is done by the mutation hook
     }
   };
 
@@ -499,7 +418,7 @@ export function DocumentsContent() {
   };
 
   const handleEditSave = () => {
-    fetchData(); // Refresh the data after edit
+    refetchData(); // Refresh the data after edit
   };
 
   const handleDelete = async (document: Document) => {
@@ -511,28 +430,16 @@ export function DocumentsContent() {
       });
       return;
     }
-    
+
     try {
-      const { error } = await supabase
-        .from('document_tracker')
-        .delete()
-        .eq('id', document.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Document deleted",
-        description: "The document has been deleted successfully.",
-      });
-
-      fetchData();
+      // Use optimistic mutation from hook
+      await deleteDocuments.mutateAsync([document.id]);
+      
+      // Trigger manual sync after successful deletion
+      syncNow();
     } catch (error) {
       console.error('Error deleting document:', error);
-      toast({
-        title: "Error deleting document",
-        description: "Could not delete document. Please try again.",
-        variant: "destructive",
-      });
+      // Error handling is done by the mutation hook
     }
   };
 
@@ -561,7 +468,7 @@ export function DocumentsContent() {
 
       setBatchDeleteDialogOpen(false);
       setSelectedDocuments([]);
-      fetchData();
+      refetchData();
     } catch (error) {
       console.error('Error deleting documents:', error);
       toast({
@@ -941,7 +848,7 @@ export function DocumentsContent() {
 
       setPreviewDialogOpen(false);
       setImportData([]);
-      fetchData();
+      refetchData();
     } catch (error) {
       console.error('Error importing documents:', error);
       toast({

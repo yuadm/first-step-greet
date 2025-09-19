@@ -148,6 +148,27 @@ export function useDocumentActions() {
       if (error) throw error;
       return data;
     },
+    // Optimistic update for immediate UI feedback
+    onMutate: async (newDocument) => {
+      await queryClient.cancelQueries({ queryKey: documentQueryKeys.list() });
+      
+      const previousDocuments = queryClient.getQueryData<Document[]>(documentQueryKeys.list());
+      
+      // Create optimistic document with temporary ID
+      const optimisticDocument = {
+        ...newDocument,
+        id: `temp-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData<Document[]>(documentQueryKeys.list(), (old) => {
+        if (!old) return [optimisticDocument];
+        return [optimisticDocument, ...old];
+      });
+      
+      return { previousDocuments };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: documentQueryKeys.list() });
       toast({
@@ -155,7 +176,10 @@ export function useDocumentActions() {
         description: "The document has been added successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousDocuments) {
+        queryClient.setQueryData(documentQueryKeys.list(), context.previousDocuments);
+      }
       console.error('Error adding document:', error);
       toast({
         title: "Error adding document",
@@ -176,6 +200,23 @@ export function useDocumentActions() {
       if (error) throw error;
       return data;
     },
+    // Optimistic update for immediate UI feedback
+    onMutate: async ({ id, ...updateData }) => {
+      await queryClient.cancelQueries({ queryKey: documentQueryKeys.list() });
+      
+      const previousDocuments = queryClient.getQueryData<Document[]>(documentQueryKeys.list());
+      
+      queryClient.setQueryData<Document[]>(documentQueryKeys.list(), (old) => {
+        if (!old) return [];
+        return old.map(doc => 
+          doc.id === id 
+            ? { ...doc, ...updateData }
+            : doc
+        );
+      });
+      
+      return { previousDocuments };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: documentQueryKeys.list() });
       toast({
@@ -183,7 +224,10 @@ export function useDocumentActions() {
         description: "The document has been updated successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousDocuments) {
+        queryClient.setQueryData(documentQueryKeys.list(), context.previousDocuments);
+      }
       console.error('Error updating document:', error);
       toast({
         title: "Error updating document",
@@ -202,6 +246,19 @@ export function useDocumentActions() {
 
       if (error) throw error;
     },
+    // Optimistic update for immediate UI feedback
+    onMutate: async (documentIds) => {
+      await queryClient.cancelQueries({ queryKey: documentQueryKeys.list() });
+      
+      const previousDocuments = queryClient.getQueryData<Document[]>(documentQueryKeys.list());
+      
+      queryClient.setQueryData<Document[]>(documentQueryKeys.list(), (old) => {
+        if (!old) return [];
+        return old.filter(doc => !documentIds.includes(doc.id));
+      });
+      
+      return { previousDocuments };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: documentQueryKeys.list() });
       toast({
@@ -209,7 +266,10 @@ export function useDocumentActions() {
         description: "The selected documents have been deleted successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: any, variables, context) => {
+      if (context?.previousDocuments) {
+        queryClient.setQueryData(documentQueryKeys.list(), context.previousDocuments);
+      }
       console.error('Error deleting documents:', error);
       toast({
         title: "Error deleting documents",
