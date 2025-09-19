@@ -163,7 +163,15 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
                   <DatePicker
                     selected={data.recentEmployer?.from ? new Date(data.recentEmployer.from) : undefined}
                     onChange={(date) => {
-                      updateRecentEmployer('from', date ? date.toISOString().split('T')[0] : '');
+                      if (date) {
+                        // Use local date string to avoid timezone issues
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        updateRecentEmployer('from', `${year}-${month}-${day}`);
+                      } else {
+                        updateRecentEmployer('from', '');
+                      }
                     }}
                     placeholder="Select start date"
                   />
@@ -173,7 +181,15 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
                   <DatePicker
                     selected={data.recentEmployer?.to ? new Date(data.recentEmployer.to) : undefined}
                     onChange={(date) => {
-                      updateRecentEmployer('to', date ? date.toISOString().split('T')[0] : '');
+                      if (date) {
+                        // Use local date string to avoid timezone issues
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        updateRecentEmployer('to', `${year}-${month}-${day}`);
+                      } else {
+                        updateRecentEmployer('to', '');
+                      }
                     }}
                     placeholder="Select end date"
                   />
@@ -183,7 +199,15 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
                   <DatePicker
                     selected={data.recentEmployer?.leavingDate ? new Date(data.recentEmployer.leavingDate) : undefined}
                     onChange={(date) => {
-                      updateRecentEmployer('leavingDate', date ? date.toISOString().split('T')[0] : '');
+                      if (date) {
+                        // Use local date string to avoid timezone issues
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        updateRecentEmployer('leavingDate', `${year}-${month}-${day}`);
+                      } else {
+                        updateRecentEmployer('leavingDate', '');
+                      }
                     }}
                     placeholder="Select leaving date"
                   />
@@ -316,7 +340,15 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
                       <DatePicker
                         selected={employer.from ? new Date(employer.from) : undefined}
                         onChange={(date) => {
-                          updatePreviousEmployer(index, 'from', date ? date.toISOString().split('T')[0] : '');
+                          if (date) {
+                            // Use local date string to avoid timezone issues
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            updatePreviousEmployer(index, 'from', `${year}-${month}-${day}`);
+                          } else {
+                            updatePreviousEmployer(index, 'from', '');
+                          }
                         }}
                         placeholder="Select start date"
                       />
@@ -326,7 +358,15 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
                       <DatePicker
                         selected={employer.to ? new Date(employer.to) : undefined}
                         onChange={(date) => {
-                          updatePreviousEmployer(index, 'to', date ? date.toISOString().split('T')[0] : '');
+                          if (date) {
+                            // Use local date string to avoid timezone issues
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            updatePreviousEmployer(index, 'to', `${year}-${month}-${day}`);
+                          } else {
+                            updatePreviousEmployer(index, 'to', '');
+                          }
                         }}
                         placeholder="Select end date"
                       />
@@ -336,7 +376,15 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
                       <DatePicker
                         selected={employer.leavingDate ? new Date(employer.leavingDate) : undefined}
                         onChange={(date) => {
-                          updatePreviousEmployer(index, 'leavingDate', date ? date.toISOString().split('T')[0] : '');
+                          if (date) {
+                            // Use local date string to avoid timezone issues
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            updatePreviousEmployer(index, 'leavingDate', `${year}-${month}-${day}`);
+                          } else {
+                            updatePreviousEmployer(index, 'leavingDate', '');
+                          }
                         }}
                         placeholder="Select leaving date"
                       />

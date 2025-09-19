@@ -30,7 +30,16 @@ export const validateStep = (currentStep: number, formData: JobApplicationData):
       return formData.employmentHistory.previouslyEmployed === 'no';
     }
     case 5: {
-      return !!(formData.references.reference1.name && formData.references.reference2.name);
+      // References validation - check required fields for both references
+      const ref1 = formData.references.reference1;
+      const ref2 = formData.references.reference2;
+      
+      const isRef1Valid = !!(ref1.name && ref1.company && ref1.jobTitle && ref1.email && 
+                            ref1.address && ref1.town && ref1.contactNumber && ref1.postcode);
+      const isRef2Valid = !!(ref2.name && ref2.company && ref2.jobTitle && ref2.email && 
+                            ref2.address && ref2.town && ref2.contactNumber && ref2.postcode);
+      
+      return isRef1Valid && isRef2Valid;
     }
     case 6: {
       // Skills & Experience step - always allow to proceed as it's optional
