@@ -13,7 +13,6 @@ import { useLeaveData } from "./hooks/useLeaveData";
 import { useLeaveActions } from "./hooks/useLeaveActions";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
-import { useActivitySync, useRoutePrefetching } from "@/hooks/useActivitySync";
 import { Leave } from "./types";
 
 export function LeavesContent() {
@@ -50,12 +49,6 @@ export function LeavesContent() {
     deleteLeave
   } = useLeaveActions({ leaves, employees, leaveTypes, refetchData });
 
-  // Initialize activity detection and advanced data refresh
-  const { syncNow, warmupData } = useActivitySync();
-  
-  // Initialize route-based prefetching for /leaves
-  useRoutePrefetching('/leaves');
-
   // Get permissions context
   const { isAdmin, getAccessibleBranches, loading: permissionsLoading, error: permissionsError } = usePermissions();
   const { 
@@ -66,22 +59,18 @@ export function LeavesContent() {
     canApproveLeaves 
   } = usePagePermissions();
 
-  // Debug permissions (reduced frequency to avoid console spam)
-  useEffect(() => {
-    if (!permissionsLoading) {
-      console.log('PERMISSIONS DEBUG:', {
-        canViewLeaves: canViewLeaves(),
-        canCreateLeaves: canCreateLeaves(),
-        canEditLeaves: canEditLeaves(),
-        canDeleteLeaves: canDeleteLeaves(),
-        canApproveLeaves: canApproveLeaves(),
-        isAdmin,
-        loading: permissionsLoading,
-        error: permissionsError,
-        accessibleBranches: getAccessibleBranches()
-      });
-    }
-  }, [isAdmin, permissionsLoading, permissionsError]);
+  // Debug permissions
+  console.log('PERMISSIONS DEBUG:', {
+    canViewLeaves: canViewLeaves(),
+    canCreateLeaves: canCreateLeaves(),
+    canEditLeaves: canEditLeaves(),
+    canDeleteLeaves: canDeleteLeaves(),
+    canApproveLeaves: canApproveLeaves(),
+    isAdmin,
+    loading: permissionsLoading,
+    error: permissionsError,
+    accessibleBranches: getAccessibleBranches()
+  });
 
   const filteredLeaves = leaves.filter(leave => {
     const matchesSearch = leave.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -233,8 +222,6 @@ export function LeavesContent() {
   const handleUpdateStatus = async (leaveId: string, status: 'approved' | 'rejected' | 'pending', managerNotes?: string) => {
     await updateLeaveStatus(leaveId, status, managerNotes);
     refetchData();
-    // Trigger immediate sync after status update
-    syncNow();
   };
 
   const handleUpdateLeave = async (data: {
@@ -249,8 +236,6 @@ export function LeavesContent() {
       await updateLeave(selectedLeave.id, data);
       setEditDialogOpen(false);
       refetchData();
-      // Trigger immediate sync after leave update
-      syncNow();
     }
   };
 
@@ -259,8 +244,6 @@ export function LeavesContent() {
       await deleteLeave(selectedLeave.id);
       setDeleteDialogOpen(false);
       refetchData();
-      // Trigger immediate sync after delete
-      syncNow();
     }
   };
 
@@ -453,11 +436,7 @@ export function LeavesContent() {
       <LeaveRequestDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSuccess={() => {
-          refetchData();
-          // Trigger immediate sync after new leave creation
-          syncNow();
-        }}
+        onSuccess={refetchData}
       />
 
       {/* Leave Dialogs */}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Eye, Edit3, Trash2, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,19 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/PermissionsContext";
-import { useClientData } from "@/hooks/useClientData";
-import { useClientActions } from "@/hooks/queries/useClientQueries";
 
 interface Client {
   id: string;
   name: string;
   branch_id: string;
-  branch?: string;
-  is_active: boolean;
   created_at: string;
-  updated_at: string;
+  is_active: boolean;
+  branches?: {
+    name: string;
+  };
 }
 
 interface Branch {
@@ -30,7 +30,9 @@ interface Branch {
 }
 
 export function ClientsContent() {
-  const { clients, branches, loading, refetchData } = useClientData();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -53,9 +55,50 @@ export function ClientsContent() {
     branch_id: ""
   });
 
-  const { createClient, updateClient, deleteClient } = useClientActions();
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const handleAddClient = () => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch clients with branch information
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select(`
+          *,
+          branches (
+            name
+          )
+        `)
+        .order('name');
+
+      if (clientsError) throw clientsError;
+
+      // Fetch branches for the form
+      const { data: branchesData, error: branchesError } = await supabase
+        .from('branches')
+        .select('id, name')
+        .order('name');
+
+      if (branchesError) throw branchesError;
+
+      setClients(clientsData || []);
+      setBranches(branchesData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error loading data",
+        description: "Could not fetch client data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addClient = async () => {
     if (!isAdmin) {
       toast({
         title: "Access denied",
@@ -65,28 +108,45 @@ export function ClientsContent() {
       return;
     }
     
-    if (!newClient.name || !newClient.branch_id) {
+    try {
+      if (!newClient.name || !newClient.branch_id) {
+        toast({
+          title: "Missing information",
+          description: "Please fill in all required fields.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('clients')
+        .insert([{
+          name: newClient.name,
+          branch_id: newClient.branch_id,
+          is_active: true
+        }]);
+
+      if (error) throw error;
+
       toast({
-        title: "Missing information",
-        description: "Please fill in all required fields.",
+        title: "Client added",
+        description: "The client has been added successfully.",
+      });
+
+      setDialogOpen(false);
+      setNewClient({
+        name: "",
+        branch_id: ""
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error adding client:', error);
+      toast({
+        title: "Error adding client",
+        description: "Could not add client. Please try again.",
         variant: "destructive",
       });
-      return;
     }
-
-    createClient.mutate({
-      name: newClient.name,
-      branch_id: newClient.branch_id,
-      is_active: true
-    }, {
-      onSuccess: () => {
-        setDialogOpen(false);
-        setNewClient({
-          name: "",
-          branch_id: ""
-        });
-      }
-    });
   };
 
   const openViewDialog = (client: Client) => {
@@ -99,7 +159,7 @@ export function ClientsContent() {
     setViewDialogOpen(true);
   };
 
-  const handleUpdateClient = () => {
+  const updateClient = async () => {
     if (!isAdmin) {
       toast({
         title: "Access denied",
@@ -111,19 +171,36 @@ export function ClientsContent() {
     
     if (!selectedClient) return;
     
-    updateClient.mutate({
-      id: selectedClient.id,
-      name: editedClient.name,
-      branch_id: editedClient.branch_id
-    }, {
-      onSuccess: () => {
-        setEditMode(false);
-        setViewDialogOpen(false);
-      }
-    });
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({
+          name: editedClient.name,
+          branch_id: editedClient.branch_id
+        })
+        .eq('id', selectedClient.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Client updated",
+        description: "The client has been updated successfully.",
+      });
+
+      setEditMode(false);
+      setViewDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error updating client:', error);
+      toast({
+        title: "Error updating client",
+        description: "Could not update client. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteClient = (clientId: string) => {
+  const deleteClient = async (clientId: string) => {
     if (!isAdmin) {
       toast({
         title: "Access denied",
@@ -133,12 +210,30 @@ export function ClientsContent() {
       return;
     }
     
-    deleteClient.mutate(clientId, {
-      onSuccess: () => {
-        setDeleteDialogOpen(false);
-        setSelectedClient(null);
-      }
-    });
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Client deleted",
+        description: "The client has been deleted successfully.",
+      });
+
+      setDeleteDialogOpen(false);
+      setSelectedClient(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      toast({
+        title: "Error deleting client",
+        description: "Could not delete client. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getBranchName = (branchId: string) => {
@@ -160,7 +255,9 @@ export function ClientsContent() {
   const paginatedClients = filteredClients.slice(startIndex, endIndex);
 
   // Reset page when filters change or items per page changes
-  const [currentPage, setCurrentPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, branchFilter, itemsPerPage]);
 
   if (loading) {
     return (
@@ -244,7 +341,7 @@ export function ClientsContent() {
               {paginatedClients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell>{client.branch || getBranchName(client.branch_id)}</TableCell>
+                  <TableCell>{client.branches?.name || getBranchName(client.branch_id)}</TableCell>
                   <TableCell>
                     {new Date(client.created_at).toLocaleDateString()}
                   </TableCell>
@@ -293,7 +390,7 @@ export function ClientsContent() {
               <div className="flex-1">
                 <h3 className="font-medium text-foreground">{client.name}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {client.branch || getBranchName(client.branch_id)}
+                  {client.branches?.name || getBranchName(client.branch_id)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Created: {new Date(client.created_at).toLocaleDateString()}
@@ -438,7 +535,7 @@ export function ClientsContent() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddClient}>Add Client</Button>
+            <Button onClick={addClient}>Add Client</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -487,7 +584,7 @@ export function ClientsContent() {
                 <Button variant="outline" onClick={() => setEditMode(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleUpdateClient}>Save Changes</Button>
+                <Button onClick={updateClient}>Save Changes</Button>
               </>
             ) : (
               <>
@@ -519,7 +616,7 @@ export function ClientsContent() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => selectedClient && handleDeleteClient(selectedClient.id)}
+              onClick={() => selectedClient && deleteClient(selectedClient.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete

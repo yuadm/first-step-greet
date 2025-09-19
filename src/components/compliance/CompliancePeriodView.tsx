@@ -1,14 +1,14 @@
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Download, AlertTriangle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import { CompliancePeriodEmployeeView } from "./CompliancePeriodEmployeeView";
 import { useToast } from "@/hooks/use-toast";
-import { useCompliancePeriodData } from "@/hooks/queries/useCompliancePeriodQueries";
 
 interface CompliancePeriodViewProps {
   complianceTypeId: string;
@@ -28,15 +28,55 @@ interface PeriodData {
 }
 
 export function CompliancePeriodView({ complianceTypeId, complianceTypeName, frequency }: CompliancePeriodViewProps) {
+  const [periods, setPeriods] = useState<PeriodData[]>([]);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [currentPeriod, setCurrentPeriod] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [records, setRecords] = useState<any[]>([]);
   const { toast } = useToast();
 
-  // Fetch data using React Query
-  const { data, isLoading, error } = useCompliancePeriodData(complianceTypeId, frequency, selectedYear);
-  
-  const employees = data?.employees || [];
-  const records = data?.records || [];
+  useEffect(() => {
+    fetchData();
+    setCurrentPeriod(getCurrentPeriod());
+  }, [complianceTypeId, frequency, selectedYear]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch employees
+      const { data: employeesData, error: employeesError } = await supabase
+        .from('employees')
+        .select('id, name, branch')
+        .order('name');
+
+      if (employeesError) throw employeesError;
+
+      // Fetch compliance records for this type
+      const { data: recordsData, error: recordsError } = await supabase
+        .from('compliance_period_records')
+        .select('*')
+        .eq('compliance_type_id', complianceTypeId)
+        .order('completion_date', { ascending: false });
+
+      if (recordsError) throw recordsError;
+
+      setEmployees(employeesData || []);
+      setRecords(recordsData || []);
+      
+      generatePeriods(employeesData || [], recordsData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error loading data",
+        description: "Could not fetch compliance data.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getCurrentPeriod = () => {
     const now = new Date();
@@ -76,12 +116,9 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
     };
   };
 
-  // Generate periods using useMemo for better performance
-  const periods = useMemo(() => {
-    if (!employees || !records) return [];
-    
+  const generatePeriods = (employeesData: any[], recordsData: any[]) => {
     const currentYear = new Date().getFullYear(); // 2025
-    const generatedPeriods: PeriodData[] = [];
+    const periods: PeriodData[] = [];
     
     // Only generate periods for years that make sense (current year going back to 6 years)
     // But start from 2025 and only show years that have passed or are current
@@ -96,8 +133,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
       
       switch (frequency.toLowerCase()) {
         case 'annual':
-          const annualStats = calculatePeriodStats(year.toString(), employees, records);
-          generatedPeriods.push({
+          const annualStats = calculatePeriodStats(year.toString(), employeesData, recordsData);
+          periods.push({
             period_identifier: year.toString(),
             year,
             record_count: annualStats.record_count,
@@ -115,8 +152,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
             for (let month = monthsToShow; month >= 1; month--) {
               const periodId = `${year}-${String(month).padStart(2, '0')}`;
               const isCurrentMonth = year === currentYear && month === new Date().getMonth() + 1;
-              const monthStats = calculatePeriodStats(periodId, employees, records);
-              generatedPeriods.push({
+              const monthStats = calculatePeriodStats(periodId, employeesData, recordsData);
+              periods.push({
                 period_identifier: periodId,
                 year,
                 record_count: monthStats.record_count,
@@ -136,8 +173,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
             for (let quarter = currentQuarter; quarter >= 1; quarter--) {
               const periodId = `${year}-Q${quarter}`;
               const isCurrentQuarter = year === currentYear && quarter === Math.ceil((new Date().getMonth() + 1) / 3);
-              const quarterStats = calculatePeriodStats(periodId, employees, records);
-              generatedPeriods.push({
+              const quarterStats = calculatePeriodStats(periodId, employeesData, recordsData);
+              periods.push({
                 period_identifier: periodId,
                 year,
                 record_count: quarterStats.record_count,
@@ -157,8 +194,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
             for (let half = currentHalf; half >= 1; half--) {
               const periodId = `${year}-H${half}`;
               const isCurrentHalf = year === currentYear && half === (new Date().getMonth() < 6 ? 1 : 2);
-              const halfStats = calculatePeriodStats(periodId, employees, records);
-              generatedPeriods.push({
+              const halfStats = calculatePeriodStats(periodId, employeesData, recordsData);
+              periods.push({
                 period_identifier: periodId,
                 year,
                 record_count: halfStats.record_count,
@@ -179,8 +216,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
             for (let week = Math.floor(currentWeek / 4) * 4; week >= 1; week -= 4) {
               const periodId = `${year}-W${String(week).padStart(2, '0')}`;
               const isCurrentWeek = year === currentYear && week === getWeekNumber(new Date());
-              const weekStats = calculatePeriodStats(periodId, employees, records);
-              generatedPeriods.push({
+              const weekStats = calculatePeriodStats(periodId, employeesData, recordsData);
+              periods.push({
                 period_identifier: periodId,
                 year,
                 record_count: weekStats.record_count,
@@ -196,8 +233,9 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
       }
     }
     
-    return generatedPeriods;
-  }, [employees, records, frequency, selectedYear]);
+    setPeriods(periods);
+    setLoading(false);
+  };
 
   const handleDownload = async (period: PeriodData) => {
     try {
@@ -253,7 +291,7 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
     return "bg-destructive/10 text-destructive border-destructive/20";
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
         <div className="h-8 bg-muted rounded w-64"></div>

@@ -54,15 +54,6 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get email settings from database
-    const { data: emailSettings, error: settingsError } = await supabase.rpc('get_email_settings');
-    if (settingsError) {
-      console.error("Error fetching email settings:", settingsError);
-    }
-
-    const senderEmail = emailSettings?.sender_email || "noreply@yourcompany.com";
-    const senderDisplayName = emailSettings?.sender_name || "Your Company";
-
     // Derive site origin from request for building public URL
     const siteOrigin = req.headers.get("origin") || `${new URL(req.url).protocol}//${new URL(req.url).host}`;
     const referenceToken = crypto.randomUUID();
@@ -176,8 +167,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const payload = {
-      sender: { name: `${safeCompanyName} HR`, email: senderEmail },
-      replyTo: { name: `${safeCompanyName} HR`, email: senderEmail },
+      sender: { name: `${safeCompanyName} HR`, email: "yuadm3@gmail.com" },
+      replyTo: { name: `${safeCompanyName} HR`, email: "yuadm3@gmail.com" },
       to: [{ email: referenceEmail, name: referenceName }],
       subject: emailSubject,
       htmlContent: emailHtml,

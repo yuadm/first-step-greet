@@ -170,7 +170,7 @@ export function LeaveRequestDialog({ open, onOpenChange, onSuccess }: LeaveReque
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Request Leave</DialogTitle>
         </DialogHeader>
@@ -179,10 +179,10 @@ export function LeaveRequestDialog({ open, onOpenChange, onSuccess }: LeaveReque
           <div className="space-y-2">
             <Label htmlFor="employee">Employee *</Label>
             <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-              <SelectTrigger className="h-11">
+              <SelectTrigger>
                 <SelectValue placeholder="Select employee" />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-background">
+              <SelectContent>
                 {employees.map((employee) => (
                   <SelectItem key={employee.id} value={employee.id}>
                     {employee.name} ({employee.branch || 'No Branch'})
@@ -195,10 +195,10 @@ export function LeaveRequestDialog({ open, onOpenChange, onSuccess }: LeaveReque
           <div className="space-y-2">
             <Label htmlFor="leave-type">Leave Type *</Label>
             <Select value={selectedLeaveType} onValueChange={setSelectedLeaveType}>
-              <SelectTrigger className="h-11">
+              <SelectTrigger>
                 <SelectValue placeholder="Select leave type" />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-background">
+              <SelectContent>
                 {leaveTypes.map((type) => (
                   <SelectItem key={type.id} value={type.id}>
                     {type.name}
@@ -208,7 +208,7 @@ export function LeaveRequestDialog({ open, onOpenChange, onSuccess }: LeaveReque
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Start Date *</Label>
               <DatePicker date={startDate} onDateChange={setStartDate} />
@@ -237,16 +237,16 @@ export function LeaveRequestDialog({ open, onOpenChange, onSuccess }: LeaveReque
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Optional notes about your leave request"
-              className="min-h-[80px] resize-none"
+              className="min-h-[80px]"
             />
           </div>
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={loading} className="w-full sm:w-auto">
+          <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "Submitting..." : "Submit Request"}
           </Button>
         </DialogFooter>

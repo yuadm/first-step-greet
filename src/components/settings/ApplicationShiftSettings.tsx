@@ -12,29 +12,12 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 
 interface ShiftSetting {
   id: string;
-  setting_key: string;
-  setting_value: {
-    name: string;
-    label: string;
-    start_time: string;
-    end_time: string;
-    display_order: number;
-    is_active: boolean;
-  };
-  display_order: number;
+  name: string;
+  label: string;
+  start_time: string;
+  end_time: string;
   is_active: boolean;
-}
-
-interface ShiftSettingDB {
-  id: string;
-  category: string;
-  setting_key: string;
-  setting_type: string;
-  setting_value: any;
   display_order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
 export function ApplicationShiftSettings() {
@@ -60,24 +43,12 @@ export function ApplicationShiftSettings() {
   const fetchShifts = async () => {
     try {
       const { data, error } = await supabase
-        .from('job_application_settings')
+        .from('application_shift_settings')
         .select('*')
-        .eq('category', 'shift')
-        .eq('is_active', true)
         .order('display_order');
 
       if (error) throw error;
-      
-      // Transform the data to match our interface
-      const transformedData: ShiftSetting[] = (data || []).map((item: ShiftSettingDB) => ({
-        id: item.id,
-        setting_key: item.setting_key,
-        setting_value: item.setting_value as ShiftSetting['setting_value'],
-        display_order: item.display_order,
-        is_active: item.is_active
-      }));
-      
-      setShifts(transformedData);
+      setShifts(data || []);
     } catch (error) {
       toast({
         title: "Error",
@@ -93,34 +64,18 @@ export function ApplicationShiftSettings() {
     e.preventDefault();
     
     try {
-      const settingData = {
-        category: 'shift',
-        setting_type: 'shift',
-        setting_key: formData.name,
-        setting_value: {
-          name: formData.name,
-          label: formData.label,
-          start_time: formData.start_time,
-          end_time: formData.end_time,
-          display_order: formData.display_order,
-          is_active: formData.is_active
-        },
-        display_order: formData.display_order,
-        is_active: formData.is_active
-      };
-
       if (editingShift) {
         const { error } = await supabase
-          .from('job_application_settings')
-          .update(settingData)
+          .from('application_shift_settings')
+          .update(formData)
           .eq('id', editingShift.id);
 
         if (error) throw error;
         toast({ title: "Success", description: "Shift updated successfully" });
       } else {
         const { error } = await supabase
-          .from('job_application_settings')
-          .insert([settingData]);
+          .from('application_shift_settings')
+          .insert([formData]);
 
         if (error) throw error;
         toast({ title: "Success", description: "Shift created successfully" });
@@ -142,12 +97,12 @@ export function ApplicationShiftSettings() {
   const handleEdit = (shift: ShiftSetting) => {
     setEditingShift(shift);
     setFormData({
-      name: shift.setting_value.name,
-      label: shift.setting_value.label,
-      start_time: shift.setting_value.start_time,
-      end_time: shift.setting_value.end_time,
-      is_active: shift.setting_value.is_active,
-      display_order: shift.setting_value.display_order
+      name: shift.name,
+      label: shift.label,
+      start_time: shift.start_time,
+      end_time: shift.end_time,
+      is_active: shift.is_active,
+      display_order: shift.display_order
     });
     setShowDialog(true);
   };
@@ -155,7 +110,7 @@ export function ApplicationShiftSettings() {
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('job_application_settings')
+        .from('application_shift_settings')
         .delete()
         .eq('id', id);
 
@@ -290,12 +245,12 @@ export function ApplicationShiftSettings() {
           <TableBody>
             {shifts.map((shift) => (
               <TableRow key={shift.id}>
-                <TableCell className="font-medium">{shift.setting_value.name}</TableCell>
-                <TableCell>{shift.setting_value.label}</TableCell>
-                <TableCell>{shift.setting_value.start_time} - {shift.setting_value.end_time}</TableCell>
-                <TableCell>{shift.setting_value.display_order}</TableCell>
+                <TableCell className="font-medium">{shift.name}</TableCell>
+                <TableCell>{shift.label}</TableCell>
+                <TableCell>{shift.start_time} - {shift.end_time}</TableCell>
+                <TableCell>{shift.display_order}</TableCell>
                 <TableCell>
-                  <Switch checked={shift.setting_value.is_active} disabled />
+                  <Switch checked={shift.is_active} disabled />
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">

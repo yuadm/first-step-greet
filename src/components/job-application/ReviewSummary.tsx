@@ -44,7 +44,7 @@ export function ReviewSummary({ data }: Props) {
     <div className="space-y-6">
       <section>
         <h3 className="text-lg font-semibold">Personal Information</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
           <Field label="Title" value={pi.title} />
           <Field label="Full Name" value={pi.fullName} />
           <Field label="Email" value={pi.email} />
@@ -68,7 +68,7 @@ export function ReviewSummary({ data }: Props) {
 
       <section>
         <h3 className="text-lg font-semibold">Availability</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
           <Field label="Hours per Week" value={av.hoursPerWeek} />
           <Field label="Right to Work (UK)" value={av.hasRightToWork} />
         </div>
@@ -88,7 +88,7 @@ export function ReviewSummary({ data }: Props) {
 
       <section>
         <h3 className="text-lg font-semibold">Emergency Contact</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
           <Field label="Full Name" value={ec.fullName} />
           <Field label="Relationship" value={ec.relationship} />
           <Field label="Contact Number" value={ec.contactNumber} />
@@ -103,7 +103,7 @@ export function ReviewSummary({ data }: Props) {
           {eh.previouslyEmployed === 'yes' && eh.recentEmployer && (
             <div>
               <div className="text-sm font-medium">Most Recent Employer</div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                 <Field label="Company" value={eh.recentEmployer.company} />
                 <Field label="Name" value={eh.recentEmployer.name} />
                 <Field label="Email" value={eh.recentEmployer.email} />
@@ -131,7 +131,7 @@ export function ReviewSummary({ data }: Props) {
               <div className="text-sm font-medium">Previous Employers</div>
               <div className="space-y-4 mt-2">
                 {(eh.previousEmployers || []).map((emp: any, idx: number) => (
-                  <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Company" value={emp.company} />
                     <Field label="Name" value={emp.name} />
                     <Field label="Email" value={emp.email} />
@@ -146,7 +146,7 @@ export function ReviewSummary({ data }: Props) {
                     <Field label="Leaving Date/Notice" value={emp.leavingDate} />
                     <Field label="Reason for Leaving" value={emp.reasonForLeaving} />
                     {emp.keyTasks && (
-                      <div className="sm:col-span-2">
+                      <div className="md:col-span-2">
                         <div className="text-sm font-medium">Key Tasks</div>
                         <p className="text-sm text-muted-foreground whitespace-pre-line">{emp.keyTasks}</p>
                       </div>
@@ -168,7 +168,7 @@ export function ReviewSummary({ data }: Props) {
           {refs
             .filter((r) => r && (r.name || r.company || r.email))
             .map((ref, idx) => (
-              <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Name" value={ref.name} />
                 <Field label="Company" value={ref.company} />
                 <Field label="Job Title" value={ref.jobTitle} />
@@ -189,7 +189,7 @@ export function ReviewSummary({ data }: Props) {
           {Object.keys(skills).length === 0 ? (
             <p className="text-sm text-muted-foreground">No skills listed.</p>
           ) : (
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {Object.entries(skills).map(([k, v]) => (
                 <li key={k} className="flex items-center justify-between text-sm">
                   <span className="font-medium">{k}</span>
@@ -203,7 +203,7 @@ export function ReviewSummary({ data }: Props) {
 
       <section>
         <h3 className="text-lg font-semibold">Declaration</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
           <Field label="Social Service Enquiry" value={dec.socialServiceEnquiry} />
           <Field label="Convicted of Offence" value={dec.convictedOfOffence} />
           <Field label="Safeguarding Investigation" value={dec.safeguardingInvestigation} />
@@ -223,7 +223,7 @@ export function ReviewSummary({ data }: Props) {
 
       <section>
         <h3 className="text-lg font-semibold">Terms & Policy</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
           <Field label="Consent to Terms" value={tp.consentToTerms ? 'Yes' : 'No'} />
           <Field label="Signature (name)" value={tp.signature} />
           <Field label="Full Name" value={tp.fullName} />

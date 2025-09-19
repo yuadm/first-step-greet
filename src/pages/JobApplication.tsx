@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { JobApplicationRedesigned } from '@/components/job-application/JobApplicationRedesigned';
+import { JobApplicationPortal } from '@/components/job-application/JobApplicationPortal';
 
 export default function JobApplication() {
   useEffect(() => {
@@ -23,5 +23,5 @@ export default function JobApplication() {
     link.setAttribute('href', canonicalHref);
   }, []);
 
-  return <JobApplicationRedesigned />;
+  return <JobApplicationPortal />;
 }

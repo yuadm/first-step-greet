@@ -329,13 +329,12 @@ React.useEffect(() => {
 </Button>
                     </div>
                     <div className="col-span-2 py-1">
-<Textarea
+<Input
   placeholder={current?.value === "no" ? "Required for 'No'" : "Optional"}
   value={current?.comments || ""}
   onChange={(e) => updateObservation(item.id, { comments: e.target.value })}
   aria-invalid={!!err}
   className={err ? "border-destructive focus-visible:ring-destructive" : ""}
-  rows={2}
 />
 {err && <p className="text-destructive text-xs mt-1">{err}</p>}
                     </div>
@@ -372,13 +371,12 @@ React.useEffect(() => {
     <X className="h-4 w-4" />
   </Button>
 </div>
-<Textarea
+<Input
   placeholder={current?.value === "no" ? "Required for 'No'" : "Optional"}
   value={current?.comments || ""}
   onChange={(e) => updateObservation(item.id, { comments: e.target.value })}
   aria-invalid={!!err}
   className={err ? "border-destructive focus-visible:ring-destructive" : ""}
-  rows={2}
 />
 {err && <p className="text-destructive text-xs mt-1">{err}</p>}
                   </div>

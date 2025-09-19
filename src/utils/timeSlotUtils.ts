@@ -10,27 +10,16 @@ export async function getTimeSlotMappings(): Promise<Record<string, string>> {
 
   try {
     const { data, error } = await supabase
-      .from('job_application_settings')
-      .select('id, setting_value')
-      .eq('category', 'shift')
-      .eq('is_active', true)
-      .order('display_order', { ascending: true });
+      .from('application_shift_settings')
+      .select('id, label')
+      .eq('is_active', true);
 
     if (error) throw error;
 
     timeSlotCache = {};
     data?.forEach(slot => {
       if (timeSlotCache) {
-        let label;
-        try {
-          const shiftValue = typeof slot.setting_value === 'string' 
-            ? JSON.parse(slot.setting_value) 
-            : slot.setting_value;
-          label = (shiftValue as any)?.label || (shiftValue as any)?.name || slot.id;
-        } catch {
-          label = (slot.setting_value as any)?.label || (slot.setting_value as any)?.name || slot.id;
-        }
-        timeSlotCache[slot.id] = label;
+        timeSlotCache[slot.id] = slot.label;
       }
     });
 

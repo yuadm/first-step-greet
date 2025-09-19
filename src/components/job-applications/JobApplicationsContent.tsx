@@ -119,22 +119,12 @@ export function JobApplicationsContent() {
   const fetchStatusOptions = async () => {
     try {
       const { data, error } = await supabase
-        .from('job_application_settings')
-        .select('setting_value, display_order, is_active')
-        .eq('category', 'status')
+        .from('application_status_settings')
+        .select('status_name, display_order, is_active')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
       if (!error && data) {
-        const opts = data.map((d: any) => {
-          try {
-            const statusValue = typeof d.setting_value === 'string' 
-              ? JSON.parse(d.setting_value) 
-              : d.setting_value;
-            return statusValue?.status_name || statusValue?.value;
-          } catch {
-            return d.setting_value?.status_name || d.setting_value?.value;
-          }
-        }).filter(Boolean);
+        const opts = data.map((d: any) => d.status_name).filter(Boolean);
         if (opts.length) setStatusOptions(opts);
       }
     } catch (e) {
@@ -379,7 +369,7 @@ Please complete and return this reference as soon as possible.`;
       {/* Applications Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Applications</CardTitle>
+          <CardTitle>Applications ({filteredApplications.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">

@@ -144,13 +144,6 @@ export function ReportsContent() {
       fields: ["Name", "Employee Code", "Job Title", "Branch", "Days Taken", "Days Remaining", "Hours", "Email", "Phone"]
     },
     {
-      id: "clients",
-      name: "Clients Report",
-      description: "Complete client directory with all details",
-      icon: "🏢",
-      fields: ["Name", "Branch", "Status", "Created Date", "Is Active"]
-    },
-    {
       id: "leaves",
       name: "Leaves Report", 
       description: "Leave requests and balances",
@@ -403,37 +396,6 @@ export function ReportsContent() {
           const csvContentEmployees = convertToCSV(transformedEmployeesData, selectedColumns[selectedReport]);
           filename = `employees_report_${new Date().toISOString().split('T')[0]}`;
           downloadFile(csvContentEmployees, `${filename}.csv`, 'text/csv');
-          break;
-
-        case "clients":
-          let clientQuery = supabase
-            .from('clients')
-            .select(`
-              *,
-              branches (name)
-            `)
-            .order('name');
-
-          // Apply branch filter if selected
-          if (selectedBranch !== "all") {
-            clientQuery = clientQuery.eq('branches.name', selectedBranch);
-          }
-          
-          const { data: clientsData, error: clientsError } = await clientQuery;
-          
-          if (clientsError) throw clientsError;
-          
-          const transformedClientsData = (clientsData || []).map(client => ({
-            'Name': client.name,
-            'Branch': client.branches?.name || '',
-            'Status': client.is_active ? 'Active' : 'Inactive',
-            'Created Date': new Date(client.created_at).toLocaleDateString('en-GB'),
-            'Is Active': client.is_active ? 'Yes' : 'No'
-          }));
-          
-          const csvContentClients = convertToCSV(transformedClientsData, selectedColumns[selectedReport]);
-          filename = `clients_report_${new Date().toISOString().split('T')[0]}`;
-          downloadFile(csvContentClients, `${filename}.csv`, 'text/csv');
           break;
 
         case "leaves":

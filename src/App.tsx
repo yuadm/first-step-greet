@@ -2,17 +2,14 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import { EmployeeAuthProvider } from "@/contexts/EmployeeAuthContext";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { EmployeeProtectedRoute } from "@/components/layout/EmployeeProtectedRoute";
-import { useActivitySync, useRoutePrefetching } from "@/hooks/useActivitySync";
-import { queryClient } from "@/lib/query-client";
 import PublicHome from "./pages/PublicHome";
 import Index from "./pages/Index";
 import Employees from "./pages/Employees";
@@ -50,14 +47,8 @@ function EmployeeRoutes() {
   );
 }
 
-// App content with permissions and activity sync
+// App content with permissions
 function AppContent() {
-  const location = useLocation();
-  
-  // Enable global activity synchronization and route-based prefetching
-  useActivitySync();
-  useRoutePrefetching(location.pathname);
-  
   return (
     <Routes>
       {/* Public routes */}
@@ -169,6 +160,8 @@ function AppContent() {
   );
 }
 
+const queryClient = new QueryClient();
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -180,7 +173,6 @@ const App = () => (
             <BrowserRouter>
               <AppContent />
             </BrowserRouter>
-            <ReactQueryDevtools initialIsOpen={false} />
           </TooltipProvider>
         </CompanyProvider>
       </PermissionsProvider>

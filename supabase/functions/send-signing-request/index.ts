@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,20 +33,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending signing request email to:", recipientEmail);
     
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get email settings from database
-    const { data: emailSettings, error: settingsError } = await supabase.rpc('get_email_settings');
-    if (settingsError) {
-      console.error("Error fetching email settings:", settingsError);
-    }
-
-    const senderEmail = emailSettings?.sender_email || "noreply@yourcompany.com";
-    const senderDisplayName = emailSettings?.sender_name || "Document Signing System";
-    
     const apiKey = Deno.env.get("BREVO_API_KEY");
     if (!apiKey) {
       throw new Error("BREVO_API_KEY environment variable is not set");
@@ -64,12 +49,12 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         sender: {
-          name: senderDisplayName,
-          email: senderEmail
+          name: "Document Signing System",
+          email: "yuadm3@gmail.com"
         },
         replyTo: {
-          name: senderDisplayName, 
-          email: senderEmail
+          name: "Document Signing System", 
+          email: "yuadm3@gmail.com"
         },
         to: [{ email: recipientEmail, name: recipientName }],
         subject: `Document Signing Request: ${documentTitle}`,

@@ -43,7 +43,7 @@ export function DeclarationStep({ data, updateData }: DeclarationStepProps) {
         <div>
           <Label>Has any Social Service Department or Police Service ever conducted an enquiry or investigation into any allegations or concerns that you may pose an actual or potential risk to children or vulnerable adults? *</Label>
           <Select value={data.socialServiceEnquiry} onValueChange={(value) => updateData('socialServiceEnquiry', value)}>
-            <SelectTrigger className="min-h-[44px]">
+            <SelectTrigger className="mt-2">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
@@ -68,7 +68,7 @@ export function DeclarationStep({ data, updateData }: DeclarationStepProps) {
         <div>
           <Label>Have you ever been convicted of any offence relating to children or vulnerable adults? *</Label>
           <Select value={data.convictedOfOffence} onValueChange={(value) => updateData('convictedOfOffence', value)}>
-            <SelectTrigger className="min-h-[44px] mt-2">
+            <SelectTrigger className="mt-2">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
@@ -93,7 +93,7 @@ export function DeclarationStep({ data, updateData }: DeclarationStepProps) {
         <div>
           <Label>Have you ever been subject to any safeguarding investigation, criminal investigation or any investigations by previous employer? *</Label>
           <Select value={data.safeguardingInvestigation} onValueChange={(value) => updateData('safeguardingInvestigation', value)}>
-            <SelectTrigger className="min-h-[44px] mt-2">
+            <SelectTrigger className="mt-2">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
@@ -118,7 +118,7 @@ export function DeclarationStep({ data, updateData }: DeclarationStepProps) {
         <div>
           <Label>Do you have any criminal convictions spent or unspent? *</Label>
           <Select value={data.criminalConvictions} onValueChange={(value) => updateData('criminalConvictions', value)}>
-            <SelectTrigger className="min-h-[44px] mt-2">
+            <SelectTrigger className="mt-2">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
@@ -143,7 +143,7 @@ export function DeclarationStep({ data, updateData }: DeclarationStepProps) {
         <div>
           <Label>Do you have any physical or mental health conditions which may hinder your ability to carry on or work for the purpose of care activities? *</Label>
           <Select value={data.healthConditions} onValueChange={(value) => updateData('healthConditions', value)}>
-            <SelectTrigger className="min-h-[44px] mt-2">
+            <SelectTrigger className="mt-2">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
@@ -168,7 +168,7 @@ export function DeclarationStep({ data, updateData }: DeclarationStepProps) {
         <div>
           <Label>Have you received cautions, reprimands or final warnings which are spent or unspent? *</Label>
           <Select value={data.cautionsReprimands} onValueChange={(value) => updateData('cautionsReprimands', value)}>
-            <SelectTrigger className="min-h-[44px] mt-2">
+            <SelectTrigger className="mt-2">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>

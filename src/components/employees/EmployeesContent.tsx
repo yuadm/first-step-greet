@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Search, Filter, Mail, Phone, MapPin, Calendar, Users, Building, Clock, User, Upload, Download, X, FileSpreadsheet, AlertCircle, Eye, Edit3, Trash2, Check, Square, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,17 +17,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
-import { useEmployeeData } from "@/hooks/useEmployeeData";
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
 interface Employee {
   id: string;
   name: string;
-  email?: string;
+  email: string;
   phone?: string;
   branch: string;
-  branch_id?: string;
   employee_code: string;
   job_title?: string;
   employee_type?: string;
@@ -36,8 +34,6 @@ interface Employee {
   leave_taken?: number;
   remaining_leave_days?: number;
   hours_restriction?: string;
-  is_active?: boolean;
-  password_hash?: string;
   created_at?: string;
 }
 
@@ -62,7 +58,9 @@ export type EmployeeSortField = 'name' | 'employee_code' | 'branch' | 'working_h
 export type EmployeeSortDirection = 'asc' | 'desc';
 
 export function EmployeesContent() {
-  const { employees, branches, loading, refetchData } = useEmployeeData();
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [branches, setBranches] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { getAccessibleBranches, isAdmin } = usePermissions();
   const { canViewEmployees, canCreateEmployees, canEditEmployees, canDeleteEmployees } = usePagePermissions();
   const [searchTerm, setSearchTerm] = useState("");
@@ -114,8 +112,9 @@ export function EmployeesContent() {
   const [pageSize, setPageSize] = useState(50);
   const { toast } = useToast();
 
-  // Remove old useEffect and fetchData - now handled by React Query
-  // const fetchData = async () => { ... } // REMOVED - using React Query hooks
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   // Email validation helper functions
   const checkEmailExists = async (email: string, excludeEmployeeId?: string): Promise<{ exists: boolean; existingEmployee?: Employee }> => {
@@ -225,7 +224,39 @@ export function EmployeesContent() {
     }
   };
 
-  // REMOVED fetchData function - now using React Query hooks in useEmployeeData
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch employees
+      const { data: employeesData, error: employeesError } = await supabase
+        .from('employees')
+        .select('*')
+        .order('name');
+
+      if (employeesError) throw employeesError;
+
+      // Fetch branches for the form
+      const { data: branchesData, error: branchesError } = await supabase
+        .from('branches')
+        .select('id, name')
+        .order('name');
+
+      if (branchesError) throw branchesError;
+
+      setEmployees(employeesData || []);
+      setBranches(branchesData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Error loading data",
+        description: "Could not fetch employee data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const addEmployee = async () => {
     if (!canCreateEmployees()) {
@@ -294,7 +325,7 @@ export function EmployeesContent() {
         leave_allowance: 28,
         hours_restriction: ""
       });
-      refetchData();
+      fetchData();
     } catch (error) {
       console.error('Error adding employee:', error);
       toast({
@@ -370,7 +401,7 @@ export function EmployeesContent() {
 
       setEditMode(false);
       setViewDialogOpen(false);
-      refetchData();
+      fetchData();
     } catch (error) {
       console.error('Error updating employee:', error);
       toast({
@@ -406,7 +437,7 @@ export function EmployeesContent() {
 
       setDeleteDialogOpen(false);
       setSelectedEmployee(null);
-      refetchData();
+      fetchData();
     } catch (error) {
       console.error('Error deleting employee:', error);
       toast({
@@ -442,7 +473,7 @@ export function EmployeesContent() {
 
       setBatchDeleteDialogOpen(false);
       setSelectedEmployees([]);
-      refetchData();
+      fetchData();
     } catch (error) {
       console.error('Error deleting employees:', error);
       toast({
@@ -743,7 +774,7 @@ export function EmployeesContent() {
 
       setPreviewDialogOpen(false);
       setImportData([]);
-      refetchData();
+      fetchData();
     } catch (error) {
       console.error('Error importing employees:', error);
       toast({

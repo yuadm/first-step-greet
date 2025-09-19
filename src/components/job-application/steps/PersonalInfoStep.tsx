@@ -42,24 +42,13 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
   const fetchJobPositions = async () => {
     try {
       const { data: positionsData, error } = await supabase
-        .from('job_application_settings')
-        .select('*')
-        .eq('category', 'position')
+        .from('job_positions')
+        .select('id, title, is_active')
         .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .order('title');
 
       if (error) throw error;
-      
-      // Transform the unified settings data
-      const transformed = positionsData?.map(setting => ({
-        id: setting.id,
-        title: typeof setting.setting_value === 'object' && setting.setting_value && 'title' in setting.setting_value 
-          ? (setting.setting_value as any).title 
-          : setting.setting_key,
-        is_active: setting.is_active
-      })) || [];
-      
-      setPositions(transformed);
+      setPositions(positionsData || []);
     } catch (error) {
       console.error('Error fetching job positions:', error);
       // Fallback to default positions if database fetch fails
@@ -81,27 +70,14 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
   const fetchPersonalSettings = async () => {
     try {
       const { data: settingsData, error } = await supabase
-        .from('job_application_settings')
+        .from('application_personal_settings')
         .select('*')
-        .eq('category', 'personal')
         .eq('is_active', true)
         .order('setting_type', { ascending: true })
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      
-      // Transform the unified settings data
-      const transformed = settingsData?.map(setting => ({
-        id: setting.id,
-        setting_type: setting.setting_type || 'default',
-        value: typeof setting.setting_value === 'object' && setting.setting_value && 'value' in setting.setting_value
-          ? (setting.setting_value as any).value
-          : setting.setting_key,
-        is_active: setting.is_active,
-        display_order: setting.display_order
-      })) || [];
-      
-      setPersonalSettings(transformed);
+      setPersonalSettings(settingsData || []);
     } catch (error) {
       console.error('Error fetching personal settings:', error);
       // Fallback to default values if database fetch fails
@@ -142,7 +118,7 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
         <p className="text-muted-foreground mb-6">Fill your personal information and continue to the next step.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="title">Title *</Label>
           <Select value={data.title} onValueChange={(value) => updateData('title', value)}>
@@ -219,7 +195,7 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
           />
         </div>
 
-        <div className="sm:col-span-2">
+        <div className="md:col-span-2">
           <Label htmlFor="streetAddress">Street Address *</Label>
           <Input
             id="streetAddress"
@@ -229,7 +205,7 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
           />
         </div>
 
-        <div className="sm:col-span-2">
+        <div className="md:col-span-2">
           <Label htmlFor="streetAddress2">Street Address Second Line</Label>
           <Input
             id="streetAddress2"
@@ -358,9 +334,9 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
       <div>
         <Label>Which other languages do you speak? *</Label>
         <div className="space-y-3 mt-2">
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex gap-2">
             <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-              <SelectTrigger className="flex-1 min-h-[44px]">
+              <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Select a language" />
               </SelectTrigger>
               <SelectContent className="bg-background border shadow-md z-50">
@@ -375,10 +351,10 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
               type="button" 
               onClick={addLanguage} 
               disabled={!selectedLanguage}
-              className="w-full sm:w-auto min-h-[44px] px-6"
+              size="sm"
             >
-              <Plus className="h-4 w-4 mr-2 sm:mr-0" />
-              <span className="sm:hidden">Add Language</span>
+              <Plus className="h-4 w-4" />
+              Add
             </Button>
           </div>
           
