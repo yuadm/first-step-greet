@@ -89,7 +89,7 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
       updateData('reference1', {
         name: employer.name || '',
         company: employer.company || '',
-        jobTitle: employer.position || '',
+        jobTitle: '', // Don't auto-fill job title
         email: employer.email || '',
         address: employer.address || '',
         address2: employer.address2 || '',
@@ -106,7 +106,7 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
       updateData('reference2', {
         name: employer.name || '',
         company: employer.company || '',
-        jobTitle: employer.position || '',
+        jobTitle: '', // Don't auto-fill job title
         email: employer.email || '',
         address: employer.address || '',
         address2: employer.address2 || '',
@@ -122,7 +122,7 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
     updateData(refNumber, {
       name: '',
       company: '',
-      jobTitle: '',
+      jobTitle: '', // Keep job title empty when clearing
       email: '',
       address: '',
       address2: '',
