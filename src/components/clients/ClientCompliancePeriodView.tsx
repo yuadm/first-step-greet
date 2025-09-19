@@ -16,8 +16,19 @@ import { ClientSpotCheckViewDialog } from "./ClientSpotCheckViewDialog";
 import { ClientComplianceRecordViewDialog } from "./ClientComplianceRecordViewDialog";
 import { ClientDeleteConfirmDialog } from "./ClientDeleteConfirmDialog";
 import { generateClientSpotCheckPdf } from "@/lib/client-spot-check-pdf";
-
 import { AddClientComplianceRecordModal } from "./AddClientComplianceRecordModal";
+import { useActivitySync } from "@/hooks/useActivitySync";
+import { usePrefetching } from "@/hooks/usePrefetching";
+import {
+  useClientComplianceClients,
+  useClientComplianceRecords,
+  useSpotCheckRecord,
+  useClientComplianceActions,
+  type Client,
+  type ClientComplianceRecord,
+  type PeriodData,
+  type ClientSpotCheckFormData as SpotCheckData,
+} from "@/hooks/queries/useClientComplianceQueries";
 
 interface ClientCompliancePeriodViewProps {
   complianceTypeId: string;
@@ -26,47 +37,7 @@ interface ClientCompliancePeriodViewProps {
   selectedFilter?: string | null;
 }
 
-interface PeriodData {
-  period_identifier: string;
-  year: number;
-  record_count: number;
-  completion_rate: number;
-  download_available: boolean;
-  archive_due_date?: string;
-  download_available_date?: string;
-  is_current: boolean;
-}
-
-interface Client {
-  id: string;
-  name: string;
-  branch_id: string;
-  branches?: {
-    name: string;
-  };
-}
-
-interface ClientSpotCheckRecord {
-  id?: string;
-  service_user_name?: string;
-  care_workers?: string;
-  date?: string;
-  time?: string;
-  performed_by?: string;
-  observations?: any[];
-}
-
-interface ClientComplianceRecord {
-  id: string;
-  client_id: string;
-  period_identifier: string;
-  status: string;
-  completion_date?: string;
-  completion_method?: string;
-  notes?: string;
-  clients?: Client;
-  client_spot_check_records?: ClientSpotCheckRecord[];
-}
+// Types are now imported from the queries hook
 
 export function ClientCompliancePeriodView({ 
   complianceTypeId, 
@@ -74,12 +45,27 @@ export function ClientCompliancePeriodView({
   frequency,
   selectedFilter
 }: ClientCompliancePeriodViewProps) {
+  const { toast } = useToast();
+  const { companySettings } = useCompany();
+  const { getAccessibleBranches, isAdmin } = usePermissions();
+  
+  // Initialize activity sync and prefetching
+  const { syncNow } = useActivitySync();
+  usePrefetching();
+  
+  // React Query hooks
+  const accessibleBranches = getAccessibleBranches();
+  const { data: clients = [], isLoading: clientsLoading } = useClientComplianceClients(accessibleBranches, isAdmin);
+  const { data: records = [], isLoading: recordsLoading } = useClientComplianceRecords(complianceTypeId);
+  
+  const { submitSpotCheck, deleteComplianceRecord } = useClientComplianceActions();
+  
+  // Derived loading state
+  const loading = clientsLoading || recordsLoading;
+  
   const [periods, setPeriods] = useState<PeriodData[]>([]);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
-  const [clients, setClients] = useState<Client[]>([]);
-  const [records, setRecords] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [spotCheckDialogOpen, setSpotCheckDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string>("all");
@@ -96,64 +82,13 @@ export function ClientCompliancePeriodView({
   const [selectedComplianceRecord, setSelectedComplianceRecord] = useState<any>(null);
   const [editingSpotCheckData, setEditingSpotCheckData] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { toast } = useToast();
-  const { companySettings } = useCompany();
-  const { getAccessibleBranches, isAdmin } = usePermissions();
 
+  // Generate periods when data changes
   useEffect(() => {
-    fetchData();
-  }, [complianceTypeId, frequency, selectedYear]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      
-      // Get accessible branches for the current user
-      const accessibleBranches = getAccessibleBranches();
-      
-      // Build the query with branch filtering for non-admin users
-      let clientsQuery = supabase
-        .from('clients')
-        .select(`
-          *,
-          branches (
-            name
-          )
-        `);
-      
-      // Apply branch filtering for non-admin users
-      if (!isAdmin && accessibleBranches.length > 0) {
-        clientsQuery = clientsQuery.in('branch_id', accessibleBranches);
-      }
-      
-      const { data: clientsData, error: clientsError } = await clientsQuery.order('name');
-
-      if (clientsError) throw clientsError;
-
-      // Fetch client compliance records
-      const { data: recordsData, error: recordsError } = await supabase
-        .from('client_compliance_period_records')
-        .select('*')
-        .eq('client_compliance_type_id', complianceTypeId)
-        .order('completion_date', { ascending: false });
-
-      if (recordsError) throw recordsError;
-
-      setClients(clientsData || []);
-      setRecords(recordsData || []);
-      
-      generatePeriods(clientsData || [], recordsData || []);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: "Error loading data",
-        description: "Could not fetch client compliance data.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (clients.length > 0 || records.length > 0) {
+      generatePeriods(clients, records);
     }
-  };
+  }, [clients, records, selectedYear, frequency]);
 
   const getCurrentPeriod = () => {
     const now = new Date();
@@ -251,79 +186,24 @@ export function ClientCompliancePeriodView({
       return;
     }
 
-    console.log('Saving spot check with complianceTypeId:', complianceTypeId);
-
     try {
-      // Create or update the compliance period record without a pre-fetch to avoid 406/409
-      const { data: updated, error: updateError } = await supabase
-        .from('client_compliance_period_records')
-        .update({
-          status: 'completed',
-          completion_date: data.date,
-          completion_method: 'spotcheck'
-        })
-        .eq('client_compliance_type_id', complianceTypeId)
-        .eq('client_id', selectedClient.id)
-        .eq('period_identifier', selectedPeriod)
-        .select('id');
-
-      if (updateError) throw updateError;
-
-      let complianceRecordId: string;
-
-      if (updated && updated.length > 0) {
-        complianceRecordId = updated[0].id;
-      } else {
-        const { data: inserted, error: insertError } = await supabase
-          .from('client_compliance_period_records')
-          .insert({
-            client_compliance_type_id: complianceTypeId,
-            client_id: selectedClient.id,
-            period_identifier: selectedPeriod,
-            status: 'completed',
-            completion_date: data.date,
-            completion_method: 'spotcheck'
-          })
-          .select('id')
-          .maybeSingle();
-
-        if (insertError) throw insertError;
-        if (!inserted) throw new Error('Failed to create compliance record');
-        complianceRecordId = inserted.id;
-      }
-
-      // Save the spot check record
-      const { error: spotCheckError } = await supabase
-        .from('client_spot_check_records')
-        .insert({
-          client_id: selectedClient.id,
-          compliance_record_id: complianceRecordId,
-          service_user_name: data.serviceUserName,
-          care_workers: '', // Remove from form but keep for database compatibility
-          date: data.date,
-          time: '', // Remove from form but keep for database compatibility  
-          performed_by: data.completedBy, // Use completedBy value for performed_by field
-          observations: data.observations as any
-        });
-
-      if (spotCheckError) throw spotCheckError;
-
-      toast({
-        title: "Spot check completed",
-        description: `Spot check for ${selectedClient.name} has been saved successfully.`,
+      // Use optimistic mutation from hook
+      await submitSpotCheck.mutateAsync({
+        complianceTypeId,
+        clientId: selectedClient.id,
+        periodIdentifier: selectedPeriod,
+        data
       });
 
       setSpotCheckDialogOpen(false);
       setSelectedClient(null);
       setEditingSpotCheckData(null);
-      fetchData();
+      
+      // Trigger manual sync after successful submission
+      syncNow();
     } catch (error) {
       console.error('Error saving spot check:', error);
-      toast({
-        title: "Error saving spot check",
-        description: "Could not save the spot check. Please try again.",
-        variant: "destructive",
-      });
+      // Error handling is done by the mutation hook
     }
   };
 
@@ -1437,7 +1317,26 @@ export function ClientCompliancePeriodView({
             setDeleteDialogOpen(false);
             setSelectedClient(null);
             // Refresh the data
-            fetchData();
+  // Legacy handlers that need to be updated to work with React Query
+  const handleView = (record: any) => {
+    setSelectedSpotCheckRecord(record);
+    setViewDialogOpen(true);
+  };
+
+  const handleViewGeneric = (record: any) => {
+    setSelectedComplianceRecord(record);
+    setGenericViewDialogOpen(true);
+  };
+
+  const handleEdit = (client: Client) => {
+    setSelectedClient(client);
+    setSpotCheckDialogOpen(true);
+  };
+
+  const handleDeleteClick = (record: any) => {
+    setSelectedComplianceRecord(record);
+    setDeleteDialogOpen(true);
+  };
             
           } catch (error) {
             console.error('Error deleting client record:', error);

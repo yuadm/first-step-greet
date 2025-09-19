@@ -454,28 +454,17 @@ export function DocumentsContent() {
     }
     
     try {
-      const { error } = await supabase
-        .from('document_tracker')
-        .delete()
-        .in('id', selectedDocuments);
-
-      if (error) throw error;
-
-      toast({
-        title: "Documents deleted",
-        description: `Successfully deleted ${selectedDocuments.length} documents.`,
-      });
+      // Use optimistic mutation from hook for batch delete
+      await deleteDocuments.mutateAsync(selectedDocuments);
 
       setBatchDeleteDialogOpen(false);
       setSelectedDocuments([]);
-      refetchData();
+      
+      // Trigger manual sync after successful deletion
+      syncNow();
     } catch (error) {
       console.error('Error deleting documents:', error);
-      toast({
-        title: "Error deleting documents",
-        description: "Could not delete documents. Please try again.",
-        variant: "destructive",
-      });
+      // Error handling is done by the mutation hook
     }
   };
 

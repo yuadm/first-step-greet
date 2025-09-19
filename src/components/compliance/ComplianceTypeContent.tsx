@@ -41,59 +41,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { CompliancePeriodView } from "./CompliancePeriodView";
 import { AddComplianceRecordModal } from "./AddComplianceRecordModal";
 import { EditComplianceRecordModal } from "./EditComplianceRecordModal";
 import { format } from "date-fns";
-import { generateSpotCheckPdf } from "@/lib/spot-check-pdf";
-import { generateSupervisionPdf } from "@/lib/supervision-pdf";
-import SpotCheckFormDialog, { SpotCheckFormData } from "./SpotCheckFormDialog";
-import SupervisionFormDialog, { SupervisionFormData } from "./SupervisionFormDialog";
 import { MedicationCompetencyForm } from "./MedicationCompetencyForm";
+import { useActivitySync } from "@/hooks/useActivitySync";
+import { usePrefetching } from "@/hooks/usePrefetching";
+import {
+  useComplianceTypeDetail,
+  useComplianceTypeEmployees,
+  useComplianceTypeBranches,
+  useComplianceTypeRecords,
+  useCompletedByUsers,
+  useComplianceTypeActions,
+  type ComplianceType,
+  type Employee,
+  type Branch,
+  type ComplianceRecord,
+  type EmployeeComplianceStatus,
+} from "@/hooks/queries/useComplianceTypeQueries";
 
-interface ComplianceType {
-  id: string;
-  name: string;
-  description: string;
-  frequency: string;
-  created_at: string;
-}
-
-interface Employee {
-  id: string;
-  name: string;
-  branch: string;
-  branch_id?: string;
-}
-
-interface Branch {
-  id: string;
-  name: string;
-}
-
-interface ComplianceRecord {
-  id: string;
-  employee_id: string;
-  period_identifier: string;
-  completion_date: string;
-  notes: string;
-  form_data?: any | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  completed_by: string | null;
-  completion_method?: string;
-}
-
-interface EmployeeComplianceStatus {
-  employee: Employee;
-  record: ComplianceRecord | null;
-  status: 'compliant' | 'overdue' | 'due' | 'pending';
-  currentPeriod: string;
-}
+// Types are now imported from the queries hook
 
 type SortField = 'name' | 'branch' | 'completion_status' | 'completion_date';
 type SortDirection = 'asc' | 'desc';
@@ -106,14 +77,26 @@ export function ComplianceTypeContent() {
   const { getAccessibleBranches, isAdmin } = usePermissions();
   const { companySettings } = useCompany();
   
-  const [complianceType, setComplianceType] = useState<ComplianceType | null>(
-    location.state?.complianceType || null
-  );
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [records, setRecords] = useState<ComplianceRecord[]>([]);
+  // Initialize activity sync and prefetching
+  const { syncNow } = useActivitySync();
+  usePrefetching();
+  
+  // React Query hooks
+  const { data: complianceType, isLoading: complianceTypeLoading } = useComplianceTypeDetail(id || '');
+  const { data: employees = [], isLoading: employeesLoading } = useComplianceTypeEmployees();
+  const { data: branches = [], isLoading: branchesLoading } = useComplianceTypeBranches();
+  const { data: records = [], isLoading: recordsLoading } = useComplianceTypeRecords(id || '');
+  
+  // Get user IDs for completed_by lookup
+  const userIds = records.map(record => record.completed_by).filter(Boolean);
+  const { data: completedByUsers = {} } = useCompletedByUsers(userIds);
+  
+  const { deleteComplianceRecord } = useComplianceTypeActions();
+  
+  // Derived loading state
+  const loading = complianceTypeLoading || employeesLoading || branchesLoading || recordsLoading;
+  
   const [employeeStatusList, setEmployeeStatusList] = useState<EmployeeComplianceStatus[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filteredStatus, setFilteredStatus] = useState<'compliant' | 'overdue' | 'due' | 'pending' | null>(null);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -121,21 +104,42 @@ export function ComplianceTypeContent() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
-  const [completedByUsers, setCompletedByUsers] = useState<{ [key: string]: { name: string; created_at: string } }>({});
 
-// Spot check edit state
-const [spotcheckEditOpen, setSpotcheckEditOpen] = useState(false);
-const [spotcheckInitialData, setSpotcheckInitialData] = useState<SpotCheckFormData | null>(null);
-const [spotcheckRowId, setSpotcheckRowId] = useState<string | null>(null);
-const [spotcheckTarget, setSpotcheckTarget] = useState<{ employeeId: string; period: string } | null>(null);
-// Supervision edit state
-const [supervisionEditOpen, setSupervisionEditOpen] = useState(false);
-const [supervisionInitialData, setSupervisionInitialData] = useState<SupervisionFormData | null>(null);
-const [supervisionTarget, setSupervisionTarget] = useState<{ recordId: string } | null>(null);
-// Medication competency edit state
-const [medicationEditOpen, setMedicationEditOpen] = useState(false);
-const [medicationInitialData, setMedicationInitialData] = useState<any | null>(null);
-const [medicationTarget, setMedicationTarget] = useState<{ recordId: string; employeeName: string } | null>(null);
+// Remove legacy state and functions - these are now handled by React Query
+const [, setSpotcheckEditOpen] = useState(false);
+const [, setSpotcheckInitialData] = useState<any | null>(null);
+const [, setSpotcheckRowId] = useState<string | null>(null);
+const [, setSpotcheckTarget] = useState<{ employeeId: string; period: string } | null>(null);
+const [, setSupervisionEditOpen] = useState(false);
+const [, setSupervisionInitialData] = useState<any | null>(null);
+const [, setSupervisionTarget] = useState<{ recordId: string } | null>(null);
+const [, setMedicationEditOpen] = useState(false);
+const [, setMedicationInitialData] = useState<any | null>(null);
+const [, setMedicationTarget] = useState<{ recordId: string; employeeName: string } | null>(null);
+
+// Legacy functions that need to be replaced or removed
+const fetchData = () => {
+  // This is now handled by React Query hooks
+  syncNow();
+};
+
+// Legacy PDF generation functions (deprecated)
+const generatePDF = async (record: any) => {
+  toast({
+    title: "Feature deprecated",
+    description: "PDF generation has been moved to the unified questionnaire system.",
+    variant: "destructive",
+  });
+};
+
+// Legacy form handlers (deprecated)
+const handleSupervisionSubmit = async (data: any) => {
+  toast({
+    title: "Feature deprecated", 
+    description: "Please use the unified questionnaire system for compliance forms.",
+    variant: "destructive",
+  });
+};
 
   // Get unique branches for filter - filtered by user access
   const uniqueBranches = useMemo(() => {
@@ -253,121 +257,12 @@ const [medicationTarget, setMedicationTarget] = useState<{ recordId: string; emp
       : <ArrowDown className="w-4 h-4" />;
   };
 
+  // Calculate employee status when data changes
   useEffect(() => {
-    if (!complianceType && id) {
-      fetchComplianceType();
-    } else {
-      fetchData();
+    if (complianceType && employees.length > 0) {
+      calculateEmployeeStatus(employees, records);
     }
-  }, [id, complianceType]);
-
-  const fetchComplianceType = async () => {
-    if (!id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('compliance_types')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      setComplianceType(data);
-      fetchData();
-    } catch (error) {
-      console.error('Error fetching compliance type:', error);
-      toast({
-        title: "Error loading compliance type",
-        description: "Could not fetch compliance type details.",
-        variant: "destructive",
-      });
-      setLoading(false);
-    }
-  };
-
-  const fetchData = async () => {
-    if (!id) return;
-
-    try {
-      setLoading(true);
-      
-      // Fetch all employees
-      const { data: employeesData, error: employeesError } = await supabase
-        .from('employees')
-        .select('id, name, branch, branch_id')
-        .order('name');
-
-      if (employeesError) throw employeesError;
-
-      // Fetch branches
-      const { data: branchesData, error: branchesError } = await supabase
-        .from('branches')
-        .select('id, name')
-        .order('name');
-
-      if (branchesError) throw branchesError;
-
-      // Fetch compliance records for this type
-      const { data: recordsData, error: recordsError } = await supabase
-        .from('compliance_period_records')
-        .select('*')
-        .eq('compliance_type_id', id)
-        .order('completion_date', { ascending: false });
-
-      if (recordsError) throw recordsError;
-
-      setEmployees(employeesData || []);
-      setBranches(branchesData || []);
-      setRecords(recordsData || []);
-      
-      // Fetch user details for completed_by
-      if (recordsData && recordsData.length > 0) {
-        const userIds = recordsData
-          .map(record => record.completed_by)
-          .filter(Boolean);
-        
-        if (userIds.length > 0) {
-          const { data: usersData, error: usersError } = await supabase
-            .from('employees')
-            .select('id, name')
-            .in('id', userIds);
-
-          if (usersError) {
-            console.error('Error fetching user data:', usersError);
-          } else if (usersData) {
-            const usersMap: { [key: string]: { name: string; created_at: string } } = {};
-            recordsData.forEach(record => {
-              if (record.completed_by) {
-                const user = usersData.find(u => u.id === record.completed_by);
-                if (user) {
-                  usersMap[record.id] = {
-                    name: user.name,
-                    created_at: record.created_at
-                  };
-                }
-              }
-            });
-            setCompletedByUsers(usersMap);
-          }
-        }
-      }
-      
-      // Calculate employee compliance status
-      if (complianceType) {
-        calculateEmployeeStatus(employeesData || [], recordsData || []);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: "Error loading data",
-        description: "Could not fetch employee and compliance data.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [complianceType, employees, records]);
 
   const getCurrentPeriodIdentifier = (frequency: string): string => {
     const now = new Date();
