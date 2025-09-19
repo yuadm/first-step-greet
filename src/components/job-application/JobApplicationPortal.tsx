@@ -15,8 +15,6 @@ import { SkillsExperienceStep } from './steps/SkillsExperienceStep';
 import { DeclarationStep } from './steps/DeclarationStep';
 import { TermsPolicyStep } from './steps/TermsPolicyStep';
 import { generateJobApplicationPdf } from '@/lib/job-application-pdf';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ReviewSummary } from './ReviewSummary';
 import { validateStep } from './ValidationLogic';
 
 const initialFormData: JobApplicationData = {
@@ -75,7 +73,6 @@ const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<JobApplicationData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [honeypotField, setHoneypotField] = useState('');
   const [startTime] = useState(Date.now());
   const { companySettings } = useCompany();
@@ -408,11 +405,11 @@ const handleDownloadPdf = async () => {
               <div className="flex gap-2">
                 {currentStep === totalSteps ? (
                   <Button
-                    onClick={() => setIsReviewOpen(true)}
+                    onClick={handleSubmit}
                     disabled={!canProceed() || isSubmitting}
                     className="w-full sm:w-auto min-h-[44px]"
                   >
-                    {isSubmitting ? 'Submitting...' : 'Review & Submit'}
+                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
                     <CheckCircle className="w-4 h-4 ml-2" />
                   </Button>
                 ) : (
@@ -430,38 +427,6 @@ const handleDownloadPdf = async () => {
 
           </CardContent>
         </Card>
-        
-        {/* Review Dialog */}
-        <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Review Your Application</DialogTitle>
-              <DialogDescription>
-                Please review all your information before submitting your application.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <ReviewSummary data={formData} />
-            
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setIsReviewOpen(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="min-h-[44px]"
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Application'}
-                <CheckCircle className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
