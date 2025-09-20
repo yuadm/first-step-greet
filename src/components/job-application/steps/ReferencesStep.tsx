@@ -11,9 +11,10 @@ interface ReferencesStepProps {
   data: References;
   employmentHistory: EmploymentHistory;
   updateData: (field: keyof References, value: any) => void;
+  updateEmploymentHistory: (field: keyof EmploymentHistory, value: any) => void;
 }
 
-export function ReferencesStep({ data, employmentHistory, updateData }: ReferencesStepProps) {
+export function ReferencesStep({ data, employmentHistory, updateData, updateEmploymentHistory }: ReferencesStepProps) {
   const [autoFilledFields, setAutoFilledFields] = useState<{
     reference1: boolean;
     reference2: boolean;
@@ -21,6 +22,65 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
 
   const updateReference = (refNumber: 'reference1' | 'reference2', field: string, value: string) => {
     updateData(refNumber, { ...data[refNumber], [field]: value });
+    
+    // Sync back to employment history if this is an employer reference
+    syncToEmploymentHistory(refNumber, field, value);
+  };
+
+  const syncToEmploymentHistory = (refNumber: 'reference1' | 'reference2', field: string, value: string) => {
+    // Only sync if this reference was auto-filled from employment history
+    if (!autoFilledFields[refNumber]) return;
+    
+    // Determine which employer this reference corresponds to
+    const referenceIndex = refNumber === 'reference1' ? 0 : 1;
+    const employers = [];
+    
+    if (employmentHistory.recentEmployer?.company?.trim() || employmentHistory.recentEmployer?.name?.trim()) {
+      employers.push(employmentHistory.recentEmployer);
+    }
+    
+    if (employmentHistory.previousEmployers?.length) {
+      employers.push(...employmentHistory.previousEmployers.filter(emp => 
+        emp.company?.trim() || emp.name?.trim()
+      ));
+    }
+    
+    if (referenceIndex >= employers.length) return;
+    
+    // Map reference fields to employment history fields
+    const fieldMap: Record<string, string> = {
+      'name': 'name',
+      'company': 'company',
+      'email': 'email',
+      'address': 'address',
+      'address2': 'address2',
+      'town': 'town',
+      'contactNumber': 'telephone',
+      'postcode': 'postcode'
+    };
+    
+    const employmentField = fieldMap[field];
+    if (!employmentField) return;
+    
+    // Update the corresponding employer
+    if (referenceIndex === 0 && employmentHistory.recentEmployer) {
+      // Update recent employer
+      updateEmploymentHistory('recentEmployer', {
+        ...employmentHistory.recentEmployer,
+        [employmentField]: value
+      });
+    } else if (referenceIndex > 0 && employmentHistory.previousEmployers) {
+      // Update previous employer
+      const prevEmployerIndex = referenceIndex - 1;
+      if (prevEmployerIndex < employmentHistory.previousEmployers.length) {
+        const updatedPreviousEmployers = [...employmentHistory.previousEmployers];
+        updatedPreviousEmployers[prevEmployerIndex] = {
+          ...updatedPreviousEmployers[prevEmployerIndex],
+          [employmentField]: value
+        };
+        updateEmploymentHistory('previousEmployers', updatedPreviousEmployers);
+      }
+    }
   };
 
   // Count employers to determine reference types
