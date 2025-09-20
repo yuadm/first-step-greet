@@ -92,9 +92,17 @@ export function useComplianceActions() {
 
   const createComplianceRecord = useMutation({
     mutationFn: async (recordData: Omit<ComplianceRecord, 'id' | 'created_at'>) => {
+      // Get current user ID for audit trail
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+
       const { data, error } = await supabase
         .from('compliance_records')
-        .insert([recordData])
+        .insert([{
+          ...recordData,
+          created_by: userId,
+          updated_by: userId
+        }])
         .select()
         .single();
       
@@ -150,9 +158,16 @@ export function useComplianceActions() {
 
   const updateComplianceRecord = useMutation({
     mutationFn: async ({ id, ...updateData }: Partial<ComplianceRecord> & { id: string }) => {
+      // Get current user ID for audit trail
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+
       const { data, error } = await supabase
         .from('compliance_records')
-        .update(updateData)
+        .update({
+          ...updateData,
+          updated_by: userId
+        })
         .eq('id', id)
         .select()
         .single();
