@@ -2,17 +2,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge";
 import { Eye } from "lucide-react";
 
-interface Client {
+interface Employee {
   id: string;
   name: string;
-  branches?: {
-    name: string;
-  };
+  branch?: string;
 }
 
-interface ClientComplianceRecord {
+interface ComplianceRecord {
   id: string;
-  client_id: string;
+  employee_id: string;
+  compliance_type_id: string;
   period_identifier: string;
   status: string;
   completion_date?: string;
@@ -20,28 +19,31 @@ interface ClientComplianceRecord {
   notes?: string;
   created_at: string;
   updated_at: string;
+  completed_by?: string;
+  created_by?: string;
+  updated_by?: string;
 }
 
-interface ClientComplianceRecordViewDialogProps {
+interface ComplianceRecordViewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  client: Client | null;
-  record: ClientComplianceRecord | null;
+  employee: Employee | null;
+  record: ComplianceRecord | null;
   completedByUser?: { name: string; created_at: string } | null;
   createdByUser?: { name: string; created_at: string } | null;
   updatedByUser?: { name: string; updated_at: string } | null;
 }
 
-export function ClientComplianceRecordViewDialog({
+export function ComplianceRecordViewDialog({
   open,
   onOpenChange,
-  client,
+  employee,
   record,
   completedByUser,
   createdByUser,
   updatedByUser
-}: ClientComplianceRecordViewDialogProps) {
-  if (!client || !record) return null;
+}: ComplianceRecordViewDialogProps) {
+  if (!employee || !record) return null;
 
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
@@ -59,7 +61,7 @@ export function ClientComplianceRecordViewDialog({
   const getStatusText = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
-        return 'Completed';
+        return 'Compliant';
       case 'pending':
         return 'Pending';
       case 'overdue':
@@ -75,21 +77,21 @@ export function ClientComplianceRecordViewDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Eye className="w-5 h-5" />
-            Client Compliance Record Details
+            Compliance Record Details
           </DialogTitle>
           <DialogDescription>
-            View details for this client compliance record.
+            View details for this compliance record.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <h4 className="font-semibold text-sm text-muted-foreground">Client</h4>
-              <p className="font-medium">{client.name}</p>
+              <h4 className="font-semibold text-sm text-muted-foreground">Employee</h4>
+              <p className="font-medium">{employee.name}</p>
             </div>
             <div>
               <h4 className="font-semibold text-sm text-muted-foreground">Branch</h4>
-              <p className="font-medium">{client.branches?.name || 'Unassigned'}</p>
+              <p className="font-medium">{employee.branch || 'Unassigned'}</p>
             </div>
             <div>
               <h4 className="font-semibold text-sm text-muted-foreground">Period</h4>
@@ -116,6 +118,7 @@ export function ClientComplianceRecordViewDialog({
               <p className="font-medium">{new Date(record.created_at).toLocaleDateString()}</p>
             </div>
           </div>
+
           {/* Audit Trail Section */}
           <div className="border-t pt-4">
             <h4 className="font-semibold text-sm text-muted-foreground mb-3">Audit Trail</h4>
@@ -154,6 +157,7 @@ export function ClientComplianceRecordViewDialog({
               )}
             </div>
           </div>
+
           {record.notes && (
             <div>
               <h4 className="font-semibold text-sm text-muted-foreground mb-2">Notes</h4>

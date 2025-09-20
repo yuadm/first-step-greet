@@ -291,7 +291,7 @@ const handleDownloadPdf = async () => {
       case 4:
         return <EmploymentHistoryStep data={formData.employmentHistory} updateData={updateEmploymentHistory} />;
       case 5:
-        return <ReferencesStep data={formData.references} employmentHistory={formData.employmentHistory} updateData={updateReferences} />;
+        return <ReferencesStep data={formData.references} employmentHistory={formData.employmentHistory} updateData={updateReferences} updateEmploymentHistory={updateEmploymentHistory} />;
       case 6:
         return <SkillsExperienceStep data={formData.skillsExperience} updateData={updateSkillsExperience} />;
       case 7:

@@ -11,9 +11,10 @@ interface ReferencesStepProps {
   data: References;
   employmentHistory: EmploymentHistory;
   updateData: (field: keyof References, value: any) => void;
+  updateEmploymentHistory: (field: keyof EmploymentHistory, value: any) => void;
 }
 
-export function ReferencesStep({ data, employmentHistory, updateData }: ReferencesStepProps) {
+export function ReferencesStep({ data, employmentHistory, updateData, updateEmploymentHistory }: ReferencesStepProps) {
   const [autoFilledFields, setAutoFilledFields] = useState<{
     reference1: boolean;
     reference2: boolean;
@@ -21,6 +22,65 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
 
   const updateReference = (refNumber: 'reference1' | 'reference2', field: string, value: string) => {
     updateData(refNumber, { ...data[refNumber], [field]: value });
+    
+    // Sync back to employment history if this is an employer reference
+    syncToEmploymentHistory(refNumber, field, value);
+  };
+
+  const syncToEmploymentHistory = (refNumber: 'reference1' | 'reference2', field: string, value: string) => {
+    // Only sync if this reference was auto-filled from employment history
+    if (!autoFilledFields[refNumber]) return;
+    
+    // Determine which employer this reference corresponds to
+    const referenceIndex = refNumber === 'reference1' ? 0 : 1;
+    const employers = [];
+    
+    if (employmentHistory.recentEmployer?.company?.trim() || employmentHistory.recentEmployer?.name?.trim()) {
+      employers.push(employmentHistory.recentEmployer);
+    }
+    
+    if (employmentHistory.previousEmployers?.length) {
+      employers.push(...employmentHistory.previousEmployers.filter(emp => 
+        emp.company?.trim() || emp.name?.trim()
+      ));
+    }
+    
+    if (referenceIndex >= employers.length) return;
+    
+    // Map reference fields to employment history fields
+    const fieldMap: Record<string, string> = {
+      'name': 'name',
+      'company': 'company',
+      'email': 'email',
+      'address': 'address',
+      'address2': 'address2',
+      'town': 'town',
+      'contactNumber': 'telephone',
+      'postcode': 'postcode'
+    };
+    
+    const employmentField = fieldMap[field];
+    if (!employmentField) return;
+    
+    // Update the corresponding employer
+    if (referenceIndex === 0 && employmentHistory.recentEmployer) {
+      // Update recent employer
+      updateEmploymentHistory('recentEmployer', {
+        ...employmentHistory.recentEmployer,
+        [employmentField]: value
+      });
+    } else if (referenceIndex > 0 && employmentHistory.previousEmployers) {
+      // Update previous employer
+      const prevEmployerIndex = referenceIndex - 1;
+      if (prevEmployerIndex < employmentHistory.previousEmployers.length) {
+        const updatedPreviousEmployers = [...employmentHistory.previousEmployers];
+        updatedPreviousEmployers[prevEmployerIndex] = {
+          ...updatedPreviousEmployers[prevEmployerIndex],
+          [employmentField]: value
+        };
+        updateEmploymentHistory('previousEmployers', updatedPreviousEmployers);
+      }
+    }
   };
 
   // Count employers to determine reference types
@@ -83,46 +143,79 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
       ));
     }
 
-    // Auto-fill reference 1 if we have at least 1 employer
-    if (employers.length >= 1 && !autoFilledFields.reference1) {
-      const employer = employers[0];
-      updateData('reference1', {
-        name: employer.name || '',
-        company: employer.company || '',
-        jobTitle: '', // Don't auto-fill job title
-        email: employer.email || '',
-        address: employer.address || '',
-        address2: employer.address2 || '',
-        town: employer.town || '',
-        contactNumber: employer.telephone || '',
-        postcode: employer.postcode || '',
-      });
+    // Auto-fill reference 1
+    if (!autoFilledFields.reference1) {
+      if (employers.length >= 1) {
+        // Employer reference
+        const employer = employers[0];
+        updateData('reference1', {
+          name: employer.name || '',
+          company: employer.company || '',
+          jobTitle: '', // Don't auto-fill job title
+          email: employer.email || '',
+          address: employer.address || '',
+          address2: employer.address2 || '',
+          town: employer.town || '',
+          contactNumber: employer.telephone || '',
+          postcode: employer.postcode || '',
+        });
+      } else {
+        // Character reference
+        updateData('reference1', {
+          name: '',
+          company: 'Character Reference',
+          jobTitle: 'Character Reference',
+          email: '',
+          address: '',
+          address2: '',
+          town: '',
+          contactNumber: '',
+          postcode: '',
+        });
+      }
       setAutoFilledFields(prev => ({ ...prev, reference1: true }));
     }
 
-    // Auto-fill reference 2 if we have at least 2 employers
-    if (employers.length >= 2 && !autoFilledFields.reference2) {
-      const employer = employers[1];
-      updateData('reference2', {
-        name: employer.name || '',
-        company: employer.company || '',
-        jobTitle: '', // Don't auto-fill job title
-        email: employer.email || '',
-        address: employer.address || '',
-        address2: employer.address2 || '',
-        town: employer.town || '',
-        contactNumber: employer.telephone || '',
-        postcode: employer.postcode || '',
-      });
+    // Auto-fill reference 2
+    if (!autoFilledFields.reference2) {
+      if (employers.length >= 2) {
+        // Employer reference
+        const employer = employers[1];
+        updateData('reference2', {
+          name: employer.name || '',
+          company: employer.company || '',
+          jobTitle: '', // Don't auto-fill job title
+          email: employer.email || '',
+          address: employer.address || '',
+          address2: employer.address2 || '',
+          town: employer.town || '',
+          contactNumber: employer.telephone || '',
+          postcode: employer.postcode || '',
+        });
+      } else {
+        // Character reference (0 or 1 employers)
+        updateData('reference2', {
+          name: '',
+          company: 'Character Reference',
+          jobTitle: 'Character Reference',
+          email: '',
+          address: '',
+          address2: '',
+          town: '',
+          contactNumber: '',
+          postcode: '',
+        });
+      }
       setAutoFilledFields(prev => ({ ...prev, reference2: true }));
     }
   }, [employmentHistory, updateData, autoFilledFields]);
 
   const clearAutoFill = (refNumber: 'reference1' | 'reference2') => {
+    const isCharacterRef = getReferenceType(refNumber) === 'Character Reference';
     updateData(refNumber, {
       name: '',
-      company: '',
-      jobTitle: '', // Keep job title empty when clearing
+      company: isCharacterRef ? 'Character Reference' : '',
+      jobTitle: isCharacterRef ? 'Character Reference' : '',
       email: '',
       address: '',
       address2: '',

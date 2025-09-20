@@ -435,6 +435,8 @@ export type Database = {
           completion_date: string | null
           created_at: string
           created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           digital_signature: string | null
           id: string
           person_completing_report: string | null
@@ -444,6 +446,7 @@ export type Database = {
           statement: string | null
           status: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           approved_at?: string | null
@@ -456,6 +459,8 @@ export type Database = {
           completion_date?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           digital_signature?: string | null
           id?: string
           person_completing_report?: string | null
@@ -465,6 +470,7 @@ export type Database = {
           statement?: string | null
           status?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           approved_at?: string | null
@@ -477,6 +483,8 @@ export type Database = {
           completion_date?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           digital_signature?: string | null
           id?: string
           person_completing_report?: string | null
@@ -486,6 +494,7 @@ export type Database = {
           statement?: string | null
           status?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -513,6 +522,9 @@ export type Database = {
           completion_date: string
           completion_method: string | null
           created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           grace_period_end: string | null
           id: string
           is_overdue: boolean | null
@@ -522,6 +534,7 @@ export type Database = {
           period_identifier: string
           status: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           auto_generated?: boolean | null
@@ -531,6 +544,9 @@ export type Database = {
           completion_date?: string
           completion_method?: string | null
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           grace_period_end?: string | null
           id?: string
           is_overdue?: boolean | null
@@ -540,6 +556,7 @@ export type Database = {
           period_identifier: string
           status?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           auto_generated?: boolean | null
@@ -549,6 +566,9 @@ export type Database = {
           completion_date?: string
           completion_method?: string | null
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           grace_period_end?: string | null
           id?: string
           is_overdue?: boolean | null
@@ -558,6 +578,7 @@ export type Database = {
           period_identifier?: string
           status?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -615,39 +636,51 @@ export type Database = {
           client_id: string
           compliance_record_id: string | null
           created_at: string
+          created_by: string | null
           date: string
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
           observations: Json
           performed_by: string
           service_user_name: string
           time: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           care_workers: string
           client_id: string
           compliance_record_id?: string | null
           created_at?: string
+          created_by?: string | null
           date: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           observations?: Json
           performed_by: string
           service_user_name: string
           time: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           care_workers?: string
           client_id?: string
           compliance_record_id?: string | null
           created_at?: string
+          created_by?: string | null
           date?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           observations?: Json
           performed_by?: string
           service_user_name?: string
           time?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -845,6 +878,9 @@ export type Database = {
           completion_method: string | null
           compliance_type_id: string
           created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           employee_id: string
           form_data: Json | null
           grace_period_end: string | null
@@ -856,6 +892,7 @@ export type Database = {
           period_identifier: string
           status: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           auto_generated?: boolean | null
@@ -864,6 +901,9 @@ export type Database = {
           completion_method?: string | null
           compliance_type_id: string
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           employee_id: string
           form_data?: Json | null
           grace_period_end?: string | null
@@ -875,6 +915,7 @@ export type Database = {
           period_identifier: string
           status?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           auto_generated?: boolean | null
@@ -883,6 +924,9 @@ export type Database = {
           completion_method?: string | null
           compliance_type_id?: string
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           employee_id?: string
           form_data?: Json | null
           grace_period_end?: string | null
@@ -894,6 +938,7 @@ export type Database = {
           period_identifier?: string
           status?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -2539,6 +2584,10 @@ export type Database = {
         Returns: {
           branch_id: string
         }[]
+      }
+      get_user_display_name: {
+        Args: { user_id: string }
+        Returns: string
       }
       get_user_role: {
         Args: { input_user_id: string }

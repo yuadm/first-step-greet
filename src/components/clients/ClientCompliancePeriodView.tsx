@@ -254,13 +254,19 @@ export function ClientCompliancePeriodView({
     console.log('Saving spot check with complianceTypeId:', complianceTypeId);
 
     try {
+      // Get current user for audit trail
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+
       // Create or update the compliance period record without a pre-fetch to avoid 406/409
       const { data: updated, error: updateError } = await supabase
         .from('client_compliance_period_records')
         .update({
           status: 'completed',
           completion_date: data.date,
-          completion_method: 'spotcheck'
+          completion_method: 'spotcheck',
+          completed_by: userId,
+          updated_by: userId
         })
         .eq('client_compliance_type_id', complianceTypeId)
         .eq('client_id', selectedClient.id)
@@ -282,7 +288,10 @@ export function ClientCompliancePeriodView({
             period_identifier: selectedPeriod,
             status: 'completed',
             completion_date: data.date,
-            completion_method: 'spotcheck'
+            completion_method: 'spotcheck',
+            completed_by: userId,
+            created_by: userId,
+            updated_by: userId
           })
           .select('id')
           .maybeSingle();
@@ -303,7 +312,9 @@ export function ClientCompliancePeriodView({
           date: data.date,
           time: '', // Remove from form but keep for database compatibility  
           performed_by: data.completedBy, // Use completedBy value for performed_by field
-          observations: data.observations as any
+          observations: data.observations as any,
+          created_by: userId,
+          updated_by: userId
         });
 
       if (spotCheckError) throw spotCheckError;
@@ -1124,8 +1135,21 @@ export function ClientCompliancePeriodView({
                                           className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
                                           title="View Record"
                                           onClick={() => {
-                                            setSelectedClient(client);
-                                            setViewDialogOpen(true);
+                                            const spotCheckRecord = record.client_spot_check_records?.[0];
+                                            if (spotCheckRecord && spotCheckRecord.id) {
+                                              setSelectedSpotCheckRecord(spotCheckRecord);
+                                              setSelectedClient(client);
+                                              setViewDialogOpen(true);
+                                            } else {
+                                              setSelectedComplianceRecord({
+                                                ...record,
+                                                completed_by_user: record.completed_by_user,
+                                                created_by_user: record.created_by_user,  
+                                                updated_by_user: record.updated_by_user
+                                              });
+                                              setSelectedClient(client);
+                                              setGenericViewDialogOpen(true);
+                                            }
                                           }}
                                         >
                                           <Eye className="w-4 h-4" />
@@ -1397,6 +1421,18 @@ export function ClientCompliancePeriodView({
         onOpenChange={setGenericViewDialogOpen}
         client={selectedClient}
         record={selectedComplianceRecord}
+        completedByUser={selectedComplianceRecord?.completed_by_user ? {
+          name: selectedComplianceRecord.completed_by_user.name,
+          created_at: selectedComplianceRecord.completion_date || selectedComplianceRecord.created_at
+        } : null}
+        createdByUser={selectedComplianceRecord?.created_by_user ? {
+          name: selectedComplianceRecord.created_by_user.name,
+          created_at: selectedComplianceRecord.created_at
+        } : null}
+        updatedByUser={selectedComplianceRecord?.updated_by_user ? {
+          name: selectedComplianceRecord.updated_by_user.name,
+          updated_at: selectedComplianceRecord.updated_at
+        } : null}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -4,6 +4,8 @@ import { StatusSettingForm } from './StatusSettingForm';
 import { PersonalSettingForm } from './PersonalSettingForm';
 import { EmergencySettingForm } from './EmergencySettingForm';
 import { SkillsSettingForm } from './SkillsSettingForm';
+import { FieldsSettingForm } from './FieldsSettingForm';
+import { ReferenceSettingForm } from './ReferenceSettingForm';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,7 +98,29 @@ export function FormRenderer({
         />
       );
 
-    // Generic form for steps, fields, and reference categories
+    case 'fields':
+      return (
+        <FieldsSettingForm
+          formData={formData}
+          onFormDataChange={onFormDataChange}
+          onSave={onSave}
+          onCancel={onCancel}
+          isEditing={isEditing}
+        />
+      );
+
+    case 'reference':
+      return (
+        <ReferenceSettingForm
+          formData={formData}
+          onFormDataChange={onFormDataChange}
+          onSave={onSave}
+          onCancel={onCancel}
+          isEditing={isEditing}
+        />
+      );
+
+    // Generic form for steps category
     default:
       return (
         <GenericSettingForm

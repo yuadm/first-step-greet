@@ -23,6 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompliancePeriodEmployeeData } from "@/hooks/queries/useCompliancePeriodQueries";
+import { ComplianceRecordViewDialog } from "./ComplianceRecordViewDialog";
 
 interface Employee {
   id: string;
@@ -69,6 +70,9 @@ export function CompliancePeriodEmployeeView({
   const [open, setOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const { toast } = useToast();
   const { companySettings } = useCompany();
 
@@ -320,6 +324,7 @@ export function CompliancePeriodEmployeeView({
                       <TableHead>Status</TableHead>
                       <TableHead>Completion Date</TableHead>
                       <TableHead>Notes</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -345,52 +350,70 @@ export function CompliancePeriodEmployeeView({
                           })() : '-'}
                         </TableCell>
                         <TableCell className="max-w-xs">
-                          <div className="flex items-center gap-2">
-                            <div className="truncate" title={(() => {
-                              if (!item.record?.notes) return '';
+                          <div className="truncate" title={(() => {
+                            if (!item.record?.notes) return '';
+                            if (item.record?.completion_method === 'supervision') {
+                              try {
+                                const j = JSON.parse(item.record.notes);
+                                const txt = (j?.freeTextNotes || '').toString().trim();
+                                return txt || '';
+                              } catch {
+                                return '';
+                              }
+                            }
+                            if (item.record?.completion_method === 'annual_appraisal') {
+                              try {
+                                const j = JSON.parse(item.record.notes);
+                                const txt = (j?.freeTextNotes || '').toString().trim();
+                                return txt || '';
+                              } catch {
+                                return '';
+                              }
+                            }
+                            return item.record?.notes || '';
+                          })()}>
+                            {(() => {
+                              if (!item.record?.notes) return '-';
                               if (item.record?.completion_method === 'supervision') {
                                 try {
                                   const j = JSON.parse(item.record.notes);
                                   const txt = (j?.freeTextNotes || '').toString().trim();
-                                  return txt || '';
+                                  return txt || '-';
                                 } catch {
-                                  return '';
+                                  return '-';
                                 }
                               }
                               if (item.record?.completion_method === 'annual_appraisal') {
                                 try {
                                   const j = JSON.parse(item.record.notes);
                                   const txt = (j?.freeTextNotes || '').toString().trim();
-                                  return txt || '';
+                                  return txt || '-';
                                 } catch {
-                                  return '';
+                                  return '-';
                                 }
                               }
-                              return item.record?.notes || '';
-                            })()}>
-                              {(() => {
-                                if (!item.record?.notes) return '-';
-                                if (item.record?.completion_method === 'supervision') {
-                                  try {
-                                    const j = JSON.parse(item.record.notes);
-                                    const txt = (j?.freeTextNotes || '').toString().trim();
-                                    return txt || '-';
-                                  } catch {
-                                    return '-';
-                                  }
-                                }
-                                if (item.record?.completion_method === 'annual_appraisal') {
-                                  try {
-                                    const j = JSON.parse(item.record.notes);
-                                    const txt = (j?.freeTextNotes || '').toString().trim();
-                                    return txt || '-';
-                                  } catch {
-                                    return '-';
-                                  }
-                                }
-                                return item.record?.notes || '-';
-                              })()}
-                            </div>
+                              return item.record?.notes || '-';
+                            })()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {item.record && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedRecord(item.record);
+                                  setSelectedEmployee(item.employee);
+                                  setViewDialogOpen(true);
+                                }}
+                                className="h-6 w-6 p-0"
+                                title="View Details"
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                            )}
                             {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && (
                               <>
                                 <Button
@@ -414,9 +437,9 @@ export function CompliancePeriodEmployeeView({
                                     }
                                   }}
                                   className="h-6 w-6 p-0"
-                                  title="View Record"
+                                  title="Download PDF"
                                 >
-                                  <Eye className="h-3 w-3" />
+                                  <Download className="h-3 w-3" />
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -589,6 +612,25 @@ export function CompliancePeriodEmployeeView({
             </Card>
           </div>
         )}
+        
+        <ComplianceRecordViewDialog
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+          employee={selectedEmployee}
+          record={selectedRecord}
+          completedByUser={selectedRecord?.completed_by_user ? {
+            name: selectedRecord.completed_by_user.name,
+            created_at: selectedRecord.completion_date || selectedRecord.created_at
+          } : null}
+          createdByUser={selectedRecord?.created_by_user ? {
+            name: selectedRecord.created_by_user.name,
+            created_at: selectedRecord.created_at
+          } : null}
+          updatedByUser={selectedRecord?.updated_by_user ? {
+            name: selectedRecord.updated_by_user.name,
+            updated_at: selectedRecord.updated_at
+          } : null}
+        />
       </DialogContent>
     </Dialog>
   );
