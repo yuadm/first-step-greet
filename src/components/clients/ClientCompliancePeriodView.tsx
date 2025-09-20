@@ -1043,7 +1043,7 @@ export function ClientCompliancePeriodView({
                                                 const { data: spotCheckData, error: spotCheckError } = await supabase
                                                   .from('client_spot_check_records')
                                                   .select('*')
-                                                  .eq('compliance_record_id', record.id)
+                                                 .eq('compliance_record_id', record.id)
                                                   .maybeSingle();
 
                                                 if (spotCheckError) {
