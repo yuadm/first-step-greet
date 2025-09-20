@@ -20,12 +20,24 @@ export const validateStep = (currentStep: number, formData: JobApplicationData):
                formData.emergencyContact.contactNumber && formData.emergencyContact.howDidYouHear);
     }
     case 4: {
-      // Employment History: If previously employed = yes, must complete Most Recent Employer
+      // Employment History: If previously employed = yes, must complete Most Recent Employer and all Previous Employers
       if (formData.employmentHistory.previouslyEmployed === 'yes') {
         const re = formData.employmentHistory.recentEmployer;
-        return !!(re && re.company && re.name && re.email && re.position && 
+        const recentEmployerValid = !!(re && re.company && re.name && re.email && re.position && 
                  re.address && re.town && re.postcode && re.telephone && 
                  re.from && re.to && re.reasonForLeaving);
+        
+        if (!recentEmployerValid) return false;
+        
+        // Validate all additional previous employers if they exist
+        const prevEmployers = formData.employmentHistory.previousEmployers || [];
+        const allPreviousEmployersValid = prevEmployers.every(emp => 
+          emp.company && emp.name && emp.email && emp.position && 
+          emp.address && emp.town && emp.postcode && emp.telephone && 
+          emp.from && emp.to && emp.reasonForLeaving
+        );
+        
+        return allPreviousEmployersValid;
       }
       return formData.employmentHistory.previouslyEmployed === 'no';
     }
