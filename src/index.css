@@ -195,6 +195,60 @@ All colors MUST be HSL. This creates a sophisticated, modern design with subtle 
     box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
   }
+
+  /* Modern glass card for settings */
+  .card-glass {
+    background: linear-gradient(145deg, hsl(var(--card) / 0.8), hsl(var(--card) / 0.4));
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.3);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Hover effects */
+  .hover-scale {
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  .hover-lift {
+    transition: all var(--duration-normal) var(--ease-smooth);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Grid pattern for backgrounds */
+  .bg-grid-white\/\[0\.02\] {
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  }
+
+  .bg-\[size\:60px_60px\] {
+    background-size: 60px 60px;
+  }
+
+  /* Modern scrollbar */
+  .modern-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .modern-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+  }
+
+  .modern-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 3px;
+  }
+
+  .modern-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
   
   /* Status badges */
   .badge-success {
