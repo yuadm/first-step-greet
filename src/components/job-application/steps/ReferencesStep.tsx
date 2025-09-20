@@ -83,68 +83,70 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
       ));
     }
 
-    // Auto-fill reference 1 if we have at least 1 employer
-    if (employers.length >= 1 && !autoFilledFields.reference1) {
-      const employer = employers[0];
-      updateData('reference1', {
-        name: employer.name || '',
-        company: employer.company || '',
-        jobTitle: '', // Don't auto-fill job title
-        email: employer.email || '',
-        address: employer.address || '',
-        address2: employer.address2 || '',
-        town: employer.town || '',
-        contactNumber: employer.telephone || '',
-        postcode: employer.postcode || '',
-      });
+    // Auto-fill reference 1
+    if (!autoFilledFields.reference1) {
+      if (employers.length >= 1) {
+        // Employer reference
+        const employer = employers[0];
+        updateData('reference1', {
+          name: employer.name || '',
+          company: employer.company || '',
+          jobTitle: '', // Don't auto-fill job title
+          email: employer.email || '',
+          address: employer.address || '',
+          address2: employer.address2 || '',
+          town: employer.town || '',
+          contactNumber: employer.telephone || '',
+          postcode: employer.postcode || '',
+        });
+      } else {
+        // Character reference
+        updateData('reference1', {
+          name: '',
+          company: 'Character Reference',
+          jobTitle: 'Character Reference',
+          email: '',
+          address: '',
+          address2: '',
+          town: '',
+          contactNumber: '',
+          postcode: '',
+        });
+      }
       setAutoFilledFields(prev => ({ ...prev, reference1: true }));
     }
-    
-    // Auto-fill character reference fields for reference 1 if no employers
-    if (employers.length === 0 && !autoFilledFields.reference1) {
-      updateData('reference1', {
-        name: '',
-        company: 'Character Reference',
-        jobTitle: 'Character Reference',
-        email: '',
-        address: '',
-        address2: '',
-        town: '',
-        contactNumber: '',
-        postcode: '',
-      });
-    }
 
-    // Auto-fill reference 2 if we have at least 2 employers
-    if (employers.length >= 2 && !autoFilledFields.reference2) {
-      const employer = employers[1];
-      updateData('reference2', {
-        name: employer.name || '',
-        company: employer.company || '',
-        jobTitle: '', // Don't auto-fill job title
-        email: employer.email || '',
-        address: employer.address || '',
-        address2: employer.address2 || '',
-        town: employer.town || '',
-        contactNumber: employer.telephone || '',
-        postcode: employer.postcode || '',
-      });
+    // Auto-fill reference 2
+    if (!autoFilledFields.reference2) {
+      if (employers.length >= 2) {
+        // Employer reference
+        const employer = employers[1];
+        updateData('reference2', {
+          name: employer.name || '',
+          company: employer.company || '',
+          jobTitle: '', // Don't auto-fill job title
+          email: employer.email || '',
+          address: employer.address || '',
+          address2: employer.address2 || '',
+          town: employer.town || '',
+          contactNumber: employer.telephone || '',
+          postcode: employer.postcode || '',
+        });
+      } else {
+        // Character reference (0 or 1 employers)
+        updateData('reference2', {
+          name: '',
+          company: 'Character Reference',
+          jobTitle: 'Character Reference',
+          email: '',
+          address: '',
+          address2: '',
+          town: '',
+          contactNumber: '',
+          postcode: '',
+        });
+      }
       setAutoFilledFields(prev => ({ ...prev, reference2: true }));
-    }
-    
-    // Auto-fill character reference fields for reference 2 if 0 or 1 employers
-    if (employers.length <= 1 && !autoFilledFields.reference2) {
-      updateData('reference2', {
-        name: '',
-        company: 'Character Reference',
-        jobTitle: 'Character Reference',
-        email: '',
-        address: '',
-        address2: '',
-        town: '',
-        contactNumber: '',
-        postcode: '',
-      });
     }
   }, [employmentHistory, updateData, autoFilledFields]);
 
