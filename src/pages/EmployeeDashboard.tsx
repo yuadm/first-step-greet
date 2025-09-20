@@ -12,6 +12,7 @@ import { DocumentUploadDialog } from '@/components/employee/DocumentUploadDialog
 import { ComplianceOverview } from '@/components/employee/ComplianceOverview';
 import { CompanyProvider, useCompany } from '@/contexts/CompanyContext';
 import { CareWorkerStatementForm } from '@/components/compliance/CareWorkerStatementForm';
+import { format } from 'date-fns';
 interface LeaveRequest {
   id: string;
   start_date: string;
@@ -195,19 +196,19 @@ function EmployeeDashboardContent() {
         </div>
 
         {/* Enhanced Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 animate-fade-in">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/5" />
-            <CardContent className="p-6 relative">
+            <CardContent className="p-4 sm:p-6 relative">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-600 mb-1">Total Allowance</p>
-                  <p className="text-3xl font-bold text-gray-900">{employee.leave_allowance}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-green-600 mb-1">Total Allowance</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{employee.leave_allowance}</p>
                   <p className="text-xs text-gray-500 mt-1">Days per year</p>
                 </div>
-                <div className="relative">
-                  <div className="h-14 w-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <Calendar className="w-7 h-7 text-white" />
+                <div className="relative flex-shrink-0 ml-3">
+                  <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Calendar className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                   </div>
                 </div>
               </div>
@@ -218,36 +219,36 @@ function EmployeeDashboardContent() {
           animationDelay: '0.1s'
         }}>
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-amber-500/5" />
-            <CardContent className="p-6 relative">
+            <CardContent className="p-4 sm:p-6 relative">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-orange-600 mb-1">Days Taken</p>
-                  <p className="text-3xl font-bold text-gray-900">{employee.leave_taken}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-orange-600 mb-1">Days Taken</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{employee.leave_taken}</p>
                   <p className="text-xs text-gray-500 mt-1">This year</p>
                 </div>
-                <div className="relative">
-                  <div className="h-14 w-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <Clock className="w-7 h-7 text-white" />
+                <div className="relative flex-shrink-0 ml-3">
+                  <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <Clock className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 animate-fade-in" style={{
+          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 animate-fade-in sm:col-span-2 lg:col-span-1" style={{
           animationDelay: '0.2s'
         }}>
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/5" />
-            <CardContent className="p-6 relative">
+            <CardContent className="p-4 sm:p-6 relative">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-600 mb-1">Remaining</p>
-                  <p className="text-3xl font-bold text-gray-900">{employee.remaining_leave_days}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-blue-600 mb-1">Remaining</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{employee.remaining_leave_days}</p>
                   <p className="text-xs text-gray-500 mt-1">Days available</p>
                 </div>
-                <div className="relative">
-                  <div className="h-14 w-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <CheckCircle className="w-7 h-7 text-white" />
+                <div className="relative flex-shrink-0 ml-3">
+                  <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <CheckCircle className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                   </div>
                 </div>
               </div>
@@ -261,17 +262,17 @@ function EmployeeDashboardContent() {
           <Card className="hover:shadow-lg transition-all duration-300 animate-fade-in" style={{
           animationDelay: '0.3s'
         }}>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
+            <CardHeader className="pb-3 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                Personal Information
+                <span className="truncate">Personal Information</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   {[{
                   label: 'Full Name',
                   value: employee.name,
@@ -288,13 +289,13 @@ function EmployeeDashboardContent() {
                   label: 'Job Title',
                   value: employee.job_title || 'Not specified',
                   icon: CheckCircle
-                }].map((item, index) => <div key={item.label} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                      <div className="h-8 w-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <item.icon className="w-4 h-4 text-gray-600" />
+                }].map((item, index) => <div key={item.label} className="flex items-start sm:items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg sm:rounded-xl hover:bg-gray-50 transition-colors min-h-[44px]">
+                      <div className="h-7 w-7 sm:h-8 sm:w-8 bg-gray-100 rounded-md sm:rounded-lg flex items-center justify-center flex-shrink-0 mt-1 sm:mt-0">
+                        <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-600">{item.label}</p>
-                        <p className="font-medium text-gray-900">{item.value}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm text-gray-600 leading-tight">{item.label}</p>
+                        <p className="font-medium text-gray-900 text-sm sm:text-base truncate leading-tight mt-0.5 sm:mt-0">{item.value}</p>
                       </div>
                     </div>)}
                 </div>
@@ -314,73 +315,75 @@ function EmployeeDashboardContent() {
         <Card className="hover:shadow-lg transition-all duration-300 animate-fade-in" style={{
         animationDelay: '0.5s'
       }}>
-          <CardHeader className="pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <CardTitle className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-5 h-5 text-white" />
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                Leave Management & Statements
+                <span className="truncate">Leave Management & Statements</span>
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-50 to-purple-50 p-1 rounded-xl border-0">
-                <TabsTrigger value="leaves" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 rounded-lg font-medium">
-                  <Calendar className="w-4 h-4" />
-                  Leaves
+              <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-50 to-purple-50 p-1 rounded-xl border-0 h-10 sm:h-auto">
+                <TabsTrigger value="leaves" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 rounded-lg font-medium text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline sm:inline">Leaves</span>
                 </TabsTrigger>
-                <TabsTrigger value="statements" className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 transition-all duration-300 rounded-lg font-medium">
-                  <FileText className="w-4 h-4" />
-                  Statements
+                <TabsTrigger value="statements" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 transition-all duration-300 rounded-lg font-medium text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+                  <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden xs:inline sm:inline">Statements</span>
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="leaves" className="mt-6">
-                <div className="space-y-4">
+              <TabsContent value="leaves" className="mt-4 sm:mt-6">
+                <div className="space-y-3 sm:space-y-4">
                   <div className="flex justify-end">
-                    <Button onClick={() => setShowLeaveDialog(true)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Request Leave
+                    <Button onClick={() => setShowLeaveDialog(true)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base px-3 sm:px-4 py-2 min-h-[44px]">
+                      <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                      <span className="hidden xs:inline">Request </span>Leave
                     </Button>
                   </div>
                   
                   {leaveRequests.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="w-8 h-8 text-gray-400" />
+                    <div className="text-center py-8 sm:py-12">
+                      <div className="h-12 w-12 sm:h-16 sm:w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                       </div>
-                      <p className="text-gray-500 mb-2">No leave requests found</p>
-                      <p className="text-sm text-gray-400">Your leave requests will appear here</p>
+                      <p className="text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">No leave requests found</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Your leave requests will appear here</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {leaveRequests.map((leave, index) => (
-                        <div key={leave.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200" style={{
+                        <div key={leave.id} className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200" style={{
                           animationDelay: `${0.1 * index}s`
                         }}>
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
                               {getStatusIcon(leave.status)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                                <span className="font-semibold text-gray-900 truncate">{leave.leave_type.name}</span>
-                                <Badge variant={getStatusColor(leave.status)} className="flex items-center gap-1 px-3 py-1 w-fit">
-                                  {getStatusIcon(leave.status)}
-                                  <span className="text-xs">{leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}</span>
-                                </Badge>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4">
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{leave.leave_type.name}</h4>
+                                  <p className="text-xs sm:text-sm text-gray-600 leading-tight mt-0.5">
+                                    {format(new Date(leave.start_date), 'MMM dd')} - {format(new Date(leave.end_date), 'MMM dd, yyyy')}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-0">
+                                  <Badge variant={getStatusColor(leave.status)} className="text-xs px-2 py-1 min-h-[24px]">
+                                    {leave.status}
+                                  </Badge>
+                                </div>
                               </div>
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-600 mb-1">
-                                <span className="truncate">{new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}</span>
-                                <span className="hidden sm:inline">•</span>
-                                <span className="text-xs sm:text-sm">Duration: {Math.ceil((new Date(leave.end_date).getTime() - new Date(leave.start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1} days</span>
-                              </div>
-                              <div className="text-xs sm:text-sm text-gray-500">
-                                Applied on {new Date(leave.created_at).toLocaleDateString()}
-                              </div>
-                              {leave.notes && <p className="text-xs sm:text-sm text-gray-500 mt-2 italic truncate">{leave.notes}</p>}
+                              {leave.notes && (
+                                <p className="text-xs sm:text-sm text-gray-500 mt-2 line-clamp-2 leading-relaxed">
+                                  {leave.notes}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -390,51 +393,57 @@ function EmployeeDashboardContent() {
                 </div>
               </TabsContent>
               
-              <TabsContent value="statements" className="mt-6">
-                <div className="space-y-4">
+              <TabsContent value="statements" className="mt-4 sm:mt-6">
+                <div className="space-y-3 sm:space-y-4">
                   {statements.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <FileText className="w-8 h-8 text-gray-400" />
+                    <div className="text-center py-8 sm:py-12">
+                      <div className="h-12 w-12 sm:h-16 sm:w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                        <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                       </div>
-                      <p className="text-gray-500 mb-2">No statements assigned</p>
-                      <p className="text-sm text-gray-400">Your care worker statements will appear here</p>
+                      <p className="text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">No statements assigned</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Your care worker statements will appear here</p>
                     </div>
                   ) : (
-                    <div className="grid gap-4">
+                    <div className="grid gap-3 sm:gap-4">
                       {statements.map((statement) => (
-                        <div key={statement.id} className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <div className="h-12 w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
-                              <FileText className="w-6 h-6 text-gray-600" />
+                        <div key={statement.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-2">
-                                <span className="font-semibold text-gray-900 truncate">{statement.care_worker_name}</span>
-                                <Badge variant={statement.status === 'approved' ? 'default' : statement.status === 'submitted' ? 'secondary' : statement.status === 'rejected' ? 'destructive' : 'outline'}>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1 sm:mb-2">
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base truncate">{statement.care_worker_name}</span>
+                                <Badge variant={statement.status === 'approved' ? 'default' : statement.status === 'submitted' ? 'secondary' : statement.status === 'rejected' ? 'destructive' : 'outline'} className="text-xs px-2 py-1 w-fit">
                                   {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-gray-600 truncate">Client: {statement.client_name}</p>
-                              <p className="text-xs text-gray-500">Report Date: {new Date(statement.report_date).toLocaleDateString()}</p>
+                              <p className="text-xs sm:text-sm text-gray-600 truncate">Client: {statement.client_name}</p>
+                              <p className="text-xs text-gray-500 leading-tight">Report Date: {new Date(statement.report_date).toLocaleDateString()}</p>
                             </div>
                           </div>
-                          <Button
-                            variant={statement.status === 'draft' || statement.status === 'rejected' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => {
-                              setSelectedStatement(statement);
-                              setIsStatementFormOpen(true);
-                            }}
-                            className="flex items-center gap-1 ml-4"
-                          >
-                            <FileText className="h-4 w-4" />
-                            {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete' : 'View'}
-                          </Button>
+                          <div className="flex justify-end mt-2 sm:mt-0">
+                            <Button
+                              variant={statement.status === 'draft' || statement.status === 'rejected' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                setSelectedStatement(statement);
+                                setIsStatementFormOpen(true);
+                              }}
+                              className="text-xs sm:text-sm px-3 sm:px-4 min-h-[36px] sm:min-h-[40px]"
+                            >
+                              <span className="hidden sm:inline">
+                                {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete' : 'View'}
+                              </span>
+                              <span className="sm:hidden">
+                                {statement.status === 'draft' || statement.status === 'rejected' ? 'Edit' : 'View'}
+                              </span>
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
-                  )}
+                   )}
                 </div>
               </TabsContent>
             </Tabs>
