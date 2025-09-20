@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Plus, Search, Eye, Edit3, Trash2, Building, Upload, Download, X, FileSpreadsheet, AlertCircle } from "lucide-react";
+import { Plus, Search, Eye, Edit3, Trash2, Building, Upload, Download, X, FileSpreadsheet, AlertCircle, Check, Square, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
@@ -39,23 +40,30 @@ interface ImportClient {
   error?: string;
 }
 
+export type ClientSortField = 'name' | 'branch' | 'created_at';
+export type ClientSortDirection = 'asc' | 'desc';
+
 export function ClientsContent() {
   const { clients, branches, loading, refetchData } = useClientData();
   const [searchTerm, setSearchTerm] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
+  const [sortField, setSortField] = useState<ClientSortField>('name');
+  const [sortDirection, setSortDirection] = useState<ClientSortDirection>('asc');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [importData, setImportData] = useState<ImportClient[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [pageSize, setPageSize] = useState(50);
   const { isAdmin } = usePermissions();
   const { toast } = useToast();
 
@@ -155,6 +163,75 @@ export function ClientsContent() {
         setSelectedClient(null);
       }
     });
+  };
+
+  const batchDeleteClients = async () => {
+    if (!isAdmin) {
+      toast({
+        title: "Access denied",
+        description: "You don't have permission to delete clients.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const deletePromises = selectedClients.map(clientId => 
+        deleteClient.mutateAsync(clientId)
+      );
+
+      await Promise.all(deletePromises);
+
+      toast({
+        title: "Clients deleted",
+        description: `Successfully deleted ${selectedClients.length} clients.`,
+      });
+
+      setBatchDeleteDialogOpen(false);
+      setSelectedClients([]);
+    } catch (error) {
+      console.error('Error deleting clients:', error);
+      toast({
+        title: "Error deleting clients",
+        description: "Could not delete clients. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleSelectClient = (clientId: string) => {
+    setSelectedClients(prev => 
+      prev.includes(clientId) 
+        ? prev.filter(id => id !== clientId)
+        : [...prev, clientId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedClients.length === paginatedClients.length) {
+      setSelectedClients([]);
+    } else {
+      setSelectedClients(paginatedClients.map(client => client.id));
+    }
+  };
+
+  const handleSort = (field: ClientSortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: ClientSortField) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4" />;
+    return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
+  };
+
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(parseInt(value));
+    setPage(1);
   };
 
   const getBranchName = (branchId: string) => {
@@ -354,21 +431,47 @@ export function ClientsContent() {
     }
   };
 
-  // Filter clients based on search term and branch filter
-  const filteredClients = clients.filter((client) => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBranch = branchFilter === "all" || client.branch_id === branchFilter;
-    return matchesSearch && matchesBranch;
-  });
+  // Filter and sort clients
+  const filteredAndSortedClients = clients
+    .filter((client) => {
+      const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesBranch = branchFilter === "all" || client.branch_id === branchFilter;
+      return matchesSearch && matchesBranch;
+    })
+    .sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'branch':
+          aValue = getBranchName(a.branch_id).toLowerCase();
+          bValue = getBranchName(b.branch_id).toLowerCase();
+          break;
+        case 'created_at':
+          aValue = new Date(a.created_at).getTime();
+          bValue = new Date(b.created_at).getTime();
+          break;
+        default:
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
-  const startIndex = (page - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedClients = filteredClients.slice(startIndex, endIndex);
-
-  // Reset page when filters change or items per page changes
-  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(filteredAndSortedClients.length / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedClients = filteredAndSortedClients.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -405,6 +508,29 @@ export function ClientsContent() {
         )}
       </div>
 
+      {/* Batch Actions Toolbar */}
+      {selectedClients.length > 0 && isAdmin && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-primary" />
+                <span className="font-medium">{selectedClients.length} client(s) selected</span>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setBatchDeleteDialogOpen(true)}
+                className="gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Selected
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Search and Filter Controls */}
       <Card>
         <CardContent className="pt-6">
@@ -439,63 +565,180 @@ export function ClientsContent() {
         </CardContent>
       </Card>
 
-      {/* Clients Table - Desktop */}
-      <Card className="hidden md:block">
+      {/* Clients Table */}
+      <Card>
         <CardHeader>
-          <CardTitle>Clients ({filteredClients.length} total, showing {paginatedClients.length})</CardTitle>
+          <CardTitle>Clients ({filteredAndSortedClients.length} total, showing {paginatedClients.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Branch</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedClients.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell>{client.branch || getBranchName(client.branch_id)}</TableCell>
-                  <TableCell>
-                    {new Date(client.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openViewDialog(client)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {isAdmin && (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {isAdmin && (
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={selectedClients.length === paginatedClients.length && paginatedClients.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all clients"
+                      />
+                    </TableHead>
+                  )}
+                  <TableHead>
+                    <Button 
+                      variant="ghost" 
+                      className="p-0 h-auto font-medium hover:bg-transparent"
+                      onClick={() => handleSort('name')}
+                    >
+                      Name {getSortIcon('name')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button 
+                      variant="ghost" 
+                      className="p-0 h-auto font-medium hover:bg-transparent"
+                      onClick={() => handleSort('branch')}
+                    >
+                      Branch {getSortIcon('branch')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button 
+                      variant="ghost" 
+                      className="p-0 h-auto font-medium hover:bg-transparent"
+                      onClick={() => handleSort('created_at')}
+                    >
+                      Created {getSortIcon('created_at')}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="w-32">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedClients.map((client) => (
+                  <TableRow key={client.id} className="hover:bg-muted/50 transition-colors">
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedClients.includes(client.id)}
+                          onCheckedChange={() => toggleSelectClient(client.id)}
+                          aria-label={`Select ${client.name}`}
+                        />
+                      </TableCell>
+                    )}
+                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Building className="w-3 h-3" />
+                        {client.branch || getBranchName(client.branch_id)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(client.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          onClick={() => {
-                            setSelectedClient(client);
-                            setDeleteDialogOpen(true);
+                          onClick={() => openViewDialog(client)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClient(client);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {paginatedClients.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground">
+                      No clients found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {filteredAndSortedClients.length > pageSize && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Items per page:</span>
+                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (page > 1) {
+                          setPage(page - 1);
+                          window.scrollTo(0, 0);
+                        }
+                      }}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                    const pageNumber = start + i;
+                    if (pageNumber > totalPages) return null;
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          href="#"
+                          isActive={pageNumber === page}
+                          className={pageNumber === page ? "bg-primary text-primary-foreground" : ""}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage(pageNumber);
+                            window.scrollTo(0, 0);
                           }}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {paginatedClients.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    No clients found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (page < totalPages) {
+                          setPage(page + 1);
+                          window.scrollTo(0, 0);
+                        }
+                      }}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -549,7 +792,7 @@ export function ClientsContent() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>Items per page:</span>
-            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
               <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
@@ -885,23 +1128,23 @@ export function ClientsContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Batch Delete Confirmation Dialog */}
+      <AlertDialog open={batchDeleteDialogOpen} onOpenChange={setBatchDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the client
-              "{selectedClient?.name}" and all associated data.
+              This action cannot be undone. This will permanently delete {selectedClients.length} selected clients
+              and all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => selectedClient && handleDeleteClient(selectedClient.id)}
+              onClick={batchDeleteClients}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              Delete {selectedClients.length} Clients
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
