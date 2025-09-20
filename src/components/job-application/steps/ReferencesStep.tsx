@@ -99,6 +99,21 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
       });
       setAutoFilledFields(prev => ({ ...prev, reference1: true }));
     }
+    
+    // Auto-fill character reference fields for reference 1 if no employers
+    if (employers.length === 0 && !autoFilledFields.reference1) {
+      updateData('reference1', {
+        name: '',
+        company: 'Character Reference',
+        jobTitle: 'Character Reference',
+        email: '',
+        address: '',
+        address2: '',
+        town: '',
+        contactNumber: '',
+        postcode: '',
+      });
+    }
 
     // Auto-fill reference 2 if we have at least 2 employers
     if (employers.length >= 2 && !autoFilledFields.reference2) {
@@ -116,13 +131,29 @@ export function ReferencesStep({ data, employmentHistory, updateData }: Referenc
       });
       setAutoFilledFields(prev => ({ ...prev, reference2: true }));
     }
+    
+    // Auto-fill character reference fields for reference 2 if 0 or 1 employers
+    if (employers.length <= 1 && !autoFilledFields.reference2) {
+      updateData('reference2', {
+        name: '',
+        company: 'Character Reference',
+        jobTitle: 'Character Reference',
+        email: '',
+        address: '',
+        address2: '',
+        town: '',
+        contactNumber: '',
+        postcode: '',
+      });
+    }
   }, [employmentHistory, updateData, autoFilledFields]);
 
   const clearAutoFill = (refNumber: 'reference1' | 'reference2') => {
+    const isCharacterRef = getReferenceType(refNumber) === 'Character Reference';
     updateData(refNumber, {
       name: '',
-      company: '',
-      jobTitle: '', // Keep job title empty when clearing
+      company: isCharacterRef ? 'Character Reference' : '',
+      jobTitle: isCharacterRef ? 'Character Reference' : '',
       email: '',
       address: '',
       address2: '',
