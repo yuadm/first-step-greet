@@ -54,6 +54,7 @@ import SpotCheckFormDialog, { SpotCheckFormData } from "./SpotCheckFormDialog";
 import SupervisionFormDialog, { SupervisionFormData } from "./SupervisionFormDialog";
 import { MedicationCompetencyForm } from "./MedicationCompetencyForm";
 import AnnualAppraisalFormDialog, { AnnualAppraisalFormData } from "./AnnualAppraisalFormDialog";
+import { EmployeePeriodRecordsView } from "./EmployeePeriodRecordsView";
 
 interface ComplianceType {
   id: string;
@@ -123,6 +124,8 @@ export function ComplianceTypeContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [completedByUsers, setCompletedByUsers] = useState<{ [key: string]: { name: string; created_at: string } }>({});
+  const [activeTab, setActiveTab] = useState<"status" | "periods">("status");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
 
 // Spot check edit state
 const [spotcheckEditOpen, setSpotcheckEditOpen] = useState(false);
@@ -1041,6 +1044,27 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
         </CardContent>
       </Card>
 
+      {/* Main Content with Tabs */}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "status" | "periods")} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-muted/50 to-muted/30 p-1">
+          <TabsTrigger 
+            value="status" 
+            className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground"
+          >
+            <Users className="w-4 h-4" />
+            Employee Compliance Status
+          </TabsTrigger>
+          <TabsTrigger 
+            value="periods"
+            className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground"
+          >
+            <Calendar className="w-4 h-4" />
+            Period Records
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="status" className="space-y-6">
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-slide-up">
         <Card 
@@ -1661,17 +1685,18 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
               )}
               </CardContent>
             </Card>
-          </div>
+           </div>
         </TabsContent>
 
         <TabsContent value="periods" className="space-y-6">
-          <CompliancePeriodView 
+          <EmployeePeriodRecordsView 
             complianceTypeId={complianceType?.id || ''} 
             complianceTypeName={complianceType?.name || ''}
             frequency={complianceType?.frequency || ''} 
           />
         </TabsContent>
       </Tabs>
+    </div>
 
 {/* Spot Check Edit Dialog */}
 {/* Temporarily disabled - SpotCheckFormDialog component not found
