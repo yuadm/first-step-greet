@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search, Edit } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,15 +22,8 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useCompliancePeriodEmployeeData } from "@/hooks/queries/useCompliancePeriodQueries";
 import { ComplianceRecordViewDialog } from "./ComplianceRecordViewDialog";
-import { EditComplianceRecordModal } from "./EditComplianceRecordModal";
-import { getComplianceEditBehavior } from "@/utils/complianceEditUtils";
-import AnnualAppraisalFormDialog, { type AnnualAppraisalFormData } from "./AnnualAppraisalFormDialog";
-import { MedicationCompetencyForm } from "./MedicationCompetencyForm";
-import SupervisionFormDialog from "./SupervisionFormDialog";
-import SpotCheckFormDialog from "./SpotCheckFormDialog";
 
 interface Employee {
   id: string;
@@ -80,14 +73,6 @@ export function CompliancePeriodEmployeeView({
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
-  
-  // Edit dialog states
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [annualAppraisalEditOpen, setAnnualAppraisalEditOpen] = useState(false);
-  const [medicationCompetencyEditOpen, setMedicationCompetencyEditOpen] = useState(false);
-  const [supervisionEditOpen, setSupervisionEditOpen] = useState(false);
-  const [spotCheckEditOpen, setSpotCheckEditOpen] = useState(false);
-  const [editingFormData, setEditingFormData] = useState<any>(null);
   const { toast } = useToast();
   const { companySettings } = useCompany();
 
@@ -223,139 +208,6 @@ export function CompliancePeriodEmployeeView({
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(parseInt(value));
     setCurrentPage(1);
-  };
-
-  // Handle editing records with smart form detection
-  const handleEditRecord = (e: React.MouseEvent, record: any, employee: any) => {
-    e.stopPropagation();
-    setSelectedRecord(record);
-    setSelectedEmployee(employee);
-
-    const editBehavior = getComplianceEditBehavior(record?.completion_method, complianceTypeName);
-    
-    if (editBehavior.shouldOpenFormDirectly) {
-      // Parse existing form data based on form type
-      let formData = null;
-      
-      switch (editBehavior.formType) {
-        case 'annual_appraisal':
-          try {
-            formData = record.notes ? JSON.parse(record.notes) : null;
-          } catch (e) {
-            console.error('Error parsing annual appraisal data:', e);
-          }
-          setEditingFormData(formData);
-          setAnnualAppraisalEditOpen(true);
-          break;
-          
-        case 'medication_competency':
-          formData = record.form_data || null;
-          setEditingFormData(formData);
-          setMedicationCompetencyEditOpen(true);
-          break;
-          
-        case 'supervision':
-          try {
-            formData = record.notes ? JSON.parse(record.notes) : null;
-          } catch (e) {
-            console.error('Error parsing supervision data:', e);
-          }
-          setEditingFormData(formData);
-          setSupervisionEditOpen(true);
-          break;
-          
-        case 'spotcheck':
-          try {
-            formData = record.notes ? JSON.parse(record.notes) : null;
-          } catch (e) {
-            console.error('Error parsing spot check data:', e);
-          }
-          setEditingFormData(formData);
-          setSpotCheckEditOpen(true);
-          break;
-          
-        default:
-          // Fallback to modal
-          setEditModalOpen(true);
-      }
-    } else {
-      // Use the edit modal for simple records
-      setEditModalOpen(true);
-    }
-  };
-
-  // Handle form completion callbacks
-  const handleFormSubmit = async (formType: string, formData: any) => {
-    if (!selectedRecord || !selectedEmployee) return;
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
-      let updateData: any = {
-        status: 'completed',
-        updated_by: userId,
-        updated_at: new Date().toISOString()
-      };
-
-      switch (formType) {
-        case 'annual_appraisal':
-          updateData.completion_method = 'annual_appraisal';
-          updateData.completion_date = formData.appraisal_date;
-          updateData.notes = JSON.stringify(formData);
-          break;
-          
-        case 'medication_competency':
-          updateData.completion_method = 'questionnaire';
-          updateData.completion_date = new Date().toISOString().slice(0, 10);
-          updateData.form_data = formData;
-          break;
-          
-        case 'supervision':
-          updateData.completion_method = 'supervision';
-          updateData.completion_date = formData.date || new Date().toISOString().slice(0, 10);
-          updateData.notes = JSON.stringify(formData);
-          break;
-          
-        case 'spotcheck':
-          updateData.completion_method = 'spotcheck';
-          updateData.completion_date = formData.date || new Date().toISOString().slice(0, 10);
-          updateData.notes = JSON.stringify(formData);
-          break;
-      }
-
-      const { error } = await supabase
-        .from('compliance_period_records')
-        .update(updateData)
-        .eq('id', selectedRecord.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Record updated successfully",
-        description: `Compliance record for ${selectedEmployee.name} has been updated.`,
-      });
-
-      // Close all dialogs and refresh data
-      setAnnualAppraisalEditOpen(false);
-      setMedicationCompetencyEditOpen(false);
-      setSupervisionEditOpen(false);
-      setSpotCheckEditOpen(false);
-      setEditingFormData(null);
-      setSelectedRecord(null);
-      setSelectedEmployee(null);
-      
-      // Trigger data refresh
-      window.location.reload(); // Simple refresh - could be optimized with query invalidation
-      
-    } catch (error) {
-      console.error('Error updating compliance record:', error);
-      toast({
-        title: "Error updating record",
-        description: "Could not update compliance record. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   // Show error if data fetching failed
@@ -547,32 +399,20 @@ export function CompliancePeriodEmployeeView({
                         <TableCell>
                           <div className="flex items-center gap-2">
                             {item.record && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedRecord(item.record);
-                                    setSelectedEmployee(item.employee);
-                                    setViewDialogOpen(true);
-                                  }}
-                                  className="h-6 w-6 p-0"
-                                  title="View Details"
-                                >
-                                  <Eye className="h-3 w-3" />
-                                </Button>
-                                
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => handleEditRecord(e, item.record, item.employee)}
-                                  className="h-6 w-6 p-0"
-                                  title="Edit Record"
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                              </>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedRecord(item.record);
+                                  setSelectedEmployee(item.employee);
+                                  setViewDialogOpen(true);
+                                }}
+                                className="h-6 w-6 p-0"
+                                title="View Details"
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
                             )}
                             {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && (
                               <>
@@ -771,79 +611,6 @@ export function CompliancePeriodEmployeeView({
               </CardContent>
             </Card>
           </div>
-        )}
-        
-        
-        {/* Edit Dialogs */}
-        {selectedRecord && selectedEmployee && (
-          <>
-            <EditComplianceRecordModal
-              record={selectedRecord}
-              employeeName={selectedEmployee.name}
-              complianceTypeName={complianceTypeName}
-              frequency={frequency}
-              onRecordUpdated={() => {
-                setEditModalOpen(false);
-                setSelectedRecord(null);
-                setSelectedEmployee(null);
-                window.location.reload(); // Simple refresh
-              }}
-              trigger={<div />} // Empty trigger since we control open state
-            />
-            
-            <AnnualAppraisalFormDialog
-              open={annualAppraisalEditOpen}
-              onOpenChange={setAnnualAppraisalEditOpen}
-              onSubmit={(data: AnnualAppraisalFormData) => handleFormSubmit('annual_appraisal', data)}
-              initialData={editingFormData}
-            />
-            
-            {/* Note: MedicationCompetencyForm is not a dialog, it's a form component */}
-            {medicationCompetencyEditOpen && (
-              <Dialog open={medicationCompetencyEditOpen} onOpenChange={setMedicationCompetencyEditOpen}>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Edit Medication Competency</DialogTitle>
-                    <DialogDescription>
-                      Update medication competency assessment for {selectedEmployee?.name}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <MedicationCompetencyForm
-                    complianceTypeId={complianceTypeId}
-                    employeeId={selectedRecord?.employee_id}
-                    employeeName={selectedEmployee?.name}
-                    periodIdentifier={selectedRecord?.period_identifier || ''}
-                    initialData={editingFormData}
-                    recordId={selectedRecord?.id}
-                    onComplete={() => {
-                      setMedicationCompetencyEditOpen(false);
-                      setEditingFormData(null);
-                      setSelectedRecord(null);
-                      setSelectedEmployee(null);
-                      window.location.reload();
-                    }}
-                  />
-                </DialogContent>
-              </Dialog>
-            )}
-            
-            <SupervisionFormDialog
-              open={supervisionEditOpen}
-              onOpenChange={setSupervisionEditOpen}
-              onSubmit={(data: any) => handleFormSubmit('supervision', data)}
-              employeeName={selectedEmployee?.name}
-              initialData={editingFormData}
-            />
-            
-            <SpotCheckFormDialog
-              open={spotCheckEditOpen}
-              onOpenChange={setSpotCheckEditOpen}
-              onSubmit={(data: any) => handleFormSubmit('spotcheck', data)}
-              initialData={editingFormData}
-              periodIdentifier={selectedRecord?.period_identifier}
-              frequency={frequency}
-            />
-          </>
         )}
         
         <ComplianceRecordViewDialog
