@@ -1160,7 +1160,25 @@ export function ClientCompliancePeriodView({
                                           className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
                                           title="Edit Record"
                                           onClick={() => {
-                                            handleEditSpotCheck(client);
+                                            // Consistent form-based vs modal-based editing
+                                            const method = record?.completion_method;
+                                            switch (method) {
+                                              case 'spotcheck':
+                                                handleEditSpotCheck(client);
+                                                break;
+                                              // Add other form-based methods here as they are implemented
+                                              // case 'supervision':
+                                              //   handleEditSupervision(client);
+                                              //   break;
+                                              default:
+                                                // For simple completion methods, open a generic edit modal
+                                                // This would need to be implemented if needed
+                                                toast({
+                                                  title: "Edit not available",
+                                                  description: "Direct editing is only available for form-based records. Use 'Add Record' to update.",
+                                                  variant: "destructive",
+                                                });
+                                            }
                                           }}
                                         >
                                           <Edit className="w-4 h-4" />
