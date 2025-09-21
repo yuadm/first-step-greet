@@ -16,8 +16,8 @@ import { ClientSpotCheckViewDialog } from "./ClientSpotCheckViewDialog";
 import { ClientComplianceRecordViewDialog } from "./ClientComplianceRecordViewDialog";
 import { ClientDeleteConfirmDialog } from "./ClientDeleteConfirmDialog";
 import { generateClientSpotCheckPdf } from "@/lib/client-spot-check-pdf";
-
 import { AddClientComplianceRecordModal } from "./AddClientComplianceRecordModal";
+import { getComplianceEditBehavior } from "@/utils/complianceEditUtils";
 
 interface ClientCompliancePeriodViewProps {
   complianceTypeId: string;
@@ -344,21 +344,102 @@ export function ClientCompliancePeriodView({
       console.log('🔍 Period:', selectedPeriod);
       console.log('🔍 Compliance Type ID:', complianceTypeId);
 
-      // Fetch the compliance record for this client and period
-      const { data: complianceRecord, error: complianceError } = await supabase
-        .from('client_compliance_period_records')
-        .select('*')
-        .eq('client_compliance_type_id', complianceTypeId)
-        .eq('client_id', client.id)
-        .eq('period_identifier', selectedPeriod)
-        .maybeSingle();
+      // Check edit behavior - for client compliance, always use direct form editing
+      const record = getClientRecordForPeriod(client.id, selectedPeriod);
+      const editBehavior = getComplianceEditBehavior(record?.completion_method, complianceTypeName);
+      
+      if (editBehavior.shouldOpenFormDirectly || record?.completion_method === 'spotcheck') {
+        // Fetch existing form data to populate the edit form
+        const { data: complianceRecord, error: complianceError } = await supabase
+          .from('client_compliance_period_records')
+          .select('*')
+          .eq('client_compliance_type_id', complianceTypeId)
+          .eq('client_id', client.id)
+          .eq('period_identifier', selectedPeriod)
+          .maybeSingle();
 
-      if (complianceError) {
-        console.error('❌ Compliance record error:', complianceError);
-        throw complianceError;
+        if (complianceError) {
+          console.error('❌ Compliance record error:', complianceError);
+          throw complianceError;
+        }
+
+        // Try to fetch existing spot check record for this compliance record when available
+        let spotCheckRecord: any = null;
+        if (complianceRecord?.id) {
+          const { data: scByCompliance, error: spotCheckError } = await supabase
+            .from('client_spot_check_records')
+            .select('*')
+            .eq('compliance_record_id', complianceRecord.id)
+            .maybeSingle();
+
+          if (spotCheckError && spotCheckError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+            console.error('❌ Spot check record error:', spotCheckError);
+          } else {
+            spotCheckRecord = scByCompliance;
+          }
+        }
+
+        // Parse observations and prepare form data
+        let formData;
+        if (spotCheckRecord) {
+          let observations = [];
+          try {
+            if (spotCheckRecord.observations) {
+              if (typeof spotCheckRecord.observations === 'string') {
+                observations = JSON.parse(spotCheckRecord.observations);
+              } else if (Array.isArray(spotCheckRecord.observations)) {
+                observations = spotCheckRecord.observations;
+              } else if (typeof spotCheckRecord.observations === 'object') {
+                observations = Object.values(spotCheckRecord.observations);
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to parse observations:', e);
+            observations = [];
+          }
+
+          formData = {
+            serviceUserName: spotCheckRecord.service_user_name || client.name,
+            date: spotCheckRecord.date || complianceRecord?.completion_date || '',
+            completedBy: spotCheckRecord.performed_by || '',
+            observations: observations
+          };
+        } else {
+          // Initialize with basic data if no existing record
+          formData = {
+            serviceUserName: client.name,
+            date: complianceRecord?.completion_date || '',
+            completedBy: '',
+            observations: []
+          };
+        }
+
+        console.log('📝 Prepared form data for editing:', formData);
+        
+        // Store form data and open spot check dialog directly for editing
+        setSelectedClient(client);
+        setEditingSpotCheckData(formData);
+        setSpotCheckDialogOpen(true);
+
+      } else {
+        // Fallback to generic modal (though unlikely for client compliance)
+        toast({
+          title: "Edit not supported",
+          description: "This record type cannot be edited directly. Please create a new record.",
+          variant: "destructive",
+        });
       }
 
-      console.log('📄 Compliance record:', complianceRecord);
+    } catch (error) {
+      console.error('Error preparing edit form:', error);
+      toast({
+        title: "Error loading record",
+        description: "Could not load the compliance record for editing. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  };
 
       if (!complianceRecord) {
         // No existing compliance record; proceed to fallback lookup by client/date range
@@ -510,6 +591,7 @@ export function ClientCompliancePeriodView({
         variant: "destructive",
       });
     }
+  };
   };
 
   const handleDownloadPeriod = async (period: PeriodData) => {
