@@ -1488,80 +1488,52 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                   </Dialog>
 
 {/* Edit Record - Consistent form-based vs modal-based editing */}
-{(() => {
-  const method = item.record.completion_method;
-  
-  // Form-based completion methods - open respective forms
-  switch (method) {
-    case 'spotcheck':
-      return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="hover-scale"
-          onClick={() => handleOpenSpotcheckEdit(item.employee.id, item.record!.period_identifier)}
-        >
-          <Edit className="w-4 h-4" />
-        </Button>
-      );
+<Button
+  variant="ghost"
+  size="sm"
+  className="hover-scale"
+  onClick={() => {
+    const method = item.record.completion_method;
     
-    case 'supervision':
-      return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="hover-scale"
-          onClick={() => handleOpenSupervisionEdit(item.record!)}
-        >
-          <Edit className="w-4 h-4" />
-        </Button>
-      );
-    
-    case 'annual_appraisal':
-      return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="hover-scale"
-          onClick={() => handleOpenAnnualAppraisalEdit(item.record!, item.employee.name)}
-        >
-          <Edit className="w-4 h-4" />
-        </Button>
-      );
-    
-    case 'questionnaire':
-    case 'medication_competency':
-      if (item.record.form_data) {
-        return (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hover-scale"
-            onClick={() => handleOpenMedicationEdit(item.record!, item.employee.name)}
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-        );
-      }
-      break;
-  }
-  
-  // Simple completion methods - open edit modal
-  return (
-    <EditComplianceRecordModal
-      record={item.record}
-      employeeName={item.employee.name}
-      complianceTypeName={complianceType?.name || ''}
-      frequency={complianceType?.frequency || ''}
-      onRecordUpdated={fetchData}
-      trigger={
-        <Button variant="ghost" size="sm" className="hover-scale">
-          <Edit className="w-4 h-4" />
-        </Button>
-      }
-    />
-  );
-})()}
+    // Form-based completion methods - open respective forms
+    switch (method) {
+      case 'spotcheck':
+        handleOpenSpotcheckEdit(item.employee.id, item.record!.period_identifier);
+        break;
+      
+      case 'supervision':
+        handleOpenSupervisionEdit(item.record!);
+        break;
+      
+      case 'annual_appraisal':
+        handleOpenAnnualAppraisalEdit(item.record!, item.employee.name);
+        break;
+      
+      case 'questionnaire':
+      case 'medication_competency':
+        if (item.record.form_data || item.record.notes) {
+          handleOpenMedicationEdit(item.record!, item.employee.name);
+        } else {
+          toast({
+            title: "No form data",
+            description: "This record doesn't have form data to edit.",
+            variant: "destructive",
+          });
+        }
+        break;
+      
+      default:
+        // Simple completion methods (date, new, text entries) - show message for now
+        toast({
+          title: "Edit not available",
+          description: "This record type doesn't support form editing. Use simple date/text completion.",
+          variant: "destructive",
+        });
+    }
+  }}
+>
+  <Edit className="w-4 h-4" />
+</Button>
 
                                   {/* Delete Dialog */}
                                   <AlertDialog>

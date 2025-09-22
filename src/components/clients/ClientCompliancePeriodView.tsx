@@ -1166,16 +1166,11 @@ export function ClientCompliancePeriodView({
                                               case 'spotcheck':
                                                 handleEditSpotCheck(client);
                                                 break;
-                                              // Add other form-based methods here as they are implemented
-                                              // case 'supervision':
-                                              //   handleEditSupervision(client);
-                                              //   break;
                                               default:
-                                                // For simple completion methods, open a generic edit modal
-                                                // This would need to be implemented if needed
+                                                // For simple completion methods, show informative message
                                                 toast({
                                                   title: "Edit not available",
-                                                  description: "Direct editing is only available for form-based records. Use 'Add Record' to update.",
+                                                  description: "Form-based editing is only available for spot checks. Simple records use date/text completion.",
                                                   variant: "destructive",
                                                 });
                                             }
