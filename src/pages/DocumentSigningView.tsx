@@ -86,7 +86,8 @@ export default function DocumentSigningView() {
   // Check if mobile view
   useEffect(() => {
     const checkMobileView = () => {
-      setIsMobileView(window.innerWidth < 768);
+      const isMobile = window.innerWidth < 768;
+      setIsMobileView(isMobile);
     };
     
     checkMobileView();
@@ -646,17 +647,17 @@ export default function DocumentSigningView() {
           </div>
         ) : (
           /* Desktop Layout */
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className={`${isMobileView ? 'space-y-4' : 'grid grid-cols-1 lg:grid-cols-4 gap-6'}`}>
             {/* PDF Viewer */}
-            <div className="lg:col-span-3">
-              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm h-[800px]">
+            <div className={isMobileView ? 'order-1' : 'lg:col-span-3'}>
+              <Card className={`shadow-xl border-0 bg-white/80 backdrop-blur-sm ${isMobileView ? 'min-h-screen' : 'h-[800px]'}`}>
                 <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5 pb-4">
                   <CardTitle className="flex items-center gap-2">
                     <Eye className="h-5 w-5" />
                     Document Review
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Click on highlighted fields to complete them
+                    {isMobileView ? 'Scroll to view document and tap fields to complete' : 'Click on highlighted fields to complete them'}
                   </p>
                 </CardHeader>
                 <CardContent className="h-full p-0">
@@ -668,51 +669,62 @@ export default function DocumentSigningView() {
                       scale={scale}
                       onScaleChange={setScale}
                       className="h-full"
-                      showToolbar={true}
+                      showToolbar={!isMobileView}
+                      isMobile={isMobileView}
+                      continuousMode={isMobileView}
                       overlayContent={
                         <>
-                          {templateFields
-                            ?.filter(field => field.page_number === currentPage)
-                            .map((field) => {
-                              const isCompleted = field.field_type === "signature" 
-                                ? signatures[field.id] 
-                                : fieldValues[field.id];
-                              
-                              return (
-                                <div
-                                  key={field.id}
-                                  onClick={() => handleFieldClick(field.id)}
-                                  className={`absolute border-2 rounded-lg cursor-pointer flex items-center justify-center text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg ${
-                                    isCompleted
-                                      ? "border-green-400 bg-green-100/90 text-green-700 shadow-green-200/50"
-                                      : field.is_required
-                                      ? "border-red-400 bg-red-100/90 text-red-700 animate-pulse"
-                                      : "border-blue-400 bg-blue-100/90 text-blue-700"
-                                  }`}
-                                  style={{
-                                    left: field.x_position * scale,
-                                    top: field.y_position * scale,
-                                    width: field.width * scale,
-                                    height: field.height * scale,
-                                    zIndex: 10
-                                  }}
-                                  title={`${field.field_name}${field.is_required ? ' (Required)' : ''}`}
-                                >
-                                  {isCompleted ? (
-                                    <CheckCircle2 className="h-4 w-4" />
-                                  ) : (
-                                    <>
-                                      {field.field_type === "signature" ? <PenTool className="h-4 w-4" /> : 
-                                       field.field_type === "checkbox" ? "☐" :
-                                       field.field_type === "date" ? <Calendar className="h-4 w-4" /> : "📝"}
+                          {templateFields?.map((field) => {
+                            // In continuous mode, show all fields; in single page mode, filter by current page
+                            if (!isMobileView && field.page_number !== currentPage) return null;
+                            
+                            const isCompleted = field.field_type === "signature" 
+                              ? signatures[field.id] 
+                              : fieldValues[field.id];
+                            
+                            const fieldScale = isMobileView ? Math.min(scale, 1.0) : scale;
+                            const mobileWidth = isMobileView ? Math.min(window.innerWidth - 32, 400) : undefined;
+                            const scaleFactor = isMobileView && mobileWidth ? mobileWidth / 600 : fieldScale; // Assume 600px base width
+                            
+                            return (
+                              <div
+                                key={field.id}
+                                onClick={() => handleFieldClick(field.id)}
+                                className={`absolute border-2 rounded-lg cursor-pointer flex items-center justify-center text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg ${
+                                  isCompleted
+                                    ? "border-green-400 bg-green-100/90 text-green-700 shadow-green-200/50"
+                                    : field.is_required
+                                    ? "border-red-400 bg-red-100/90 text-red-700 animate-pulse"
+                                    : "border-blue-400 bg-blue-100/90 text-blue-700"
+                                } ${isMobileView ? 'min-h-[44px] min-w-[44px]' : ''}`}
+                                style={{
+                                  left: field.x_position * scaleFactor,
+                                  top: isMobileView 
+                                    ? field.y_position * scaleFactor + (field.page_number - 1) * (Math.min(window.innerWidth - 32, 400) * 1.4 + 32) // Account for page spacing
+                                    : field.y_position * scaleFactor,
+                                  width: Math.max(field.width * scaleFactor, isMobileView ? 44 : 0),
+                                  height: Math.max(field.height * scaleFactor, isMobileView ? 44 : 0),
+                                  zIndex: 10
+                                }}
+                                title={`${field.field_name}${field.is_required ? ' (Required)' : ''}`}
+                              >
+                                {isCompleted ? (
+                                  <CheckCircle2 className="h-4 w-4" />
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    {field.field_type === "signature" ? <PenTool className="h-4 w-4" /> : 
+                                     field.field_type === "checkbox" ? "☐" :
+                                     field.field_type === "date" ? <Calendar className="h-4 w-4" /> : "📝"}
+                                    {!isMobileView && (
                                       <span className="ml-1 truncate">
                                         {field.field_name}
                                       </span>
-                                    </>
-                                  )}
-                                </div>
-                              );
-                            })}
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </>
                       }
                     />
@@ -721,19 +733,22 @@ export default function DocumentSigningView() {
               </Card>
             </div>
 
-            {/* Form Fields Sidebar */}
-            <div className="lg:col-span-1">
-              <Card className="sticky top-4 shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+            {/* Form Fields Sidebar / Mobile Form Summary */}
+            <div className={isMobileView ? 'order-2' : 'lg:col-span-1'}>
+              <Card className={`shadow-xl border-0 bg-white/80 backdrop-blur-sm ${isMobileView ? '' : 'sticky top-4'}`}>
                 <CardHeader className="bg-gradient-to-r from-accent/5 to-primary/5">
                   <CardTitle className="flex items-center gap-2">
                     <User className="h-5 w-5" />
-                    Complete the Form
+                    {isMobileView ? 'Form Progress' : 'Complete the Form'}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Fill in all required fields to sign the document
+                    {isMobileView 
+                      ? 'Tap fields in the document above to complete them'
+                      : 'Fill in all required fields to sign the document'
+                    }
                   </p>
                 </CardHeader>
-                <CardContent className="space-y-4 max-h-[600px] overflow-y-auto">
+                <CardContent className={`space-y-4 ${isMobileView ? 'pb-6' : 'max-h-[600px] overflow-y-auto'}`}>
                   {/* Quick Status Overview */}
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
@@ -767,9 +782,11 @@ export default function DocumentSigningView() {
                               isCompleted 
                                 ? "border-green-300 bg-green-50" 
                                 : "border-red-300 bg-red-50 animate-pulse"
-                            }`}
+                            } ${isMobileView ? 'touch-manipulation' : ''}`}
                             onClick={() => {
-                              setCurrentPage(field.page_number);
+                              if (!isMobileView) {
+                                setCurrentPage(field.page_number);
+                              }
                               handleFieldClick(field.id);
                             }}
                           >
@@ -783,7 +800,7 @@ export default function DocumentSigningView() {
                                 <div>
                                   <div className="font-medium text-sm">{field.field_name}</div>
                                   <div className="text-xs text-muted-foreground">
-                                    Page {field.page_number} • {field.field_type}
+                                    {!isMobileView && `Page ${field.page_number} • `}{field.field_type}
                                   </div>
                                 </div>
                               </div>
@@ -846,7 +863,7 @@ export default function DocumentSigningView() {
 
         {/* Field Modal for Mobile/Focus Mode */}
         <Dialog open={showFieldModal} onOpenChange={closeFieldModal}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className={`${isMobileView ? 'w-[95vw] max-w-[95vw] max-h-[90vh] overflow-y-auto' : 'sm:max-w-md'}`}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 {selectedFieldData?.field_type === "signature" ? (
@@ -879,9 +896,10 @@ export default function DocumentSigningView() {
                         <SignatureCanvas
                           ref={(ref) => (signatureRefs.current[selectedFieldData.id] = ref)}
                           canvasProps={{
-                            width: 350,
-                            height: 150,
-                            className: "w-full h-32 border rounded",
+                            width: isMobileView ? Math.min(window.innerWidth - 100, 300) : 350,
+                            height: isMobileView ? 120 : 150,
+                            className: "w-full border rounded",
+                            style: { touchAction: 'none' }
                           }}
                           onEnd={() => handleSignature(selectedFieldData.id)}
                         />
