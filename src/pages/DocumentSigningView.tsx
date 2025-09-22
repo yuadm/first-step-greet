@@ -444,9 +444,12 @@ export default function DocumentSigningView() {
     if (field.field_type === "signature") {
       return signatures[field.id];
     }
-    return fieldValues[field.id];
+    if (field.field_type === "checkbox") {
+      return fieldValues[field.id]; // Checkbox can be true or false, just check if it's set
+    }
+    return fieldValues[field.id] && fieldValues[field.id].trim().length > 0; // Ensure text fields have content
   });
-  const isFormComplete = requiredFields.length > 0 && completedRequiredFields.length === requiredFields.length;
+  const isFormComplete = requiredFields.length === 0 || completedRequiredFields.length === requiredFields.length;
 
   const selectedFieldData = templateFields?.find(field => field.id === selectedField);
   const completionPercentage = requiredFields.length > 0 ? (completedRequiredFields.length / requiredFields.length) * 100 : 100;
@@ -800,8 +803,12 @@ export default function DocumentSigningView() {
                   <div className="space-y-3">
                     <Button
                       onClick={handleSubmit}
-                      disabled={completeSigning.isPending || !isFormComplete || isSigningInProgress}
-                      className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                      disabled={completeSigning.isPending || isSigningInProgress}
+                      className={`w-full h-12 text-base font-semibold transition-all duration-200 ${
+                        isFormComplete 
+                          ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800" 
+                          : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                      }`}
                       size="lg"
                     >
                       {completeSigning.isPending ? (
@@ -812,11 +819,12 @@ export default function DocumentSigningView() {
                       ) : isFormComplete ? (
                         <>
                           <PenTool className="mr-2 h-5 w-5" />
-                          Sign Document
+                          Complete Document Signing
                         </>
                       ) : (
                         <>
-                          Complete {requiredFields.length - completedRequiredFields.length} more field{requiredFields.length - completedRequiredFields.length !== 1 ? 's' : ''}
+                          <CheckCircle2 className="mr-2 h-5 w-5" />
+                          Complete Form ({completedRequiredFields.length}/{requiredFields.length})
                         </>
                       )}
                     </Button>
@@ -927,6 +935,8 @@ export default function DocumentSigningView() {
                         placeholder={selectedFieldData.placeholder_text || `Enter ${selectedFieldData.field_name.toLowerCase()}`}
                         className="text-base"
                         autoFocus
+                        autoComplete="off"
+                        spellCheck="false"
                       />
                       <Button
                         onClick={closeFieldModal}
