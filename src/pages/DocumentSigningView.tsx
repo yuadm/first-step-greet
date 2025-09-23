@@ -76,6 +76,8 @@ export default function DocumentSigningView() {
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [signatures, setSignatures] = useState<Record<string, string>>({});
+  const [savedFields, setSavedFields] = useState<Set<string>>(new Set());
+  const [tempFieldValues, setTempFieldValues] = useState<Record<string, string>>({});
   const [isSigningInProgress, setIsSigningInProgress] = useState(false);
   const [hasBeenSigned, setHasBeenSigned] = useState(false);
   const [selectedField, setSelectedField] = useState<string | null>(null);
@@ -293,7 +295,23 @@ export default function DocumentSigningView() {
   });
 
   const handleFieldChange = (fieldId: string, value: string) => {
-    setFieldValues(prev => ({ ...prev, [fieldId]: value }));
+    // Update temporary field values for immediate UI feedback
+    setTempFieldValues(prev => ({ ...prev, [fieldId]: value }));
+  };
+
+  const saveField = (fieldId: string) => {
+    const value = tempFieldValues[fieldId];
+    if (value && value.trim()) {
+      setFieldValues(prev => ({ ...prev, [fieldId]: value }));
+      setSavedFields(prev => new Set([...prev, fieldId]));
+      toast.success("Field saved successfully!");
+    }
+  };
+
+  const cancelFieldEdit = (fieldId: string) => {
+    // Revert to last saved value
+    const savedValue = fieldValues[fieldId] || "";
+    setTempFieldValues(prev => ({ ...prev, [fieldId]: savedValue }));
   };
 
   const handleSignature = (fieldId: string) => {
@@ -301,6 +319,7 @@ export default function DocumentSigningView() {
     if (canvas && !canvas.isEmpty()) {
       const dataURL = canvas.toDataURL();
       setSignatures(prev => ({ ...prev, [fieldId]: dataURL }));
+      setSavedFields(prev => new Set([...prev, fieldId]));
       toast.success("Signature captured successfully!");
     }
   };
@@ -315,14 +334,26 @@ export default function DocumentSigningView() {
       delete newSignatures[fieldId];
       return newSignatures;
     });
+    setSavedFields(prev => {
+      const newSaved = new Set(prev);
+      newSaved.delete(fieldId);
+      return newSaved;
+    });
   };
 
   const handleFieldClick = (fieldId: string) => {
     setSelectedField(fieldId);
+    // Initialize temp value with current saved value
+    const currentValue = fieldValues[fieldId] || "";
+    setTempFieldValues(prev => ({ ...prev, [fieldId]: currentValue }));
     setShowFieldModal(true);
   };
 
   const closeFieldModal = () => {
+    // Cancel any unsaved changes when closing modal
+    if (selectedField) {
+      cancelFieldEdit(selectedField);
+    }
     setShowFieldModal(false);
     setSelectedField(null);
   };
@@ -432,16 +463,16 @@ export default function DocumentSigningView() {
     );
   }
 
-  // Calculate form completion
+  // Calculate form completion based on saved fields only
   const requiredFields = templateFields?.filter(field => field.is_required) || [];
   const completedRequiredFields = requiredFields.filter(field => {
     if (field.field_type === "signature") {
-      return signatures[field.id];
+      return signatures[field.id] && savedFields.has(field.id);
     }
     if (field.field_type === "checkbox") {
-      return fieldValues[field.id]; // Checkbox can be true or false, just check if it's set
+      return fieldValues[field.id] && savedFields.has(field.id);
     }
-    return fieldValues[field.id] && fieldValues[field.id].trim().length > 0; // Ensure text fields have content
+    return fieldValues[field.id] && fieldValues[field.id].trim().length > 0 && savedFields.has(field.id);
   });
   const isFormComplete = requiredFields.length === 0 || completedRequiredFields.length === requiredFields.length;
   const selectedFieldData = templateFields?.find(field => field.id === selectedField);
@@ -524,8 +555,8 @@ export default function DocumentSigningView() {
                       {templateFields
                         ?.map((field) => {
                           const isCompleted = field.field_type === "signature" 
-                            ? signatures[field.id] 
-                            : fieldValues[field.id];
+                            ? signatures[field.id] && savedFields.has(field.id)
+                            : fieldValues[field.id] && savedFields.has(field.id);
                           
                           return (
                             <div
@@ -578,8 +609,8 @@ export default function DocumentSigningView() {
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {requiredFields.slice(0, isMobileView ? 3 : 5).map((field) => {
                   const isCompleted = field.field_type === "signature" 
-                    ? signatures[field.id] 
-                    : fieldValues[field.id];
+                    ? signatures[field.id] && savedFields.has(field.id)
+                    : fieldValues[field.id] && savedFields.has(field.id);
                   
                   return (
                     <button
@@ -663,26 +694,36 @@ export default function DocumentSigningView() {
                   <Label htmlFor="field-input">Enter your information</Label>
                   <Input
                     id="field-input"
-                    value={fieldValues[selectedFieldData.id] || ""}
+                    value={tempFieldValues[selectedFieldData.id] || ""}
                     onChange={(e) => handleFieldChange(selectedFieldData.id, e.target.value)}
                     placeholder={selectedFieldData.placeholder_text || "Type here..."}
                     className="mt-2"
+                    autoComplete="off"
+                    spellCheck={false}
                   />
+                  {tempFieldValues[selectedFieldData.id] && !savedFields.has(selectedFieldData.id) && (
+                    <p className="text-xs text-orange-600 mt-1">⚠️ Unsaved changes</p>
+                  )}
                 </div>
               )}
               
               {selectedFieldData.field_type === "checkbox" && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="field-checkbox"
-                    checked={fieldValues[selectedFieldData.id] === "true"}
-                    onCheckedChange={(checked) => 
-                      handleFieldChange(selectedFieldData.id, checked ? "true" : "false")
-                    }
-                  />
-                  <Label htmlFor="field-checkbox" className="text-sm">
-                    {selectedFieldData.placeholder_text || "Check this box"}
-                  </Label>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="field-checkbox"
+                      checked={tempFieldValues[selectedFieldData.id] === "true"}
+                      onCheckedChange={(checked) => 
+                        handleFieldChange(selectedFieldData.id, checked ? "true" : "false")
+                      }
+                    />
+                    <Label htmlFor="field-checkbox" className="text-sm">
+                      {selectedFieldData.placeholder_text || "Check this box"}
+                    </Label>
+                  </div>
+                  {tempFieldValues[selectedFieldData.id] && !savedFields.has(selectedFieldData.id) && (
+                    <p className="text-xs text-orange-600">⚠️ Unsaved changes</p>
+                  )}
                 </div>
               )}
               
@@ -728,7 +769,13 @@ export default function DocumentSigningView() {
                   <Button variant="outline" onClick={closeFieldModal}>
                     Cancel
                   </Button>
-                  <Button onClick={closeFieldModal}>
+                  <Button 
+                    onClick={() => {
+                      saveField(selectedFieldData.id);
+                      closeFieldModal();
+                    }}
+                    disabled={!tempFieldValues[selectedFieldData.id]?.trim()}
+                  >
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                     Save
                   </Button>
