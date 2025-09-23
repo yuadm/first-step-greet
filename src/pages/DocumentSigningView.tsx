@@ -562,7 +562,7 @@ export default function DocumentSigningView() {
                             : fieldValues[field.id] && savedFields.has(field.id);
                           
                           // Use the actual scale from the PDF viewer for consistent positioning
-                          const actualScale = isMobileView ? Math.min(viewerScale || scale, 1.0) : (viewerScale || scale);
+                          const actualScale = viewerScale || scale;
                           
                           return (
                             <div

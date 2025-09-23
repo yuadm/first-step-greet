@@ -443,8 +443,7 @@ export function EnhancedPDFViewer({
                     <div className="relative">
                       <Page
                         pageNumber={pageNum}
-                        scale={isMobile ? Math.min(scale, 1.0) : scale}
-                        width={isMobile ? Math.min(window.innerWidth - 32, 400) : undefined}
+                        scale={scale}
                         renderTextLayer={PDF_CONFIG.defaultOptions.renderTextLayer}
                         renderAnnotationLayer={PDF_CONFIG.defaultOptions.renderAnnotationLayer}
                         className="shadow-lg rounded-lg"
@@ -458,7 +457,7 @@ export function EnhancedPDFViewer({
                       {/* Custom overlay content for all pages in continuous mode */}
                       {overlayContent && 
                         (typeof overlayContent === 'function' 
-                          ? overlayContent(pageNum, isMobile ? Math.min(scale, 1.0) : scale)
+                          ? overlayContent(pageNum, scale)
                           : (pageNum === currentPage && overlayContent))
                       }
                     </div>
