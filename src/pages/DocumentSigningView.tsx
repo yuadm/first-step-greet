@@ -558,6 +558,9 @@ export default function DocumentSigningView() {
                             ? signatures[field.id] && savedFields.has(field.id)
                             : fieldValues[field.id] && savedFields.has(field.id);
                           
+                          // Calculate actual scale being used by the PDF viewer
+                          const actualScale = isMobileView ? Math.min(scale, 1.0) : scale;
+                          
                           return (
                             <div
                               key={field.id}
@@ -569,10 +572,10 @@ export default function DocumentSigningView() {
                                     : 'bg-blue-200/90 border-2 border-blue-500 shadow-blue-200'
                               } hover:scale-105 hover:shadow-lg`}
                               style={{
-                                left: `${field.x_position * scale}px`,
-                                top: `${field.y_position * scale}px`,
-                                width: `${field.width * scale}px`,
-                                height: `${field.height * scale}px`,
+                                left: `${field.x_position * actualScale}px`,
+                                top: `${field.y_position * actualScale}px`,
+                                width: `${field.width * actualScale}px`,
+                                height: `${field.height * actualScale}px`,
                                 transform: 'translateZ(0)', // GPU acceleration
                               }}
                               onClick={() => handleFieldClick(field.id)}
