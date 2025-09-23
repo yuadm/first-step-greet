@@ -550,16 +550,19 @@ export default function DocumentSigningView() {
                   showToolbar={!isMobileView}
                   isMobile={isMobileView}
                   continuousMode={true}
-                  overlayContent={
-                    <>
-                      {templateFields
-                        ?.map((field) => {
+                  overlayContent={(pageNum: number, viewerScale: number) => {
+                    // Filter fields for this specific page
+                    const pageFields = templateFields?.filter(field => field.page_number === pageNum) || [];
+                    
+                    return (
+                      <>
+                        {pageFields.map((field) => {
                           const isCompleted = field.field_type === "signature" 
                             ? signatures[field.id] && savedFields.has(field.id)
                             : fieldValues[field.id] && savedFields.has(field.id);
                           
-                          // Calculate actual scale being used by the PDF viewer
-                          const actualScale = isMobileView ? Math.min(scale, 1.0) : scale;
+                          // Use the actual scale from the PDF viewer for consistent positioning
+                          const actualScale = isMobileView ? Math.min(viewerScale || scale, 1.0) : (viewerScale || scale);
                           
                           return (
                             <div
@@ -576,12 +579,12 @@ export default function DocumentSigningView() {
                                 top: `${field.y_position * actualScale}px`,
                                 width: `${field.width * actualScale}px`,
                                 height: `${field.height * actualScale}px`,
-                                transform: 'translateZ(0)', // GPU acceleration
+                                zIndex: 10
                               }}
                               onClick={() => handleFieldClick(field.id)}
                               title={`${field.field_name}${field.is_required ? ' (Required)' : ''}`}
                             >
-                              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+                              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm rounded-md">
                                 {isCompleted ? (
                                   <CheckCircle2 className="h-4 w-4 text-green-700 drop-shadow-sm" />
                                 ) : (
@@ -589,15 +592,16 @@ export default function DocumentSigningView() {
                                 )}
                               </div>
                               {/* Mobile-friendly field label */}
-                              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white px-2 py-1 rounded-md text-xs whitespace-nowrap pointer-events-none shadow-lg">
+                              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white px-2 py-1 rounded-md text-xs whitespace-nowrap pointer-events-none shadow-lg z-20">
                                 {field.field_name}
                                 {field.is_required && <span className="text-red-300 ml-1">*</span>}
                               </div>
                             </div>
                           );
                         })}
-                    </>
-                  }
+                      </>
+                    );
+                  }}
                 />
               )}
             </CardContent>
