@@ -29,7 +29,7 @@ interface EnhancedPDFViewerProps {
   scale?: number;
   onScaleChange?: (scale: number) => void;
   onPageClick?: (event: React.MouseEvent) => void;
-  overlayContent?: React.ReactNode | ((pageNum: number, scale: number) => React.ReactNode);
+  overlayContent?: React.ReactNode;
   showToolbar?: boolean;
   className?: string;
   enableKeyboardNavigation?: boolean;
@@ -64,50 +64,35 @@ export function EnhancedPDFViewer({
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (!enableKeyboardNavigation) return;
     
-    // Don't handle keyboard shortcuts when user is in an input field
-    const target = event.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-      return;
-    }
-    
     const { code, ctrlKey, metaKey } = event;
     const isModifier = ctrlKey || metaKey;
     
-    // Only prevent default for specific keys we're actually handling
-    let shouldPreventDefault = false;
+    // Prevent default for handled keys
+    const handledKeys = Object.values(PDF_CONFIG.keyboardShortcuts).flat();
+    if (handledKeys.includes(code as any)) {
+      event.preventDefault();
+    }
 
     if ((PDF_CONFIG.keyboardShortcuts.nextPage as readonly string[]).includes(code) && !isModifier) {
       if (currentPage < numPages) {
         onPageChange(currentPage + 1);
-        shouldPreventDefault = true;
       }
     } else if ((PDF_CONFIG.keyboardShortcuts.prevPage as readonly string[]).includes(code) && !isModifier) {
       if (currentPage > 1) {
         onPageChange(currentPage - 1);
-        shouldPreventDefault = true;
       }
     } else if ((PDF_CONFIG.keyboardShortcuts.firstPage as readonly string[]).includes(code)) {
       onPageChange(1);
-      shouldPreventDefault = true;
     } else if ((PDF_CONFIG.keyboardShortcuts.lastPage as readonly string[]).includes(code)) {
       onPageChange(numPages);
-      shouldPreventDefault = true;
     } else if ((PDF_CONFIG.keyboardShortcuts.zoomIn as readonly string[]).includes(code) && onScaleChange) {
       const newScale = zoomUtils.getNextZoomLevel(scale, 'in');
       onScaleChange(newScale);
-      shouldPreventDefault = true;
     } else if ((PDF_CONFIG.keyboardShortcuts.zoomOut as readonly string[]).includes(code) && onScaleChange) {
       const newScale = zoomUtils.getNextZoomLevel(scale, 'out');
       onScaleChange(newScale);
-      shouldPreventDefault = true;
     } else if ((PDF_CONFIG.keyboardShortcuts.resetZoom as readonly string[]).includes(code) && onScaleChange) {
       onScaleChange(PDF_CONFIG.defaultScale);
-      shouldPreventDefault = true;
-    }
-    
-    // Only prevent default if we actually handled the event
-    if (shouldPreventDefault) {
-      event.preventDefault();
     }
   }, [currentPage, numPages, onPageChange, scale, onScaleChange, enableKeyboardNavigation]);
 
@@ -443,7 +428,8 @@ export function EnhancedPDFViewer({
                     <div className="relative">
                       <Page
                         pageNumber={pageNum}
-                        scale={scale}
+                        scale={isMobile ? Math.min(scale, 1.0) : scale}
+                        width={isMobile ? Math.min(window.innerWidth - 32, 400) : undefined}
                         renderTextLayer={PDF_CONFIG.defaultOptions.renderTextLayer}
                         renderAnnotationLayer={PDF_CONFIG.defaultOptions.renderAnnotationLayer}
                         className="shadow-lg rounded-lg"
@@ -454,12 +440,8 @@ export function EnhancedPDFViewer({
                         {pageNum} / {numPages}
                       </div>
                       
-                      {/* Custom overlay content for all pages in continuous mode */}
-                      {overlayContent && 
-                        (typeof overlayContent === 'function' 
-                          ? overlayContent(pageNum, scale)
-                          : (pageNum === currentPage && overlayContent))
-                      }
+                      {/* Custom overlay content for specific page */}
+                      {pageNum === currentPage && overlayContent}
                     </div>
                   </div>
                 ))}
@@ -489,11 +471,7 @@ export function EnhancedPDFViewer({
               </Document>
               
               {/* Custom overlay content */}
-              {overlayContent && 
-                (typeof overlayContent === 'function' 
-                  ? overlayContent(currentPage, scale)
-                  : overlayContent)
-              }
+              {overlayContent}
             </div>
           )}
         </div>
