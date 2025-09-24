@@ -29,7 +29,7 @@ interface EnhancedPDFViewerProps {
   scale?: number;
   onScaleChange?: (scale: number) => void;
   onPageClick?: (event: React.MouseEvent) => void;
-  overlayContent?: React.ReactNode;
+  overlayContent?: React.ReactNode | ((pageNum: number, scale: number) => React.ReactNode);
   showToolbar?: boolean;
   className?: string;
   enableKeyboardNavigation?: boolean;
@@ -441,22 +441,25 @@ export function EnhancedPDFViewer({
                     onClick={onPageClick}
                   >
                     <div className="relative">
-                      <Page
-                        pageNumber={pageNum}
-                        scale={isMobile ? Math.min(scale, 1.0) : scale}
-                        width={isMobile ? Math.min(window.innerWidth - 32, 400) : undefined}
-                        renderTextLayer={PDF_CONFIG.defaultOptions.renderTextLayer}
-                        renderAnnotationLayer={PDF_CONFIG.defaultOptions.renderAnnotationLayer}
-                        className="shadow-lg rounded-lg"
-                      />
+                       <Page
+                         pageNumber={pageNum}
+                         scale={scale}
+                         renderTextLayer={PDF_CONFIG.defaultOptions.renderTextLayer}
+                         renderAnnotationLayer={PDF_CONFIG.defaultOptions.renderAnnotationLayer}
+                         className="shadow-lg rounded-lg"
+                       />
                       
                       {/* Page number indicator */}
                       <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
                         {pageNum} / {numPages}
                       </div>
                       
-                      {/* Custom overlay content for specific page */}
-                      {pageNum === currentPage && overlayContent}
+                       {/* Custom overlay content for all pages in continuous mode */}
+                       {overlayContent && 
+                         (typeof overlayContent === 'function' 
+                           ? overlayContent(pageNum, scale)
+                           : (pageNum === currentPage && overlayContent))
+                       }
                     </div>
                   </div>
                 ))}
@@ -485,8 +488,12 @@ export function EnhancedPDFViewer({
                 />
               </Document>
               
-              {/* Custom overlay content */}
-              {overlayContent}
+               {/* Custom overlay content */}
+               {overlayContent && 
+                 (typeof overlayContent === 'function' 
+                   ? overlayContent(currentPage, scale)
+                   : overlayContent)
+               }
             </div>
           )}
         </div>

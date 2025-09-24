@@ -154,8 +154,9 @@ export function FieldDesigner({ isOpen, onClose, templateId, templateUrl }: Fiel
     if (!pageElement) return;
     
     const rect = pageElement.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / scale;
-    const y = (event.clientY - rect.top) / scale;
+    const effectiveScale = scale * getViewModeScale();
+    const x = (event.clientX - rect.left) / effectiveScale;
+    const y = (event.clientY - rect.top) / effectiveScale;
 
     const newField: TemplateField = {
       field_name: `${newFieldType}_field_${Date.now()}`,
@@ -208,8 +209,9 @@ export function FieldDesigner({ isOpen, onClose, templateId, templateUrl }: Fiel
     const initialY = field.y_position;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = (moveEvent.clientX - startX) / scale;
-      const deltaY = (moveEvent.clientY - startY) / scale;
+      const effectiveScale = scale * getViewModeScale();
+      const deltaX = (moveEvent.clientX - startX) / effectiveScale;
+      const deltaY = (moveEvent.clientY - startY) / effectiveScale;
 
       const newX = Math.max(0, initialX + deltaX);
       const newY = Math.max(0, initialY + deltaY);

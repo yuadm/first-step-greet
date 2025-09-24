@@ -499,50 +499,51 @@ function EmployeeDocumentSigningContent() {
                   showToolbar={!isMobileView}
                   isMobile={isMobileView}
                   continuousMode={true}
-                  overlayContent={
-                    <>
-                      {templateFields
-                        ?.map((field) => {
-                          const isCompleted = field.field_type === "signature" 
-                            ? signatures[field.id] 
-                            : fieldValues[field.id];
-                          
-                          return (
-                            <div
-                              key={field.id}
-                              className={`absolute cursor-pointer transition-all duration-200 rounded-md ${
-                                isCompleted 
-                                  ? 'bg-green-200/90 border-2 border-green-500 shadow-green-200' 
-                                  : field.is_required 
-                                    ? 'bg-red-200/90 border-2 border-red-500 animate-pulse shadow-red-200' 
-                                    : 'bg-blue-200/90 border-2 border-blue-500 shadow-blue-200'
-                              } hover:scale-105 hover:shadow-lg`}
-                              style={{
-                                left: `${field.x_position * scale}px`,
-                                top: `${field.y_position * scale}px`,
-                                width: `${field.width * scale}px`,
-                                height: `${field.height * scale}px`,
-                                transform: 'translateZ(0)',
-                              }}
-                              onClick={() => handleFieldClick(field.id)}
-                              title={`${field.field_name}${field.is_required ? ' (Required)' : ''}`}
-                            >
-                              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
-                                {isCompleted ? (
-                                  <CheckCircle2 className="h-4 w-4 text-green-700 drop-shadow-sm" />
-                                ) : (
-                                  <PenTool className="h-4 w-4 text-gray-700 drop-shadow-sm" />
-                                )}
-                              </div>
-                              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white px-2 py-1 rounded-md text-xs whitespace-nowrap pointer-events-none shadow-lg">
-                                {field.field_name}
-                                {field.is_required && <span className="text-red-300 ml-1">*</span>}
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </>
-                  }
+                   overlayContent={(pageNum, viewerScale) => (
+                     <>
+                       {templateFields
+                         ?.filter(field => field.page_number === pageNum)
+                         .map((field) => {
+                           const isCompleted = field.field_type === "signature" 
+                             ? signatures[field.id] 
+                             : fieldValues[field.id];
+                           
+                           return (
+                             <div
+                               key={field.id}
+                               className={`absolute cursor-pointer transition-all duration-200 rounded-md ${
+                                 isCompleted 
+                                   ? 'bg-green-200/90 border-2 border-green-500 shadow-green-200' 
+                                   : field.is_required 
+                                     ? 'bg-red-200/90 border-2 border-red-500 animate-pulse shadow-red-200' 
+                                     : 'bg-blue-200/90 border-2 border-blue-500 shadow-blue-200'
+                               } hover:scale-105 hover:shadow-lg`}
+                               style={{
+                                 left: `${field.x_position * viewerScale}px`,
+                                 top: `${field.y_position * viewerScale}px`,
+                                 width: `${field.width * viewerScale}px`,
+                                 height: `${field.height * viewerScale}px`,
+                                 transform: 'translateZ(0)',
+                               }}
+                               onClick={() => handleFieldClick(field.id)}
+                               title={`${field.field_name}${field.is_required ? ' (Required)' : ''}`}
+                             >
+                               <div className="absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+                                 {isCompleted ? (
+                                   <CheckCircle2 className="h-4 w-4 text-green-700 drop-shadow-sm" />
+                                 ) : (
+                                   <PenTool className="h-4 w-4 text-gray-700 drop-shadow-sm" />
+                                 )}
+                               </div>
+                               <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white px-2 py-1 rounded-md text-xs whitespace-nowrap pointer-events-none shadow-lg">
+                                 {field.field_name}
+                                 {field.is_required && <span className="text-red-300 ml-1">*</span>}
+                               </div>
+                             </div>
+                           );
+                         })}
+                     </>
+                   )}
                 />
               )}
             </CardContent>
