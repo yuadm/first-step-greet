@@ -24,8 +24,7 @@ import {
   Eye,
   User,
   Calendar,
-  RotateCcw,
-  Lock
+  RotateCcw
 } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import { CompanyProvider, useCompany } from "@/contexts/CompanyContext";
@@ -113,22 +112,15 @@ function EmployeeDocumentSigningContent() {
 
       if (error) throw error;
       
-      const recipient = data?.signing_request_recipients?.[0];
-      if (!recipient) throw new Error("No recipient found");
-      
-      // Check if already signed or expired before tracking access
-      if (recipient.status === "signed" || recipient.expired_at) {
-        // Don't track access for already completed/expired links
-        return data as SigningRequestData;
+      // Track access for expiration checking
+      if (data?.signing_request_recipients?.[0]) {
+        await supabase
+          .from("signing_request_recipients")
+          .update({ 
+            access_count: (data.signing_request_recipients[0].access_count || 0) + 1 
+          })
+          .eq("id", data.signing_request_recipients[0].id);
       }
-      
-      // Track access for expiration checking only for active links
-      await supabase
-        .from("signing_request_recipients")
-        .update({ 
-          access_count: (recipient.access_count || 0) + 1 
-        })
-        .eq("id", recipient.id);
       
       return data as SigningRequestData;
     },
@@ -392,40 +384,25 @@ function EmployeeDocumentSigningContent() {
   const recipient = signingData.signing_request_recipients[0];
   const isAlreadySigned = recipient?.status === "signed" || hasBeenSigned;
   const isExpired = recipient?.expired_at !== null;
-  const hasExpiredOrSigned = isAlreadySigned || isExpired;
 
-  if (hasExpiredOrSigned) {
+  if (isAlreadySigned || isExpired) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-background to-orange-50">
-        <Card className="w-full max-w-md shadow-xl">
-          <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-              {isAlreadySigned ? (
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
-              ) : (
-                <Lock className="h-8 w-8 text-amber-600" />
-              )}
-            </div>
-            <CardTitle className={`text-xl ${isAlreadySigned ? 'text-green-600' : 'text-amber-600'}`}>
-              {isAlreadySigned ? "Already Completed" : "Link No Longer Valid"}
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-green-600">
+              {isExpired ? "Link Expired" : "Already Signed"}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-muted-foreground mb-6">
-              {isAlreadySigned 
-                ? "This document has already been signed and completed. The link can only be used once for security reasons."
-                : "This signing link has expired and is no longer accessible."
+            <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-green-600" />
+            <p className="mb-6">
+              {isExpired 
+                ? "This signing link has expired and is no longer accessible." 
+                : "This document has already been signed successfully."
               }
             </p>
-            <div className="bg-muted/50 rounded-lg p-3 mb-6">
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Shield className="h-4 w-4" />
-                <span>One-time use links for enhanced security</span>
-              </div>
-            </div>
-            <Button onClick={() => navigate("/")} className="w-full" variant="outline">
-              Close Window
-            </Button>
+            <Button onClick={() => navigate("/")}>Return to Home</Button>
           </CardContent>
         </Card>
       </div>
