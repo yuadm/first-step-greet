@@ -217,6 +217,27 @@ export function ClientCompliancePeriodView({
           }
           break;
         
+        case 'monthly':
+          if (year === selectedYear) {
+            const currentMonth = year === currentYear ? new Date().getMonth() + 1 : 12;
+            for (let month = currentMonth; month >= 1; month--) {
+              const periodId = `${year}-${String(month).padStart(2, '0')}`;
+              const isCurrentMonth = year === currentYear && month === new Date().getMonth() + 1;
+              const monthStats = calculatePeriodStats(periodId, clientsData, recordsData);
+              periods.push({
+                period_identifier: periodId,
+                year,
+                record_count: monthStats.record_count,
+                completion_rate: monthStats.completion_rate,
+                download_available: shouldShowDownload,
+                archive_due_date: shouldShowDownload ? `${archiveDueYear}-01-01` : undefined,
+                download_available_date: shouldShowDownload ? `${archiveDueYear - 1}-10-01` : undefined,
+                is_current: isCurrentMonth
+              });
+            }
+          }
+          break;
+        
         case 'annual':
           const annualStats = calculatePeriodStats(year.toString(), clientsData, recordsData);
           periods.push({
@@ -649,6 +670,11 @@ export function ClientCompliancePeriodView({
     switch (frequency.toLowerCase()) {
       case 'quarterly':
         return periodId.replace('-', ' ');
+      case 'monthly':
+        const [year, month] = periodId.split('-');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${monthNames[parseInt(month) - 1]} ${year}`;
       case 'annual':
         return `Year ${periodId}`;
       default:
