@@ -156,19 +156,23 @@ export default function ClientCompliance() {
 
       if (clientsError) throw clientsError;
 
-      // Fetch compliance records for current period
+      // Get client IDs for accessible clients only
+      const accessibleClientIds = clients?.map(client => client.id) || [];
+
+      // Fetch compliance records for current period - only for accessible clients
       const { data: records, error: recordsError } = await supabase
         .from('client_compliance_period_records')
         .select('*')
         .eq('client_compliance_type_id', clientTypeId as string)
-        .eq('period_identifier', period);
+        .eq('period_identifier', period)
+        .in('client_id', accessibleClientIds);
 
       if (recordsError) throw recordsError;
 
-      // Calculate overall stats
+      // Calculate overall stats - based on accessible clients only
       const totalClients = clients?.length || 0;
       const completedRecords = records?.filter(r => r.status === 'completed') || [];
-      const pendingRecords = records?.filter(r => r.status === 'pending') || [];
+      const pendingRecords = records?.filter(r => r.status === 'pending') || [];  
       const overdueRecords = records?.filter(r => r.status === 'overdue') || [];
       
       const completedClients = completedRecords.length;
