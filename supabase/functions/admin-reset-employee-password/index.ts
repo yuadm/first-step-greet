@@ -56,20 +56,10 @@ serve(async (req) => {
       throw new Error('Employee not found or missing email');
     }
 
-    // Hash the default password "123456"
-    const { data: hashedPassword, error: hashError } = await supabase
-      .rpc('hash_password', { password: '123456' });
-
-    if (hashError) {
-      console.error('Password hashing error:', hashError);
-      throw new Error('Failed to hash password');
-    }
-
-    // Update employee password and force password change
+    // Update employee to mark password reset needed
     const { error: updateError } = await supabase
       .from('employees')
       .update({
-        password_hash: hashedPassword,
         must_change_password: true,
         failed_login_attempts: 0,
         locked_until: null
@@ -78,7 +68,7 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('Employee update error:', updateError);
-      throw new Error('Failed to reset employee password');
+      throw new Error('Failed to reset employee record');
     }
 
     // Ensure Supabase Auth user exists and set the same password
