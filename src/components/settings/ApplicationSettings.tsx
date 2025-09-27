@@ -1,4 +1,4 @@
-import { UserFriendlyApplicationSettings } from "./UserFriendlyApplicationSettings";
+import { UnifiedJobApplicationSettings } from "./UnifiedJobApplicationSettings";
 
 export function ApplicationSettings() {
   return (
@@ -6,11 +6,11 @@ export function ApplicationSettings() {
       <div>
         <h2 className="text-2xl font-bold">Job Application Settings</h2>
         <p className="text-muted-foreground">
-          Configure all aspects of your job application process and forms with an easy-to-use interface.
+          Configure all aspects of your job application process and forms in one unified interface.
         </p>
       </div>
 
-      <UserFriendlyApplicationSettings />
+      <UnifiedJobApplicationSettings />
     </div>
   );
 }

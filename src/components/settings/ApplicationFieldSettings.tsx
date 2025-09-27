@@ -54,30 +54,13 @@ export function ApplicationFieldSettings() {
   const fetchFields = async () => {
     try {
       const { data, error } = await supabase
-        .from('job_application_settings')
+        .from('application_field_settings')
         .select('*')
-        .eq('category', 'fields')
+        .order('step_name', { ascending: true })
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      
-      // Transform the data to match the expected FieldSetting interface
-      const transformedData = (data || []).map(item => {
-        const settingValue = item.setting_value as any;
-        return {
-          id: item.id,
-          step_name: settingValue?.step_name || '',
-          field_name: settingValue?.field_name || item.setting_key,
-          field_label: settingValue?.field_label || item.setting_key,
-          is_required: settingValue?.is_required || false,
-          is_visible: settingValue?.is_visible !== false,
-          validation_rules: settingValue?.validation_rules || {},
-          help_text: settingValue?.help_text || null,
-          display_order: item.display_order || 0,
-        };
-      });
-      
-      setFields(transformedData);
+      setFields(data || []);
     } catch (error) {
       console.error('Error fetching field settings:', error);
       toast({
@@ -102,22 +85,13 @@ export function ApplicationFieldSettings() {
       );
 
       const { error } = await supabase
-        .from('job_application_settings')
+        .from('application_field_settings')
         .insert({
-          category: 'fields',
-          setting_type: selectedStep,
-          setting_key: formData.field_name.trim(),
-          setting_value: {
-            step_name: selectedStep,
-            field_name: formData.field_name.trim(),
-            field_label: formData.field_label.trim(),
-            help_text: formData.help_text.trim() || null,
-            is_required: false,
-            is_visible: true,
-            validation_rules: {}
-          },
+          step_name: selectedStep,
+          field_name: formData.field_name.trim(),
+          field_label: formData.field_label.trim(),
+          help_text: formData.help_text.trim() || null,
           display_order: maxOrder + 1,
-          is_active: true
         });
 
       if (error) throw error;
@@ -142,30 +116,12 @@ export function ApplicationFieldSettings() {
 
   const updateField = async (id: string, updates: Partial<FieldSetting>) => {
     try {
-      // Get current setting to preserve existing data
-      const { data: currentData } = await supabase
-        .from('job_application_settings')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { error } = await supabase
+        .from('application_field_settings')
+        .update(updates)
+        .eq('id', id);
 
-      if (currentData) {
-        const currentValue = currentData.setting_value as any;
-        const updatedSettingValue = {
-          ...currentValue,
-          ...updates
-        };
-
-        const { error } = await supabase
-          .from('job_application_settings')
-          .update({
-            setting_value: updatedSettingValue,
-            display_order: updates.display_order || currentData.display_order
-          })
-          .eq('id', id);
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
@@ -186,7 +142,7 @@ export function ApplicationFieldSettings() {
   const deleteField = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('job_application_settings')
+        .from('application_field_settings')
         .delete()
         .eq('id', id);
 

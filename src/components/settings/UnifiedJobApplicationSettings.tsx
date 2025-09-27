@@ -235,98 +235,25 @@ export function UnifiedJobApplicationSettings() {
     
     if (typeof value === 'object') {
       if (setting.category === 'shift') {
-        return (
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">{value.label || value.name}</Badge>
-            <span className="text-sm text-muted-foreground">
-              {value.start_time} - {value.end_time}
-            </span>
-          </div>
-        );
+        return `${value.label} (${value.start_time} - ${value.end_time})`;
       } else if (setting.category === 'status') {
         return (
           <div className="flex items-center gap-2">
             <div 
-              className="w-3 h-3 rounded-full border" 
-              style={{ backgroundColor: value.status_color || '#6b7280' }}
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: value.status_color }}
             />
-            <span className="font-medium">{value.status_label || value.status_name}</span>
-            {value.is_default && <Badge variant="secondary" className="text-xs">Default</Badge>}
+            {value.status_label}
+            {value.is_default && <Badge variant="secondary">Default</Badge>}
           </div>
         );
       } else if (setting.category === 'steps') {
-        return (
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{value.display_name || value.step_name}</span>
-            <Badge variant={value.is_enabled ? "default" : "secondary"} className="text-xs">
-              {value.is_enabled ? 'Enabled' : 'Disabled'}
-            </Badge>
-          </div>
-        );
-      } else if (setting.category === 'personal') {
-        const settingTypeLabels = {
-          'title': 'Title',
-          'nationality': 'Nationality',
-          'gender': 'Gender',
-          'marital_status': 'Marital Status',
-          'ethnicity': 'Ethnicity',
-          'language': 'Language',
-          'religion': 'Religion',
-          'qualification': 'Qualification',
-          'borough': 'Borough',
-          'dbs_type': 'DBS Type',
-          'personal_care': 'Personal Care'
-        };
-        
-        return (
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              {settingTypeLabels[setting.setting_type] || setting.setting_type}
-            </Badge>
-            <span className="font-medium">{value.value || value.name}</span>
-          </div>
-        );
-      } else if (setting.category === 'emergency') {
-        return (
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">Emergency Contact</Badge>
-            <span className="font-medium">{value.value || value.name}</span>
-          </div>
-        );
-      } else if (setting.category === 'skills') {
-        const isCategory = setting.setting_type === 'category';
-        return (
-          <div className="flex items-center gap-2">
-            <Badge variant={isCategory ? "default" : "outline"} className="text-xs">
-              {isCategory ? 'Category' : 'Skill'}
-            </Badge>
-            <span className="font-medium">{value.name}</span>
-            {value.description && (
-              <span className="text-xs text-muted-foreground">- {value.description}</span>
-            )}
-          </div>
-        );
-      } else if (setting.category === 'fields') {
-        return (
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">{value.step_name}</Badge>
-            <span className="font-medium">{value.field_label || value.field_name}</span>
-            {value.is_required && <Badge variant="secondary" className="text-xs">Required</Badge>}
-          </div>
-        );
-      } else if (setting.category === 'reference') {
-        return (
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">Reference</Badge>
-            <span className="font-medium">{JSON.stringify(value)}</span>
-          </div>
-        );
+        return `${value.display_name} (${value.is_enabled ? 'Enabled' : 'Disabled'})`;
+      } else if (value.value) {
+        return value.value;
+      } else if (value.name) {
+        return value.name;
       }
-      
-      // Fallback for any other complex objects
-      if (value.name) return value.name;
-      if (value.value) return value.value;
-      if (value.label) return value.label;
       return JSON.stringify(value);
     }
     
