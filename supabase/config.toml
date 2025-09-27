@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.generate-statement-pdf]
 verify_jwt = false
+
+[functions.send-signing-request]
+verify_jwt = false

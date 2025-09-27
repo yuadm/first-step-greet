@@ -34,15 +34,29 @@ serve(async (req) => {
       throw new Error('Invalid authentication token');
     }
 
-    // Check if user is admin
+    // Check if user is admin or has permission to reset passwords
     const { data: userRole, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .single();
 
-    if (roleError || userRole?.role !== 'admin') {
-      throw new Error('Admin access required');
+    // Allow admins or check for specific permission
+    const isAdmin = userRole?.role === 'admin';
+    
+    if (!isAdmin) {
+      // Check if user has specific permission to reset employee passwords
+      const { data: permission, error: permError } = await supabase
+        .from('user_permissions')
+        .select('granted')
+        .eq('user_id', user.id)
+        .eq('permission_type', 'page_action')
+        .eq('permission_key', 'employees:reset-password')
+        .single();
+
+      if (permError || !permission?.granted) {
+        throw new Error('Permission required: ability to reset employee passwords');
+      }
     }
 
     // Fetch employee to get email and name
