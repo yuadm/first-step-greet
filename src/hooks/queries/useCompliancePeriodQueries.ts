@@ -67,16 +67,24 @@ export const fetchCompliancePeriodEmployeeData = async (complianceTypeId: string
   };
 };
 
-export const fetchClientCompliancePeriodData = async (complianceTypeId: string, frequency: string, selectedYear: number) => {
-  // Fetch clients with branches
-  const { data: clientsData, error: clientsError } = await supabase
+export const fetchClientCompliancePeriodData = async (complianceTypeId: string, frequency: string, selectedYear: number, accessibleBranches?: string[], isAdmin?: boolean) => {
+  // Build the query with branch filtering for non-admin users
+  let clientsQuery = supabase
     .from('clients')
     .select(`
       *,
       branches (
         name
       )
-    `)
+    `);
+
+  // Apply branch filtering for non-admin users
+  if (!isAdmin && accessibleBranches && accessibleBranches.length > 0) {
+    clientsQuery = clientsQuery.in('branch_id', accessibleBranches);
+  }
+
+  const { data: clientsData, error: clientsError } = await clientsQuery
+    .eq('is_active', true)
     .order('name');
 
   if (clientsError) throw clientsError;
@@ -144,10 +152,10 @@ export function useCompliancePeriodEmployeeData(complianceTypeId: string, period
   });
 }
 
-export function useClientCompliancePeriodData(complianceTypeId: string, frequency: string, selectedYear: number) {
+export function useClientCompliancePeriodData(complianceTypeId: string, frequency: string, selectedYear: number, accessibleBranches?: string[], isAdmin?: boolean) {
   return useQuery({
     queryKey: compliancePeriodQueryKeys.clientPeriods(complianceTypeId, selectedYear),
-    queryFn: () => fetchClientCompliancePeriodData(complianceTypeId, frequency, selectedYear),
+    queryFn: () => fetchClientCompliancePeriodData(complianceTypeId, frequency, selectedYear, accessibleBranches, isAdmin),
     enabled: !!complianceTypeId,
     ...cacheConfig.dynamic,
   });

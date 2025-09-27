@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 interface ComplianceType {
   id: string;
@@ -38,6 +39,7 @@ export default function ClientCompliance() {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { getAccessibleBranches, isAdmin } = usePermissions();
   
   const [stats, setStats] = useState<ComplianceStats>({
     totalClients: 0,
@@ -131,8 +133,11 @@ export default function ClientCompliance() {
       const period = getCurrentPeriod();
       setCurrentPeriod(period);
 
-      // Fetch all clients
-      const { data: clients, error: clientsError } = await supabase
+      // Get accessible branches for the current user
+      const accessibleBranches = getAccessibleBranches();
+      
+      // Build the query with branch filtering for non-admin users
+      let clientsQuery = supabase
         .from('clients')
         .select(`
           *,
@@ -141,6 +146,13 @@ export default function ClientCompliance() {
           )
         `)
         .eq('is_active', true);
+
+      // Apply branch filtering for non-admin users
+      if (!isAdmin && accessibleBranches.length > 0) {
+        clientsQuery = clientsQuery.in('branch_id', accessibleBranches);
+      }
+
+      const { data: clients, error: clientsError } = await clientsQuery.order('name');
 
       if (clientsError) throw clientsError;
 
@@ -174,24 +186,27 @@ export default function ClientCompliance() {
         completionRate
       });
 
-      // Calculate branch stats
+      // Calculate branch stats - only for accessible branches
       const branchMap = new Map<string, { total: number; completed: number; name: string }>();
       
       clients?.forEach(client => {
-        const branchName = client.branches?.name || 'Unassigned';
-        if (!branchMap.has(client.branch_id || 'unassigned')) {
-          branchMap.set(client.branch_id || 'unassigned', {
-            total: 0,
-            completed: 0,
-            name: branchName
-          });
-        }
-        const branch = branchMap.get(client.branch_id || 'unassigned')!;
-        branch.total++;
+        // Only include clients from accessible branches
+        if (isAdmin || accessibleBranches.length === 0 || accessibleBranches.includes(client.branch_id || '')) {
+          const branchName = client.branches?.name || 'Unassigned';
+          if (!branchMap.has(client.branch_id || 'unassigned')) {
+            branchMap.set(client.branch_id || 'unassigned', {
+              total: 0,
+              completed: 0,
+              name: branchName
+            });
+          }
+          const branch = branchMap.get(client.branch_id || 'unassigned')!;
+          branch.total++;
 
-        const clientRecord = records?.find(r => r.client_id === client.id);
-        if (clientRecord?.status === 'completed') {
-          branch.completed++;
+          const clientRecord = records?.find(r => r.client_id === client.id);
+          if (clientRecord?.status === 'completed') {
+            branch.completed++;
+          }
         }
       });
 
