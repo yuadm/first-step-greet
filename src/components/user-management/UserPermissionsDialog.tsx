@@ -53,6 +53,12 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
       actions: ['view', 'create', 'edit', 'delete']
     },
     {
+      name: 'Clients',
+      key: 'clients',
+      path: '/clients',
+      actions: ['view', 'create', 'edit', 'delete', 'import', 'bulk-delete']
+    },
+    {
       name: 'Leaves',
       key: 'leaves',
       path: '/leaves', 
