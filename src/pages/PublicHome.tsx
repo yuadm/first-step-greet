@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, Badge, Building, User } from 'lucide-react';
+import { Briefcase, Badge, Building, User, KeyRound } from 'lucide-react';
 import { CompanyProvider, useCompany } from '@/contexts/CompanyContext';
 
 function PublicHomeContent() {
@@ -83,7 +83,10 @@ function PublicHomeContent() {
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <User className="w-6 h-6 text-primary" />
+                <div className="relative">
+                  <User className="w-6 h-6 text-primary" />
+                  <KeyRound className="w-3 h-3 text-primary absolute -bottom-1 -right-1" />
+                </div>
               </div>
               <CardTitle className="text-2xl">Employee Portal</CardTitle>
               <CardDescription>

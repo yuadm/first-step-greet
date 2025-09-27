@@ -53,6 +53,7 @@ import { generateSupervisionPdf } from "@/lib/supervision-pdf";
 import SpotCheckFormDialog, { SpotCheckFormData } from "./SpotCheckFormDialog";
 import SupervisionFormDialog, { SupervisionFormData } from "./SupervisionFormDialog";
 import { MedicationCompetencyForm } from "./MedicationCompetencyForm";
+import AnnualAppraisalFormDialog, { AnnualAppraisalFormData } from "./AnnualAppraisalFormDialog";
 
 interface ComplianceType {
   id: string;
@@ -136,6 +137,10 @@ const [supervisionTarget, setSupervisionTarget] = useState<{ recordId: string } 
 const [medicationEditOpen, setMedicationEditOpen] = useState(false);
 const [medicationInitialData, setMedicationInitialData] = useState<any>(null);
 const [medicationTarget, setMedicationTarget] = useState<{ recordId: string; employeeName: string } | null>(null);
+// Annual appraisal state
+const [annualAppraisalEditOpen, setAnnualAppraisalEditOpen] = useState(false);
+const [annualAppraisalInitialData, setAnnualAppraisalInitialData] = useState<AnnualAppraisalFormData | null>(null);
+const [annualAppraisalTarget, setAnnualAppraisalTarget] = useState<{ recordId: string; employeeName: string } | null>(null);
 
   // Get unique branches for filter - filtered by user access
   const uniqueBranches = useMemo(() => {
@@ -707,6 +712,18 @@ const handleOpenMedicationEdit = (record: ComplianceRecord, employeeName: string
   }
 };
 
+const handleOpenAnnualAppraisalEdit = (record: ComplianceRecord, employeeName: string) => {
+  try {
+    const init: AnnualAppraisalFormData | null = record.notes ? JSON.parse(record.notes) : null;
+    setAnnualAppraisalInitialData(init);
+    setAnnualAppraisalTarget({ recordId: record.id, employeeName });
+    setAnnualAppraisalEditOpen(true);
+  } catch (err) {
+    console.error('Error loading annual appraisal form:', err);
+    toast({ title: 'Error', description: 'Could not load annual appraisal form.', variant: 'destructive' });
+  }
+};
+
 const handleSaveSupervisionEdit = async (formData: any) => {
   if (!supervisionTarget) return;
   try {
@@ -829,6 +846,31 @@ const handleSaveSpotcheckEdit = async (formData: any) => {
   } catch (err) {
     console.error('Error saving spot check form:', err);
     toast({ title: 'Error', description: 'Could not save the spot check form.', variant: 'destructive' });
+  }
+};
+
+const handleSaveAnnualAppraisalEdit = async (formData: AnnualAppraisalFormData) => {
+  if (!annualAppraisalTarget) return;
+  try {
+    const { error } = await supabase
+      .from('compliance_period_records')
+      .update({
+        completion_date: formData.appraisal_date,
+        completion_method: 'annual_appraisal',
+        updated_at: new Date().toISOString(),
+        notes: JSON.stringify(formData),
+        status: 'completed',
+      })
+      .eq('id', annualAppraisalTarget.recordId);
+    if (error) throw error;
+    toast({ title: 'Annual appraisal updated', description: 'The annual appraisal form has been saved.' });
+    setAnnualAppraisalEditOpen(false);
+    setAnnualAppraisalInitialData(null);
+    setAnnualAppraisalTarget(null);
+    fetchData();
+  } catch (err) {
+    console.error('Error saving annual appraisal form:', err);
+    toast({ title: 'Error', description: 'Could not save the annual appraisal form.', variant: 'destructive' });
   }
 };
 
@@ -1445,48 +1487,81 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                     </DialogContent>
                                   </Dialog>
 
-{/* Edit Record */}
-{item.record.completion_method === 'spotcheck' ? (
-  <Button
-    variant="ghost"
-    size="sm"
-    className="hover-scale"
-    onClick={() => handleOpenSpotcheckEdit(item.employee.id, item.record!.period_identifier)}
-  >
-    <Edit className="w-4 h-4" />
-  </Button>
-) : item.record.completion_method === 'supervision' ? (
-  <Button
-    variant="ghost"
-    size="sm"
-    className="hover-scale"
-    onClick={() => handleOpenSupervisionEdit(item.record!)}
-  >
-    <Edit className="w-4 h-4" />
-  </Button>
-) : item.record.completion_method === 'questionnaire' && item.record.form_data ? (
-  <Button
-    variant="ghost"
-    size="sm"
-    className="hover-scale"
-    onClick={() => handleOpenMedicationEdit(item.record!, item.employee.name)}
-  >
-    <Edit className="w-4 h-4" />
-  </Button>
-) : (
-  <EditComplianceRecordModal
-    record={item.record}
-    employeeName={item.employee.name}
-    complianceTypeName={complianceType?.name || ''}
-    frequency={complianceType?.frequency || ''}
-    onRecordUpdated={fetchData}
-    trigger={
-      <Button variant="ghost" size="sm" className="hover-scale">
-        <Edit className="w-4 h-4" />
-      </Button>
-    }
-  />
-)}
+{/* Edit Record - Consistent form-based vs modal-based editing */}
+{(() => {
+  const method = item.record.completion_method;
+  
+  // Form-based completion methods - open respective forms
+  switch (method) {
+    case 'spotcheck':
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hover-scale"
+          onClick={() => handleOpenSpotcheckEdit(item.employee.id, item.record!.period_identifier)}
+        >
+          <Edit className="w-4 h-4" />
+        </Button>
+      );
+    
+    case 'supervision':
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hover-scale"
+          onClick={() => handleOpenSupervisionEdit(item.record!)}
+        >
+          <Edit className="w-4 h-4" />
+        </Button>
+      );
+    
+    case 'annual_appraisal':
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="hover-scale"
+          onClick={() => handleOpenAnnualAppraisalEdit(item.record!, item.employee.name)}
+        >
+          <Edit className="w-4 h-4" />
+        </Button>
+      );
+    
+    case 'questionnaire':
+    case 'medication_competency':
+      if (item.record.form_data) {
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover-scale"
+            onClick={() => handleOpenMedicationEdit(item.record!, item.employee.name)}
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+        );
+      }
+      break;
+  }
+  
+  // Simple completion methods - open edit modal
+  return (
+    <EditComplianceRecordModal
+      record={item.record}
+      employeeName={item.employee.name}
+      complianceTypeName={complianceType?.name || ''}
+      frequency={complianceType?.frequency || ''}
+      onRecordUpdated={fetchData}
+      trigger={
+        <Button variant="ghost" size="sm" className="hover-scale">
+          <Edit className="w-4 h-4" />
+        </Button>
+      }
+    />
+  );
+})()}
 
                                   {/* Delete Dialog */}
                                   <AlertDialog>
@@ -1599,7 +1674,6 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
       </Tabs>
 
 {/* Spot Check Edit Dialog */}
-{/* Temporarily disabled - SpotCheckFormDialog component not found
 <SpotCheckFormDialog 
   open={spotcheckEditOpen}
   onOpenChange={setSpotcheckEditOpen}
@@ -1608,16 +1682,14 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
   frequency={complianceType?.frequency}
   onSubmit={handleSaveSpotcheckEdit}
 />
-*/}
+
 {/* Supervision Edit Dialog */}
-{/* Temporarily disabled - SupervisionFormDialog component not found
 <SupervisionFormDialog 
   open={supervisionEditOpen}
   onOpenChange={setSupervisionEditOpen}
   initialData={supervisionInitialData || undefined}
   onSubmit={handleSaveSupervisionEdit}
 />
-*/}
 
 {/* Medication Competency Edit Dialog */}
 <Dialog open={medicationEditOpen} onOpenChange={setMedicationEditOpen}>
@@ -1664,6 +1736,14 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
     </div>
   </DialogContent>
 </Dialog>
+
+{/* Annual Appraisal Edit Dialog */}
+<AnnualAppraisalFormDialog
+  open={annualAppraisalEditOpen}
+  onOpenChange={setAnnualAppraisalEditOpen}
+  initialData={annualAppraisalInitialData || undefined}
+  onSubmit={handleSaveAnnualAppraisalEdit}
+/>
     </div>
   );
 }
