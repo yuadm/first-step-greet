@@ -355,12 +355,7 @@ export function Dashboard() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 rounded-lg bg-success-soft">
-                  <div className="text-2xl font-bold text-success">{metrics.activeUsers}</div>
-                  <div className="text-sm text-muted-foreground">Active Users</div>
-                </div>
-                
+              <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-4 rounded-lg bg-primary-soft">
                   <div className="text-2xl font-bold text-primary">99.9%</div>
                   <div className="text-sm text-muted-foreground">Uptime</div>
