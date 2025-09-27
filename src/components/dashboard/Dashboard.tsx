@@ -114,10 +114,15 @@ export function Dashboard() {
               Advanced HR & Compliance Analytics
             </p>
           </div>
-          <Badge variant={isConnected ? "default" : "secondary"} className="flex items-center gap-2">
-            <Activity className="w-3 h-3" />
-            {isConnected ? "Live" : "Offline"}
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant={isConnected ? "default" : "secondary"} className="flex items-center gap-2">
+              <Activity className="w-3 h-3" />
+              {isConnected ? "Live" : "Offline"}
+            </Badge>
+            <div className="text-sm text-muted-foreground">
+              {metrics.activeUsers} active users
+            </div>
+          </div>
         </div>
       </div>
 
