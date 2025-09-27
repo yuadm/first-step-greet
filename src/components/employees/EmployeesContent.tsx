@@ -201,13 +201,8 @@ export function EmployeesContent() {
     try {
       setResettingPassword(true);
       
-      // Ensure Authorization header is included for edge function (verify_jwt=true)
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      
       const { data, error } = await supabase.functions.invoke('admin-reset-employee-password', {
-        body: { employeeId: selectedEmployee.id },
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        body: { employeeId: selectedEmployee.id }
       });
 
       if (error) throw error;

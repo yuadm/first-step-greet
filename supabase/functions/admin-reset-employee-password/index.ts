@@ -34,8 +34,16 @@ serve(async (req) => {
       throw new Error('Invalid authentication token');
     }
 
-    // Require only that the caller is authenticated; proceed without admin/permission gating
-    // Additional authorization can be enforced via database policies if needed.
+    // Check if user is admin
+    const { data: userRole, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (roleError || userRole?.role !== 'admin') {
+      throw new Error('Admin access required');
+    }
 
     // Fetch employee to get email and name
     const { data: employeeRec, error: empFetchError } = await supabase
