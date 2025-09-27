@@ -13,11 +13,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import { useClientsForStatements, useCompliancePeriodActions } from "@/hooks/queries/useCompliancePeriodQueries";
 
 interface Employee {
   id: string;
   name: string;
   branch_id?: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  branch_id?: string;
+  branches?: {
+    name: string;
+  };
 }
 
 interface CareWorkerStatement {
@@ -53,6 +63,7 @@ export function CareWorkerStatementModal({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     care_worker_name: "",
+    client_id: "",
     client_name: "",
     client_address: "",
     report_date: new Date(),
@@ -63,6 +74,11 @@ export function CareWorkerStatementModal({
   const { toast } = useToast();
   const { user } = useAuth();
   const { isAdmin, getAccessibleBranches } = usePermissions();
+  const { createStatement, updateStatement } = useCompliancePeriodActions();
+
+  // Fetch clients with branch permissions
+  const accessibleBranches = getAccessibleBranches();
+  const { data: clients = [] } = useClientsForStatements(accessibleBranches, isAdmin);
 
   useEffect(() => {
     fetchEmployees();
@@ -72,6 +88,7 @@ export function CareWorkerStatementModal({
     if (statement) {
       setFormData({
         care_worker_name: statement.care_worker_name,
+        client_id: "",
         client_name: statement.client_name,
         client_address: statement.client_address,
         report_date: new Date(statement.report_date),
@@ -81,6 +98,7 @@ export function CareWorkerStatementModal({
     } else {
       setFormData({
         care_worker_name: "",
+        client_id: "",
         client_name: "",
         client_address: "",
         report_date: new Date(),
@@ -131,6 +149,16 @@ export function CareWorkerStatementModal({
     });
   };
 
+  const handleClientChange = (clientId: string) => {
+    const selectedClient = clients.find(client => client.id === clientId);
+    setFormData({ 
+      ...formData, 
+      client_id: clientId,
+      client_name: selectedClient?.name || "",
+      client_address: "" // Reset address when client changes
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -162,39 +190,18 @@ export function CareWorkerStatementModal({
       };
 
       if (statement) {
-        const { error } = await supabase
-          .from('care_worker_statements')
-          .update(submitData)
-          .eq('id', statement.id);
-
-        if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Statement updated successfully",
+        await updateStatement.mutateAsync({ 
+          statementId: statement.id, 
+          statementData: submitData 
         });
       } else {
-        const { error } = await supabase
-          .from('care_worker_statements')
-          .insert(submitData);
-
-        if (error) throw error;
-
-        toast({
-          title: "Success",
-          description: "Statement created and assigned successfully",
-        });
+        await createStatement.mutateAsync(submitData);
       }
 
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error saving statement:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save statement",
-        variant: "destructive",
-      });
+      // Error handling is done by the mutations
     } finally {
       setLoading(false);
     }
@@ -212,12 +219,22 @@ export function CareWorkerStatementModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="client_name">Client Name</Label>
-            <Input
-              id="client_name"
-              value={formData.client_name}
-              onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+            <Select
+              value={formData.client_id}
+              onValueChange={handleClientChange}
               required
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select client" />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name} {client.branches?.name && `(${client.branches.name})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

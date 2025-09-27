@@ -80,7 +80,7 @@ export function CareWorkerStatementContent() {
   } = usePagePermissions();
 
   // Fetch data using React Query
-  const { data: statementsData, isLoading: statementsLoading } = useCareWorkerStatements();
+  const { data: statementsData, isLoading: statementsLoading, refetch: refetchStatements } = useCareWorkerStatements();
   const { data: branchesData, isLoading: branchesLoading } = useStatementBranches();
   const { updateStatementStatus } = useCompliancePeriodActions();
 
@@ -473,6 +473,7 @@ export function CareWorkerStatementContent() {
         branches={branches}
         onSuccess={() => {
           setSelectedStatement(null);
+          refetchStatements(); // Auto-refresh the table
         }}
       />
 
@@ -482,6 +483,7 @@ export function CareWorkerStatementContent() {
         statement={selectedStatement}
         onSuccess={() => {
           setSelectedStatement(null);
+          refetchStatements(); // Auto-refresh the table
         }}
         readOnly={!canEditCompliance() && selectedStatement?.status !== 'draft' && selectedStatement?.status !== 'rejected'}
       />

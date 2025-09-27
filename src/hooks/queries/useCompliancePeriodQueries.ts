@@ -123,6 +123,31 @@ export const fetchCareWorkerStatements = async () => {
   return data || [];
 };
 
+export const fetchClientsForStatements = async (accessibleBranches?: string[], isAdmin?: boolean) => {
+  // Build the query with branch filtering for non-admin users
+  let clientsQuery = supabase
+    .from('clients')
+    .select(`
+      id,
+      name,
+      branch_id,
+      branches (
+        name
+      )
+    `)
+    .eq('is_active', true);
+
+  // Apply branch filtering for non-admin users
+  if (!isAdmin && accessibleBranches && accessibleBranches.length > 0) {
+    clientsQuery = clientsQuery.in('branch_id', accessibleBranches);
+  }
+
+  const { data, error } = await clientsQuery.order('name');
+
+  if (error) throw error;
+  return data || [];
+};
+
 export const fetchStatementBranches = async () => {
   const { data, error } = await supabase
     .from('branches')
@@ -177,6 +202,14 @@ export function useStatementBranches() {
   });
 }
 
+export function useClientsForStatements(accessibleBranches?: string[], isAdmin?: boolean) {
+  return useQuery({
+    queryKey: [...compliancePeriodQueryKeys.all, 'clients', accessibleBranches, isAdmin],
+    queryFn: () => fetchClientsForStatements(accessibleBranches, isAdmin),
+    ...cacheConfig.dynamic,
+  });
+}
+
 // Mutation Hooks
 export function useCompliancePeriodActions() {
   const queryClient = useQueryClient();
@@ -221,7 +254,60 @@ export function useCompliancePeriodActions() {
     },
   });
 
+  const createStatement = useMutation({
+    mutationFn: async (statementData: any) => {
+      const { error } = await supabase
+        .from('care_worker_statements')
+        .insert(statementData);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: compliancePeriodQueryKeys.statements() });
+      toast({
+        title: "Success",
+        description: "Statement created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating statement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create statement",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateStatement = useMutation({
+    mutationFn: async ({ statementId, statementData }: { statementId: string; statementData: any }) => {
+      const { error } = await supabase
+        .from('care_worker_statements')
+        .update(statementData)
+        .eq('id', statementId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: compliancePeriodQueryKeys.statements() });
+      toast({
+        title: "Success",
+        description: "Statement updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating statement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update statement",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     updateStatementStatus,
+    createStatement,
+    updateStatement,
   };
 }
