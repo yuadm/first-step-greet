@@ -31,12 +31,29 @@ export function ApplicationStepSettings() {
   const fetchSteps = async () => {
     try {
       const { data, error } = await supabase
-        .from('application_step_settings')
+        .from('job_application_settings')
         .select('*')
+        .eq('category', 'steps')
         .order('display_order');
 
       if (error) throw error;
-      setSteps(data || []);
+      
+      // Transform the data to match the expected StepSetting interface
+      const transformedData = (data || []).map(item => {
+        const settingValue = item.setting_value as any;
+        return {
+          id: item.id,
+          step_name: settingValue?.step_name || item.setting_key,
+          display_name: settingValue?.display_name || item.setting_key,
+          description: settingValue?.description || null,
+          is_enabled: settingValue?.is_enabled !== false,
+          is_required: settingValue?.is_required || false,
+          display_order: item.display_order || 0,
+          step_config: settingValue?.step_config || {},
+        };
+      });
+      
+      setSteps(transformedData);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -61,18 +78,33 @@ export function ApplicationStepSettings() {
     if (!editingId || !editForm) return;
 
     try {
-      const { error } = await supabase
-        .from('application_step_settings')
-        .update({
+      // Get current setting to preserve existing data
+      const { data: currentData } = await supabase
+        .from('job_application_settings')
+        .select('*')
+        .eq('id', editingId)
+        .single();
+
+      if (currentData) {
+        const currentValue = currentData.setting_value as any;
+        const updatedSettingValue = {
+          ...currentValue,
           display_name: editForm.display_name,
           description: editForm.description,
           is_enabled: editForm.is_enabled,
           is_required: editForm.is_required,
-          display_order: editForm.display_order,
-        })
-        .eq('id', editingId);
+        };
 
-      if (error) throw error;
+        const { error } = await supabase
+          .from('job_application_settings')
+          .update({
+            setting_value: updatedSettingValue,
+            display_order: editForm.display_order || currentData.display_order
+          })
+          .eq('id', editingId);
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",
