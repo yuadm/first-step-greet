@@ -18,24 +18,29 @@ serve(async (req) => {
       throw new Error('Employee ID is required');
     }
 
-    // Create admin client with service role key
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify the requesting user is an admin
+    // Verify the requesting user is an admin using anon client first
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Authorization header required');
     }
 
+    const supabaseAnon = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+    
+    // Set the auth header for the anon client
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    await supabaseAnon.auth.setSession({
+      access_token: token,
+      refresh_token: ''
+    });
+
+    const { data: { user }, error: userError } = await supabaseAnon.auth.getUser();
     
     if (userError || !user) {
       throw new Error('Invalid authentication token');
     }
 
-    // Check if user is admin
-    const { data: userRole, error: roleError } = await supabase
+    // Check if user is admin using anon client (respects RLS)
+    const { data: userRole, error: roleError } = await supabaseAnon
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -44,6 +49,9 @@ serve(async (req) => {
     if (roleError || userRole?.role !== 'admin') {
       throw new Error('Admin access required');
     }
+
+    // Now create admin client with service role key for the actual operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch employee to get email and name
     const { data: employeeRec, error: empFetchError } = await supabase
