@@ -559,18 +559,32 @@ export function ReportsContent() {
           
           if (complianceError) throw complianceError;
           
-          const transformedComplianceData = (complianceData || []).map(record => ({
-            'Task Name': record.compliance_types?.name || '',
-            'Employee': record.employees?.name || '',
-            'Branch': record.employees?.branch || '',
-            'Period': record.period_identifier || '',
-            'Completion Date': record.completion_date && record.completion_date.match(/^\d{4}-\d{2}-\d{2}/) 
-              ? new Date(record.completion_date).toLocaleDateString('en-GB') 
-              : record.completion_date || '',
-            'Status': record.status || '',
-            'Notes': record.notes || '',
-            'Frequency': record.compliance_types?.frequency || ''
-          }));
+          const transformedComplianceData = (complianceData || []).map(record => {
+            // For Annual Appraisal, don't show form_data JSON in notes
+            let notes = record.notes || '';
+            if (record.compliance_types?.name === 'Annual Appraisal' && notes) {
+              // If notes contains JSON (starts with { or [), show empty instead
+              try {
+                JSON.parse(notes);
+                notes = ''; // It's valid JSON, so show empty
+              } catch {
+                // Not JSON, keep the original notes
+              }
+            }
+            
+            return {
+              'Task Name': record.compliance_types?.name || '',
+              'Employee': record.employees?.name || '',
+              'Branch': record.employees?.branch || '',
+              'Period': record.period_identifier || '',
+              'Completion Date': record.completion_date && record.completion_date.match(/^\d{4}-\d{2}-\d{2}/) 
+                ? new Date(record.completion_date).toLocaleDateString('en-GB') 
+                : record.completion_date || '',
+              'Status': record.status || '',
+              'Notes': notes,
+              'Frequency': record.compliance_types?.frequency || ''
+            };
+          });
           
           const csvContentCompliance = convertToCSV(transformedComplianceData, selectedColumns[selectedReport]);
           filename = `compliance_report_${new Date().toISOString().split('T')[0]}`;
