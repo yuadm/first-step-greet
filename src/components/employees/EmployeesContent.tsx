@@ -111,7 +111,7 @@ export function EmployeesContent() {
     hours_restriction: ""
   });
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<number | "ALL">(50);
+  const [pageSize, setPageSize] = useState(50);
   const { toast } = useToast();
 
   // Remove old useEffect and fetchData - now handled by React Query
@@ -462,11 +462,10 @@ export function EmployeesContent() {
   };
 
   const toggleSelectAll = () => {
-    const employeesToSelect = pageSize === "ALL" ? filteredEmployees : paginatedEmployees;
-    if (selectedEmployees.length === employeesToSelect.length) {
+    if (selectedEmployees.length === paginatedEmployees.length) {
       setSelectedEmployees([]);
     } else {
-      setSelectedEmployees(employeesToSelect.map(emp => emp.id));
+      setSelectedEmployees(paginatedEmployees.map(emp => emp.id));
     }
   };
 
@@ -784,11 +783,7 @@ export function EmployeesContent() {
   };
 
   const handlePageSizeChange = (newPageSize: string) => {
-    if (newPageSize === "ALL") {
-      setPageSize("ALL");
-    } else {
-      setPageSize(parseInt(newPageSize));
-    }
+    setPageSize(parseInt(newPageSize));
     setPage(1); // Reset to first page when changing page size
   };
 
@@ -856,10 +851,9 @@ export function EmployeesContent() {
 
   // Pagination logic
   const totalCount = filteredEmployees.length;
-  const actualPageSize = pageSize === "ALL" ? totalCount : pageSize;
-  const totalPages = pageSize === "ALL" ? 1 : Math.max(1, Math.ceil(totalCount / pageSize));
-  const startIndex = pageSize === "ALL" ? 0 : (page - 1) * pageSize;
-  const endIndex = pageSize === "ALL" ? totalCount : startIndex + pageSize;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
   const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
 
   // Calculate stats - apply the same branch access filtering as the table
@@ -1192,7 +1186,7 @@ export function EmployeesContent() {
             </div>
           )}
           
-          {totalCount > 10 && (
+          {totalCount > pageSize && (
             <div className="flex items-center justify-between mt-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Items per page:</span>
@@ -1205,61 +1199,58 @@ export function EmployeesContent() {
                     <SelectItem value="25">25</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                     <SelectItem value="100">100</SelectItem>
-                    <SelectItem value="ALL">ALL</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              {pageSize !== "ALL" && (
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (page > 1) {
-                            setPage(page - 1);
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (page > 1) {
+                          setPage(page - 1);
+                          window.scrollTo(0, 0);
+                        }
+                      }}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                    const pageNumber = start + i;
+                    if (pageNumber > totalPages) return null;
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          href="#"
+                          isActive={pageNumber === page}
+                          className={pageNumber === page ? "bg-primary text-primary-foreground" : ""}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage(pageNumber);
                             window.scrollTo(0, 0);
-                          }
-                        }}
-                      />
-                    </PaginationItem>
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      const start = Math.max(1, Math.min(page - 2, totalPages - 4));
-                      const pageNumber = start + i;
-                      if (pageNumber > totalPages) return null;
-                      return (
-                        <PaginationItem key={pageNumber}>
-                          <PaginationLink
-                            href="#"
-                            isActive={pageNumber === page}
-                            className={pageNumber === page ? "bg-primary text-primary-foreground" : ""}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setPage(pageNumber);
-                              window.scrollTo(0, 0);
-                            }}
-                          >
-                            {pageNumber}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    })}
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (page < totalPages) {
-                            setPage(page + 1);
-                            window.scrollTo(0, 0);
-                          }
-                        }}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              )}
+                          }}
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (page < totalPages) {
+                          setPage(page + 1);
+                          window.scrollTo(0, 0);
+                        }
+                      }}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
         </CardContent>
