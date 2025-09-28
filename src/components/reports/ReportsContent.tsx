@@ -562,29 +562,17 @@ export function ReportsContent() {
               if (branchClients && branchClients.length > 0) {
                 const clientIds = branchClients.map(c => c.id);
                 clientComplianceQuery = clientComplianceQuery.in('client_id', clientIds);
+                // Execute the query
+                const result = await clientComplianceQuery;
+                complianceData = result.data || [];
+                complianceError = result.error;
               } else {
                 // No clients in selected branch, return empty data
                 complianceData = [];
+                complianceError = null;
               }
-            }
-
-            if (selectedComplianceType !== "all") {
-              clientComplianceQuery = clientComplianceQuery.eq('client_compliance_type_id', selectedComplianceType);
-            }
-
-            if (currentComplianceType) {
-              if (currentComplianceType.frequency.toLowerCase() === 'annual') {
-                clientComplianceQuery = clientComplianceQuery.like('period_identifier', `${selectedYear}%`);
-              } else if (currentComplianceType.frequency.toLowerCase() === 'monthly' && selectedMonths.length > 0) {
-                const monthFilters = selectedMonths.map(month => `${selectedYear}-${month}`);
-                clientComplianceQuery = clientComplianceQuery.in('period_identifier', monthFilters);
-              } else if (currentComplianceType.frequency.toLowerCase() === 'quarterly' && selectedQuarters.length > 0) {
-                const quarterFilters = selectedQuarters.map(quarter => `${selectedYear}-${quarter}`);
-                clientComplianceQuery = clientComplianceQuery.in('period_identifier', quarterFilters);
-              }
-            }
-
-            if (complianceData.length > 0 || selectedBranch === "all") {
+            } else {
+              // All branches selected, execute the query
               const result = await clientComplianceQuery;
               complianceData = result.data || [];
               complianceError = result.error;
