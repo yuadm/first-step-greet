@@ -41,8 +41,8 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    if (roleError || userRole?.role !== 'admin') {
-      throw new Error('Admin access required');
+    if (roleError || !['admin', 'user'].includes(userRole?.role)) {
+      throw new Error('Admin or user access required');
     }
 
     // Fetch employee to get email and name
