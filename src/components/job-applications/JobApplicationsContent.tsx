@@ -70,7 +70,7 @@ export function JobApplicationsContent() {
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<number | "ALL">(50);
+  const [pageSize, setPageSize] = useState(50);
   const [totalCount, setTotalCount] = useState(0);
   const [statusOptions, setStatusOptions] = useState<string[]>(['new','reviewing','interviewed','accepted','rejected']);
   const { toast } = useToast();
@@ -323,17 +323,12 @@ Please complete and return this reference as soon as possible.`;
     });
 
   const handlePageSizeChange = (newPageSize: string) => {
-    if (newPageSize === "ALL") {
-      setPageSize("ALL");
-    } else {
-      setPageSize(parseInt(newPageSize));
-    }
+    setPageSize(parseInt(newPageSize));
     setPage(1); // Reset to first page when changing page size
   };
 
-  const actualPageSize = pageSize === "ALL" ? filteredApplications.length : pageSize;
-  const totalPages = pageSize === "ALL" ? 1 : Math.max(1, Math.ceil(filteredApplications.length / pageSize));
-  const paginatedApplications = pageSize === "ALL" ? displayedApplications : displayedApplications.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / pageSize));
+  const paginatedApplications = displayedApplications.slice((page - 1) * pageSize, page * pageSize);
   if (loading) {
     return (
       <div className="p-6">
@@ -526,7 +521,7 @@ Please complete and return this reference as soon as possible.`;
         </CardContent>
       </Card>
 
-      {filteredApplications.length > 10 && (
+      {totalCount > pageSize && (
         <div className="flex items-center justify-between mt-4">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Items per page:</span>
@@ -539,11 +534,10 @@ Please complete and return this reference as soon as possible.`;
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>
                 <SelectItem value="100">100</SelectItem>
-                <SelectItem value="ALL">ALL</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          {pageSize !== "ALL" && totalPages > 1 && (
+          <Pagination>
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
@@ -591,7 +585,6 @@ Please complete and return this reference as soon as possible.`;
               </PaginationItem>
             </PaginationContent>
           </Pagination>
-          )}
         </div>
       )}
       {displayedApplications.length === 0 && (
