@@ -63,7 +63,7 @@ export function ClientsContent() {
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState<number | "ALL">(50);
   const { isAdmin } = usePermissions();
   const { toast } = useToast();
 
@@ -230,7 +230,11 @@ export function ClientsContent() {
   };
 
   const handlePageSizeChange = (value: string) => {
-    setPageSize(parseInt(value));
+    if (value === "ALL") {
+      setPageSize("ALL");
+    } else {
+      setPageSize(parseInt(value));
+    }
     setPage(1);
   };
 
@@ -468,9 +472,10 @@ export function ClientsContent() {
     });
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredAndSortedClients.length / pageSize);
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
+  const actualPageSize = pageSize === "ALL" ? filteredAndSortedClients.length : pageSize;
+  const totalPages = pageSize === "ALL" ? 1 : Math.ceil(filteredAndSortedClients.length / pageSize);
+  const startIndex = pageSize === "ALL" ? 0 : (page - 1) * pageSize;
+  const endIndex = pageSize === "ALL" ? filteredAndSortedClients.length : startIndex + pageSize;
   const paginatedClients = filteredAndSortedClients.slice(startIndex, endIndex);
 
   if (loading) {
@@ -672,7 +677,7 @@ export function ClientsContent() {
             </Table>
           </div>
 
-          {filteredAndSortedClients.length > pageSize && (
+          {filteredAndSortedClients.length > 10 && (
             <div className="flex items-center justify-between mt-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Items per page:</span>
@@ -685,58 +690,61 @@ export function ClientsContent() {
                     <SelectItem value="25">25</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                     <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="ALL">ALL</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (page > 1) {
-                          setPage(page - 1);
-                          window.scrollTo(0, 0);
-                        }
-                      }}
-                    />
-                  </PaginationItem>
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const start = Math.max(1, Math.min(page - 2, totalPages - 4));
-                    const pageNumber = start + i;
-                    if (pageNumber > totalPages) return null;
-                    return (
-                      <PaginationItem key={pageNumber}>
-                        <PaginationLink
-                          href="#"
-                          isActive={pageNumber === page}
-                          className={pageNumber === page ? "bg-primary text-primary-foreground" : ""}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setPage(pageNumber);
+              {pageSize !== "ALL" && totalPages > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (page > 1) {
+                            setPage(page - 1);
                             window.scrollTo(0, 0);
-                          }}
-                        >
-                          {pageNumber}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (page < totalPages) {
-                          setPage(page + 1);
-                          window.scrollTo(0, 0);
-                        }
-                      }}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+                          }
+                        }}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                      const pageNumber = start + i;
+                      if (pageNumber > totalPages) return null;
+                      return (
+                        <PaginationItem key={pageNumber}>
+                          <PaginationLink
+                            href="#"
+                            isActive={pageNumber === page}
+                            className={pageNumber === page ? "bg-primary text-primary-foreground" : ""}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setPage(pageNumber);
+                              window.scrollTo(0, 0);
+                            }}
+                          >
+                            {pageNumber}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (page < totalPages) {
+                            setPage(page + 1);
+                            window.scrollTo(0, 0);
+                          }
+                        }}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
             </div>
           )}
         </CardContent>
@@ -788,7 +796,7 @@ export function ClientsContent() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {filteredAndSortedClients.length > 10 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>Items per page:</span>
@@ -801,10 +809,11 @@ export function ClientsContent() {
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>
                 <SelectItem value="100">100</SelectItem>
+                <SelectItem value="ALL">ALL</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <Pagination>
+          {pageSize !== "ALL" && totalPages > 1 && (
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
@@ -853,6 +862,7 @@ export function ClientsContent() {
               </PaginationItem>
             </PaginationContent>
           </Pagination>
+          )}
         </div>
       )}
 

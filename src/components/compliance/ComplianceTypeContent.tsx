@@ -121,7 +121,7 @@ export function ComplianceTypeContent() {
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [itemsPerPage, setItemsPerPage] = useState<number | "ALL">(50);
   const [completedByUsers, setCompletedByUsers] = useState<{ [key: string]: { name: string; created_at: string } }>({});
 
 // Spot check edit state
@@ -883,10 +883,11 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
   };
 
   // Pagination calculations
+  const actualItemsPerPage = itemsPerPage === "ALL" ? filteredAndSortedEmployees.length : itemsPerPage;
   const totalItems = filteredAndSortedEmployees.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  const totalPages = itemsPerPage === "ALL" ? 1 : Math.ceil(totalItems / itemsPerPage);
+  const startIndex = itemsPerPage === "ALL" ? 0 : (currentPage - 1) * itemsPerPage;
+  const endIndex = itemsPerPage === "ALL" ? totalItems : startIndex + itemsPerPage;
   const paginatedEmployees = filteredAndSortedEmployees.slice(startIndex, endIndex);
 
   // Reset to first page when filters change
@@ -903,7 +904,11 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
   };
 
   const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(parseInt(value));
+    if (value === "ALL") {
+      setItemsPerPage("ALL");
+    } else {
+      setItemsPerPage(parseInt(value));
+    }
     setCurrentPage(1);
   };
 
@@ -1601,23 +1606,24 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                      </TableBody>
                  </Table>
                  
-                 {/* Pagination */}
-                 {totalPages > 1 && (
-                   <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
-                     <div className="flex items-center gap-2">
-                       <span className="text-sm text-muted-foreground">Items per page:</span>
-                       <select
-                         value={itemsPerPage}
-                         onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                         className="border border-border rounded px-2 py-1 text-sm bg-background"
-                       >
-                         <option value={10}>10</option>
-                         <option value={25}>25</option>
-                         <option value={50}>50</option>
-                         <option value={100}>100</option>
-                       </select>
-                     </div>
-                     
+                  {/* Pagination */}
+                  {totalItems > 10 && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Items per page:</span>
+                        <select
+                          value={itemsPerPage.toString()}
+                          onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                          className="border border-border rounded px-2 py-1 text-sm bg-background"
+                        >
+                          <option value={10}>10</option>
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                          <option value="ALL">ALL</option>
+                        </select>
+                      </div>
+                      {itemsPerPage !== "ALL" && totalPages > 1 && (
                      <div className="flex items-center gap-2">
                        <Button
                          variant="outline"
@@ -1654,8 +1660,9 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                      
                      <div className="text-sm text-muted-foreground">
                        Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} employees
-                     </div>
-                   </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                  </>
               )}

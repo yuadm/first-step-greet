@@ -111,7 +111,7 @@ export function DocumentsContent() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [itemsPerPage, setItemsPerPage] = useState<number | "ALL">(50);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -392,9 +392,10 @@ export function DocumentsContent() {
   const uniqueEmployeeCount = new Set(filteredDocuments.map(doc => doc.employee_id)).size;
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
-  const startIndex = (page - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  const actualItemsPerPage = itemsPerPage === "ALL" ? filteredDocuments.length : itemsPerPage;
+  const totalPages = itemsPerPage === "ALL" ? 1 : Math.ceil(filteredDocuments.length / itemsPerPage);
+  const startIndex = itemsPerPage === "ALL" ? 0 : (page - 1) * itemsPerPage;
+  const endIndex = itemsPerPage === "ALL" ? filteredDocuments.length : startIndex + itemsPerPage;
   const paginatedDocuments = filteredDocuments.slice(startIndex, endIndex);
 
   // Reset page when filters change or items per page changes
@@ -1080,11 +1081,18 @@ export function DocumentsContent() {
           </Tabs>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {filteredDocuments.length > 10 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>Items per page:</span>
-                <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+                  if (value === "ALL") {
+                    setItemsPerPage("ALL");
+                  } else {
+                    setItemsPerPage(Number(value));
+                  }
+                  setPage(1);
+                }}>
                   <SelectTrigger className="w-20">
                     <SelectValue />
                   </SelectTrigger>
@@ -1093,10 +1101,11 @@ export function DocumentsContent() {
                     <SelectItem value="25">25</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                     <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="ALL">ALL</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Pagination>
+              {itemsPerPage !== "ALL" && totalPages > 1 && (
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
@@ -1143,10 +1152,11 @@ export function DocumentsContent() {
                       }}
                     />
                   </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
+              </PaginationContent>
+            </Pagination>
+            )}
+          </div>
+        )}
         </CardContent>
       </Card>
 
