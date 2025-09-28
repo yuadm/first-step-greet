@@ -535,7 +535,7 @@ export function ClientCompliancePeriodView({
 
   const handleDownloadPeriod = async (period: PeriodData) => {
     try {
-      // Fetch all client compliance records for this period
+      // Fetch all client compliance records for this period (don't filter by status - include all records that have data)
       const { data: periodRecords, error: recordsError } = await supabase
         .from('client_compliance_period_records')
         .select(`
@@ -551,8 +551,7 @@ export function ClientCompliancePeriodView({
           )
         `)
         .eq('client_compliance_type_id', complianceTypeId)
-        .eq('period_identifier', period.period_identifier)
-        .eq('status', 'completed');
+        .eq('period_identifier', period.period_identifier);
 
       if (recordsError) throw recordsError;
 
