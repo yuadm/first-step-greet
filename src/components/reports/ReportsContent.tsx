@@ -560,9 +560,10 @@ export function ReportsContent() {
           if (complianceError) throw complianceError;
           
           const transformedComplianceData = (complianceData || []).map(record => {
-            // For Annual Appraisal, don't show form_data JSON in notes
+            // For Annual Appraisal and Supervision, don't show form_data JSON in notes
             let notes = record.notes || '';
-            if (record.compliance_types?.name === 'Annual Appraisal' && notes) {
+            const taskName = record.compliance_types?.name;
+            if ((taskName === 'Annual Appraisal' || taskName === 'Supervision') && notes) {
               // If notes contains JSON (starts with { or [), show empty instead
               try {
                 JSON.parse(notes);
