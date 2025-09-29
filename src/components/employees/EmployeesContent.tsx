@@ -783,7 +783,11 @@ export function EmployeesContent() {
   };
 
   const handlePageSizeChange = (newPageSize: string) => {
-    setPageSize(parseInt(newPageSize));
+    if (newPageSize === "all") {
+      setPageSize(filteredEmployees.length || 999999);
+    } else {
+      setPageSize(parseInt(newPageSize));
+    }
     setPage(1); // Reset to first page when changing page size
   };
 
@@ -851,9 +855,10 @@ export function EmployeesContent() {
 
   // Pagination logic
   const totalCount = filteredEmployees.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
+  const effectivePageSize = pageSize >= 999999 ? totalCount : pageSize;
+  const totalPages = Math.max(1, Math.ceil(totalCount / effectivePageSize));
+  const startIndex = (page - 1) * effectivePageSize;
+  const endIndex = startIndex + effectivePageSize;
   const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
 
   // Calculate stats - apply the same branch access filtering as the table
@@ -1186,11 +1191,11 @@ export function EmployeesContent() {
             </div>
           )}
           
-          {totalCount > pageSize && (
+          {totalCount > pageSize && pageSize < 999999 && (
             <div className="flex items-center justify-between mt-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Items per page:</span>
-                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                <Select value={pageSize >= 999999 ? "all" : pageSize.toString()} onValueChange={handlePageSizeChange}>
                   <SelectTrigger className="w-20">
                     <SelectValue />
                   </SelectTrigger>
@@ -1199,6 +1204,7 @@ export function EmployeesContent() {
                     <SelectItem value="25">25</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                     <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
