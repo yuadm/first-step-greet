@@ -30,7 +30,7 @@ export function ApplicationStepSettings() {
 
   const fetchSteps = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('application_step_settings')
         .select('*')
         .order('display_order');
@@ -61,7 +61,7 @@ export function ApplicationStepSettings() {
     if (!editingId || !editForm) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('application_step_settings')
         .update({
           display_name: editForm.display_name,

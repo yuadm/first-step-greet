@@ -53,7 +53,7 @@ export function ApplicationFieldSettings() {
 
   const fetchFields = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('application_field_settings')
         .select('*')
         .order('step_name', { ascending: true })
@@ -84,7 +84,7 @@ export function ApplicationFieldSettings() {
         0
       );
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('application_field_settings')
         .insert({
           step_name: selectedStep,
@@ -116,7 +116,7 @@ export function ApplicationFieldSettings() {
 
   const updateField = async (id: string, updates: Partial<FieldSetting>) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('application_field_settings')
         .update(updates)
         .eq('id', id);
@@ -141,7 +141,7 @@ export function ApplicationFieldSettings() {
 
   const deleteField = async (id: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('application_field_settings')
         .delete()
         .eq('id', id);

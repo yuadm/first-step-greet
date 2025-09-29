@@ -679,7 +679,25 @@ export function ReportsContent() {
           }
           
           const csvContentCompliance = convertToCSV(allComplianceData, selectedColumns[selectedReport]);
-          filename = `compliance_report_${new Date().toISOString().split('T')[0]}`;
+          
+          // Helper function to format names for filename
+          const formatNameForFilename = (name: string) => {
+            return name.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
+          };
+
+          // Get compliance type name
+          const complianceType = complianceTypes.find(ct => ct.id === selectedComplianceType);
+          const formattedComplianceType = complianceType ? formatNameForFilename(complianceType.name) : 'UnknownCompliance';
+          
+          // Get branch name
+          const formattedBranch = selectedBranch === 'all' 
+            ? 'allbranches' 
+            : (() => {
+                const branch = branches.find(b => b.id === selectedBranch);
+                return branch ? formatNameForFilename(branch.name) : 'UnknownBranch';
+              })();
+
+          filename = `${formattedComplianceType}${selectedYear}${formattedBranch}`;
           downloadFile(csvContentCompliance, `${filename}.csv`, 'text/csv');
           break;
       }
