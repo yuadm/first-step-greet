@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { JobApplicationData } from './types';
 import { getTimeSlotMappings, mapTimeSlotIds } from '@/utils/timeSlotUtils';
+import { EnhancedSkillsSection } from './EnhancedSkillsSection';
 
 interface Props {
   data: JobApplicationData;
@@ -183,23 +184,7 @@ export function ReviewSummary({ data }: Props) {
         </div>
       </section>
 
-      <section>
-        <h3 className="text-lg font-semibold">Skills & Experience</h3>
-        <div className="mt-3">
-          {Object.keys(skills).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No skills listed.</p>
-          ) : (
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {Object.entries(skills).map(([k, v]) => (
-                <li key={k} className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{k}</span>
-                  <span className="text-muted-foreground">{String(v)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
+      <EnhancedSkillsSection data={data} />
 
       <section>
         <h3 className="text-lg font-semibold">Declaration</h3>

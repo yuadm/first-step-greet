@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { format, parseISO, isValid as isValidDateFns } from 'date-fns'
 import type { JobApplicationData } from '@/components/job-application/types'
 import { getTimeSlotMappings, mapTimeSlotIds } from '@/utils/timeSlotUtils'
+import { generateEnhancedSkills } from './enhancedSkills'
 
 // Format date to DD-MM-YYYY regardless of input (YYYY-MM-DD, ISO, etc.)
 function formatDateDDMMYYYY(value?: string): string {
@@ -253,6 +254,7 @@ function renderTwoColGrid(ctx: WriterCtx, pairs: Array<[string, string | undefin
     ctx.y -= rowHeight + rowGap
   }
 }
+
 // Helper to embed image (PNG/JPG) from URL
 async function embedImageFromUrl(doc: PDFDocument, url: string) {
   try {
@@ -273,7 +275,7 @@ async function embedImageFromUrl(doc: PDFDocument, url: string) {
 
 export async function generateJobApplicationPdf(
   data: JobApplicationData,
-  options?: { logoUrl?: string; companyName?: string }
+  options?: { logoUrl?: string; companyName?: string; applicationId?: string }
 ) {
   const doc = await PDFDocument.create()
   const page = doc.addPage()
@@ -449,8 +451,8 @@ addSpacer(ctx, 10)
 
   // Skills & Experience (2-column layout)
   addSectionTitle(ctx, '6. Skills & Experience')
-  const skills = data.skillsExperience?.skills || {}
-  const skillEntries = Object.entries(skills)
+  const enhancedSkills = await generateEnhancedSkills(data, options?.applicationId)
+  const skillEntries = Object.entries(enhancedSkills)
   if (skillEntries.length) {
     const skillPairs = skillEntries.map(([skill, level]) => [skill, String(level)]) as Array<[string, string]>
     renderTwoColGrid(ctx, skillPairs)
