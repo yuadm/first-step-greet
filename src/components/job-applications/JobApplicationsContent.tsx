@@ -323,12 +323,17 @@ Please complete and return this reference as soon as possible.`;
     });
 
   const handlePageSizeChange = (newPageSize: string) => {
-    setPageSize(parseInt(newPageSize));
+    if (newPageSize === "all") {
+      setPageSize(filteredApplications.length || 999999);
+    } else {
+      setPageSize(parseInt(newPageSize));
+    }
     setPage(1); // Reset to first page when changing page size
   };
 
-  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / pageSize));
-  const paginatedApplications = displayedApplications.slice((page - 1) * pageSize, page * pageSize);
+  const effectivePageSize = pageSize >= 999999 ? filteredApplications.length : pageSize;
+  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / effectivePageSize));
+  const paginatedApplications = displayedApplications.slice((page - 1) * effectivePageSize, page * effectivePageSize);
   if (loading) {
     return (
       <div className="p-6">
@@ -521,11 +526,11 @@ Please complete and return this reference as soon as possible.`;
         </CardContent>
       </Card>
 
-      {totalCount > pageSize && (
+      {totalCount > pageSize && pageSize < 999999 && (
         <div className="flex items-center justify-between mt-4">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Items per page:</span>
-            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+            <Select value={pageSize >= 999999 ? "all" : pageSize.toString()} onValueChange={handlePageSizeChange}>
               <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
@@ -534,6 +539,7 @@ Please complete and return this reference as soon as possible.`;
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>
                 <SelectItem value="100">100</SelectItem>
+                <SelectItem value="all">All</SelectItem>
               </SelectContent>
             </Select>
           </div>
