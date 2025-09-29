@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import type { JobApplicationData } from './types';
 import { getTimeSlotMappings, mapTimeSlotIds } from '@/utils/timeSlotUtils';
 import { EnhancedSkillsSection } from './EnhancedSkillsSection';
-import { capitalizeValue } from '@/lib/textUtils';
 
 interface Props {
   data: JobApplicationData;
@@ -23,13 +22,6 @@ export function ReviewSummary({ data }: Props) {
   const skills = data.skillsExperience?.skills || {};
   const dec = data.declaration || ({} as any);
   const tp = data.termsPolicy || ({} as any);
-
-  const Field = ({ label, value }: { label: string; value?: string | number | boolean }) => (
-    <div className="text-sm">
-      <span className="font-medium">{label}: </span>
-      <span className="text-muted-foreground">{capitalizeValue(value)}</span>
-    </div>
-  );
 
   // Helper function to format date from YYYY-MM-DD to DD-MM-YYYY
   const formatDateToDDMMYYYY = (dateString: string | null | undefined): string => {
