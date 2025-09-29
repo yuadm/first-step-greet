@@ -685,9 +685,36 @@ export function ReportsContent() {
             return name.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
           };
 
-          // Get compliance type name
+          // Get compliance type name and frequency
           const complianceType = complianceTypes.find(ct => ct.id === selectedComplianceType);
           const formattedComplianceType = complianceType ? formatNameForFilename(complianceType.name) : 'UnknownCompliance';
+          
+          // Generate frequency suffix based on compliance type frequency
+          let frequencySuffix = '';
+          if (complianceType) {
+            const frequency = complianceType.frequency.toLowerCase();
+            
+            if (frequency === 'quarterly') {
+              if (selectedQuarters.length === 1) {
+                frequencySuffix = selectedQuarters[0].toLowerCase(); // e.g., "q3"
+              } else if (selectedQuarters.length > 1) {
+                frequencySuffix = selectedQuarters.map(q => q.toLowerCase()).join(''); // e.g., "q1q2q3"
+              }
+            } else if (frequency === 'monthly') {
+              if (selectedMonths.length === 1) {
+                const monthNames = ['', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+                const monthIndex = parseInt(selectedMonths[0]);
+                frequencySuffix = monthNames[monthIndex] || selectedMonths[0];
+              } else if (selectedMonths.length > 1) {
+                frequencySuffix = 'multimonth';
+              }
+            } else if (frequency === 'weekly') {
+              frequencySuffix = 'weekly';
+            } else if (frequency === 'daily') {
+              frequencySuffix = 'daily';
+            }
+            // For annual and other frequencies, no suffix needed
+          }
           
           // Get branch name
           const formattedBranch = selectedBranch === 'all' 
@@ -697,7 +724,7 @@ export function ReportsContent() {
                 return branch ? formatNameForFilename(branch.name) : 'UnknownBranch';
               })();
 
-          filename = `${formattedComplianceType}${selectedYear}${formattedBranch}`;
+          filename = `${formattedComplianceType}${frequencySuffix}${selectedYear}${formattedBranch}`;
           downloadFile(csvContentCompliance, `${filename}.csv`, 'text/csv');
           break;
       }
