@@ -3,6 +3,7 @@ import { format, parseISO, isValid as isValidDateFns } from 'date-fns'
 import type { JobApplicationData } from '@/components/job-application/types'
 import { getTimeSlotMappings, mapTimeSlotIds } from '@/utils/timeSlotUtils'
 import { generateEnhancedSkills } from './enhancedSkills'
+import { capitalizeValue } from './textUtils'
 
 // Format date to DD-MM-YYYY regardless of input (YYYY-MM-DD, ISO, etc.)
 function formatDateDDMMYYYY(value?: string): string {
@@ -116,7 +117,7 @@ function addKeyValue(ctx: WriterCtx, label: string, value?: string) {
     // Wrapped label (bold, black)
     drawText(ctx, label, { bold: true })
     // Value (blue) on next lines
-    const valueText = value ?? ''
+    const valueText = capitalizeValue(value ?? '')
     if (valueText) {
       drawText(ctx, valueText, { blue: true })
     }
@@ -133,7 +134,7 @@ function addKeyValue(ctx: WriterCtx, label: string, value?: string) {
   })
 
   // Draw value in blue on the same line if it fits, otherwise wrap to next lines
-  const valueText = value ?? ''
+  const valueText = capitalizeValue(value ?? '')
   const remainingWidth = maxWidth - labelWidth
   const valueWidth = ctx.font.widthOfTextAtSize(valueText, ctx.fontSize)
 
@@ -228,7 +229,7 @@ function drawKeyValueInArea(
     color: rgb(ctx.color.r, ctx.color.g, ctx.color.b),
   })
   // Value (blue)
-  const used = drawTextAt(ctx, String(value ?? ''), x, yStart - ctx.lineHeight, width, { blue: true })
+  const used = drawTextAt(ctx, capitalizeValue(String(value ?? '')), x, yStart - ctx.lineHeight, width, { blue: true })
   return ctx.lineHeight + used
 }
 
