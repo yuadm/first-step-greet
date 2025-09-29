@@ -2213,6 +2213,10 @@ export type Database = {
         }
         Returns: Json
       }
+      generate_client_compliance_records_for_period: {
+        Args: { p_compliance_type_id: string; p_period_identifier: string }
+        Returns: number
+      }
       generate_compliance_records_for_period: {
         Args: { p_compliance_type_id: string; p_period_identifier: string }
         Returns: number
@@ -2309,6 +2313,10 @@ export type Database = {
       run_leave_annual_reset_if_needed: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      update_client_compliance_statuses: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       update_compliance_statuses: {
         Args: Record<PropertyKey, never>
