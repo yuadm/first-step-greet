@@ -230,7 +230,11 @@ export function ClientsContent() {
   };
 
   const handlePageSizeChange = (value: string) => {
-    setPageSize(parseInt(value));
+    if (value === "all") {
+      setPageSize(filteredAndSortedClients.length || 999999);
+    } else {
+      setPageSize(parseInt(value));
+    }
     setPage(1);
   };
 
@@ -468,9 +472,10 @@ export function ClientsContent() {
     });
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredAndSortedClients.length / pageSize);
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
+  const effectivePageSize = pageSize >= 999999 ? filteredAndSortedClients.length : pageSize;
+  const totalPages = Math.ceil(filteredAndSortedClients.length / effectivePageSize);
+  const startIndex = (page - 1) * effectivePageSize;
+  const endIndex = startIndex + effectivePageSize;
   const paginatedClients = filteredAndSortedClients.slice(startIndex, endIndex);
 
   if (loading) {
@@ -672,11 +677,11 @@ export function ClientsContent() {
             </Table>
           </div>
 
-          {filteredAndSortedClients.length > pageSize && (
+          {filteredAndSortedClients.length > pageSize && pageSize < 999999 && (
             <div className="flex items-center justify-between mt-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Items per page:</span>
-                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                <Select value={pageSize >= 999999 ? "all" : pageSize.toString()} onValueChange={handlePageSizeChange}>
                   <SelectTrigger className="w-20">
                     <SelectValue />
                   </SelectTrigger>
@@ -685,6 +690,7 @@ export function ClientsContent() {
                     <SelectItem value="25">25</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                     <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
