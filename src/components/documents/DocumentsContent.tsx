@@ -392,9 +392,10 @@ export function DocumentsContent() {
   const uniqueEmployeeCount = new Set(filteredDocuments.map(doc => doc.employee_id)).size;
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredDocuments.length / itemsPerPage);
-  const startIndex = (page - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  const effectiveItemsPerPage = itemsPerPage >= 999999 ? filteredDocuments.length : itemsPerPage;
+  const totalPages = Math.ceil(filteredDocuments.length / effectiveItemsPerPage);
+  const startIndex = (page - 1) * effectiveItemsPerPage;
+  const endIndex = startIndex + effectiveItemsPerPage;
   const paginatedDocuments = filteredDocuments.slice(startIndex, endIndex);
 
   // Reset page when filters change or items per page changes
@@ -1080,11 +1081,14 @@ export function DocumentsContent() {
           </Tabs>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {totalPages > 1 && itemsPerPage < 999999 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>Items per page:</span>
-                <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                <Select 
+                  value={itemsPerPage >= 999999 ? "all" : itemsPerPage.toString()} 
+                  onValueChange={(value) => setItemsPerPage(value === "all" ? filteredDocuments.length || 999999 : Number(value))}
+                >
                   <SelectTrigger className="w-20">
                     <SelectValue />
                   </SelectTrigger>
@@ -1093,6 +1097,7 @@ export function DocumentsContent() {
                     <SelectItem value="25">25</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                     <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
