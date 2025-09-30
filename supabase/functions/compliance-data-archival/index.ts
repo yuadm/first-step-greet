@@ -59,7 +59,16 @@ serve(async (req) => {
     const { data: complianceTypes, error: typesError } = await complianceTypesQuery;
     if (typesError) throw typesError;
 
-    // Process each compliance type
+    // Get client compliance types to process
+    let clientComplianceTypesQuery = supabase.from('client_compliance_types').select('id, name, frequency');
+    if (complianceTypeId) {
+      clientComplianceTypesQuery = clientComplianceTypesQuery.eq('id', complianceTypeId);
+    }
+
+    const { data: clientComplianceTypes, error: clientTypesError } = await clientComplianceTypesQuery;
+    if (clientTypesError) throw clientTypesError;
+
+    // Process each employee compliance type
     for (const type of complianceTypes) {
       console.log(`Processing archival for compliance type: ${type.name}`);
 
@@ -181,6 +190,124 @@ serve(async (req) => {
         totalEntriesProcessed += 1;
 
         console.log(`Archived ${recordCount} records for ${type.name} - ${archivalYear}`);
+      }
+    }
+
+    // Process each client compliance type
+    for (const type of clientComplianceTypes) {
+      console.log(`Processing archival for client compliance type: ${type.name}`);
+
+      const currentYear = new Date().getFullYear();
+      const retentionYears = 6;
+      const yearsToCheck = year ? [year] : 
+        Array.from({ length: 10 }, (_, i) => currentYear - retentionYears - i - 1);
+
+      for (const archivalYear of yearsToCheck) {
+        if (archivalYear >= currentYear - 1) continue;
+
+        console.log(`Checking archival readiness for client ${type.name} - ${archivalYear}`);
+
+        const { data: existingEntry } = await supabase
+          .from('compliance_data_retention')
+          .select('*')
+          .eq('compliance_type_id', type.id)
+          .eq('year', archivalYear)
+          .single();
+
+        if (existingEntry && existingEntry.archival_status === 'archived') {
+          console.log(`Already archived: client ${type.name} - ${archivalYear}`);
+          continue;
+        }
+
+        const { data: readinessCheck } = await supabase
+          .rpc('check_client_archival_readiness', {
+            p_compliance_type_id: type.id,
+            p_year: archivalYear
+          });
+
+        if (!readinessCheck && !forceArchival) {
+          console.log(`Not ready for archival: client ${type.name} - ${archivalYear}`);
+          continue;
+        }
+
+        const { data: statistics } = await supabase
+          .rpc('generate_client_compliance_statistics', {
+            p_compliance_type_id: type.id,
+            p_year: archivalYear
+          });
+
+        const { count: recordCount } = await supabase
+          .from('client_compliance_period_records')
+          .select('*', { count: 'exact', head: true })
+          .eq('client_compliance_type_id', type.id)
+          .gte('created_at', `${archivalYear}-01-01`)
+          .lt('created_at', `${archivalYear + 1}-01-01`);
+
+        if (recordCount === 0) {
+          console.log(`No records to archive for client ${type.name} - ${archivalYear}`);
+          continue;
+        }
+
+        const { data: archiveDates, error: archiveDatesError } = await supabase
+          .rpc('calculate_archive_dates', {
+            frequency: type.frequency,
+            base_year: archivalYear
+          });
+
+        if (archiveDatesError) {
+          console.error('Error calculating archive dates:', archiveDatesError);
+        }
+
+        const archiveData = {
+          compliance_type_id: type.id,
+          year: archivalYear,
+          period_type: type.frequency,
+          period_identifier: `${archivalYear}`,
+          data_summary: statistics || {},
+          completion_statistics: statistics || {},
+          archive_due_date: archiveDates?.[0]?.archive_due_date,
+          download_available_date: archiveDates?.[0]?.download_available_date,
+          archival_status: 'processing',
+          archival_started_at: new Date().toISOString(),
+          total_records_archived: recordCount || 0,
+          retention_policy_years: retentionYears,
+          archival_notes: `Auto-archived client compliance on ${new Date().toISOString()}`
+        };
+
+        if (existingEntry) {
+          const { error: updateError } = await supabase
+            .from('compliance_data_retention')
+            .update({
+              ...archiveData,
+              archival_completed_at: new Date().toISOString(),
+              archival_status: 'archived'
+            })
+            .eq('id', existingEntry.id);
+
+          if (updateError) throw updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('compliance_data_retention')
+            .insert({
+              ...archiveData,
+              archival_completed_at: new Date().toISOString(),
+              archival_status: 'archived'
+            });
+
+          if (insertError) throw insertError;
+        }
+
+        archivalEntries.push({
+          complianceType: `Client: ${type.name}`,
+          year: archivalYear,
+          recordsArchived: recordCount || 0,
+          statistics: statistics || {}
+        });
+
+        totalRecordsArchived += recordCount || 0;
+        totalEntriesProcessed += 1;
+
+        console.log(`Archived ${recordCount} client records for ${type.name} - ${archivalYear}`);
       }
     }
 

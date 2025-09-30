@@ -12,5 +12,8 @@ verify_jwt = false
 [functions.compliance-data-archival]
 verify_jwt = false
 
+[functions.compliance-notifications]
+verify_jwt = false
+
 [functions.generate-statement-pdf]
 verify_jwt = false

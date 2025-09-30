@@ -2197,6 +2197,10 @@ export type Database = {
         Args: { p_compliance_type_id: string; p_year: number }
         Returns: boolean
       }
+      check_client_archival_readiness: {
+        Args: { p_compliance_type_id: string; p_year: number }
+        Returns: boolean
+      }
       create_user_branch_permissions_table: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2216,6 +2220,10 @@ export type Database = {
       generate_client_compliance_records_for_period: {
         Args: { p_compliance_type_id: string; p_period_identifier: string }
         Returns: number
+      }
+      generate_client_compliance_statistics: {
+        Args: { p_compliance_type_id: string; p_year: number }
+        Returns: Json
       }
       generate_compliance_records_for_period: {
         Args: { p_compliance_type_id: string; p_period_identifier: string }
