@@ -884,9 +884,10 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
 
   // Pagination calculations
   const totalItems = filteredAndSortedEmployees.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  const effectiveItemsPerPage = itemsPerPage >= 999999 ? totalItems : itemsPerPage;
+  const totalPages = Math.ceil(totalItems / effectiveItemsPerPage);
+  const startIndex = (currentPage - 1) * effectiveItemsPerPage;
+  const endIndex = startIndex + effectiveItemsPerPage;
   const paginatedEmployees = filteredAndSortedEmployees.slice(startIndex, endIndex);
 
   // Reset to first page when filters change
@@ -903,7 +904,11 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
   };
 
   const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(parseInt(value));
+    if (value === "all") {
+      setItemsPerPage(filteredAndSortedEmployees.length || 999999);
+    } else {
+      setItemsPerPage(parseInt(value));
+    }
     setCurrentPage(1);
   };
 
@@ -1601,22 +1606,23 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                      </TableBody>
                  </Table>
                  
-                 {/* Pagination */}
-                 {totalPages > 1 && (
-                   <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
-                     <div className="flex items-center gap-2">
-                       <span className="text-sm text-muted-foreground">Items per page:</span>
-                       <select
-                         value={itemsPerPage}
-                         onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                         className="border border-border rounded px-2 py-1 text-sm bg-background"
-                       >
-                         <option value={10}>10</option>
-                         <option value={25}>25</option>
-                         <option value={50}>50</option>
-                         <option value={100}>100</option>
-                       </select>
-                     </div>
+                  {/* Pagination */}
+                  {totalPages > 1 && itemsPerPage < 999999 && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Items per page:</span>
+                        <select
+                          value={itemsPerPage >= 999999 ? "all" : itemsPerPage}
+                          onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                          className="border border-border rounded px-2 py-1 text-sm bg-background"
+                        >
+                          <option value={10}>10</option>
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                          <option value="all">All</option>
+                        </select>
+                      </div>
                      
                      <div className="flex items-center gap-2">
                        <Button
