@@ -41,7 +41,7 @@ export function useAutomationCronJobs() {
     queryKey: ['compliance-automation-cron-jobs'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc('get_compliance_automation_status');
+        .rpc('get_all_compliance_automation_status');
       
       if (error) throw error;
       return data as CronJobStatus[];

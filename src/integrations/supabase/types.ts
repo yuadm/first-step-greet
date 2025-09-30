@@ -2237,6 +2237,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_all_compliance_automation_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active: boolean
+          job_name: string
+          schedule: string
+        }[]
+      }
       get_compliance_automation_status: {
         Args: Record<PropertyKey, never>
         Returns: {
