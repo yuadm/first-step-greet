@@ -764,10 +764,7 @@ export function ClientCompliancePeriodView({
     if (selectedFilter) {
       filtered = filtered.filter(client => {
         const record = getClientRecordForPeriod(client.id, selectedPeriod);
-        // Check both status field and is_overdue flag
-        const status = (record?.status === 'overdue' || record?.is_overdue === true) 
-          ? 'overdue' 
-          : (record?.status || 'pending');
+        const status = record?.status || 'pending';
         
         switch (selectedFilter) {
           case 'completed':
@@ -802,15 +799,8 @@ export function ClientCompliancePeriodView({
           const aRecord = getClientRecordForPeriod(a.id, selectedPeriod);
           const bRecord = getClientRecordForPeriod(b.id, selectedPeriod);
           const statusOrder = { 'completed': 3, 'pending': 2, 'overdue': 1 };
-          // Check both status field and is_overdue flag for sorting
-          const aStatus = (aRecord?.status === 'overdue' || aRecord?.is_overdue === true) 
-            ? 'overdue' 
-            : (aRecord?.status || 'pending');
-          const bStatus = (bRecord?.status === 'overdue' || bRecord?.is_overdue === true) 
-            ? 'overdue' 
-            : (bRecord?.status || 'pending');
-          aValue = statusOrder[aStatus] || 0;
-          bValue = statusOrder[bStatus] || 0;
+          aValue = statusOrder[aRecord?.status || 'pending'] || 0;
+          bValue = statusOrder[bRecord?.status || 'pending'] || 0;
           break;
         case 'completion_date':
           const aRecordDate = getClientRecordForPeriod(a.id, selectedPeriod);
@@ -1034,10 +1024,7 @@ export function ClientCompliancePeriodView({
                        <TableBody>
                          {paginatedClients.map((client) => {
                           const record = getClientRecordForPeriod(client.id, selectedPeriod);
-                          // Check both status field and is_overdue flag
-                          const status = (record?.status === 'overdue' || record?.is_overdue === true) 
-                            ? 'overdue' 
-                            : (record?.status || 'pending');
+                          const status = record?.status || 'pending';
                           const isCompleted = status === 'completed' || status === 'compliant';
                       
                             return (
