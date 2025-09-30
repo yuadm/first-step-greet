@@ -207,13 +207,13 @@ serve(async (req) => {
       .from('compliance_data_retention')
       .update({ 
         archival_status: 'failed',
-        archival_notes: `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        archival_notes: `Failed: ${error.message}`
       })
       .eq('archival_status', 'processing');
 
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        error: error.message,
         success: false 
       }),
       {

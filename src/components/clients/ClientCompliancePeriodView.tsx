@@ -829,10 +829,9 @@ export function ClientCompliancePeriodView({
 
   // Pagination calculations
   const totalItems = filteredAndSortedClients.length;
-  const effectiveItemsPerPage = itemsPerPage >= 999999 ? totalItems : itemsPerPage;
-  const totalPages = Math.ceil(totalItems / effectiveItemsPerPage);
-  const startIndex = (currentPage - 1) * effectiveItemsPerPage;
-  const endIndex = startIndex + effectiveItemsPerPage;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
   const paginatedClients = filteredAndSortedClients.slice(startIndex, endIndex);
 
   // Reset to first page when search changes
@@ -845,11 +844,7 @@ export function ClientCompliancePeriodView({
   };
 
   const handleItemsPerPageChange = (value: string) => {
-    if (value === "all") {
-      setItemsPerPage(filteredAndSortedClients.length || 999999);
-    } else {
-      setItemsPerPage(parseInt(value));
-    }
+    setItemsPerPage(parseInt(value));
     setCurrentPage(1);
   };
 
@@ -1254,23 +1249,22 @@ export function ClientCompliancePeriodView({
                        </TableBody>
                       </Table>
                       
-                       {/* Pagination */}
-                       {totalPages > 1 && itemsPerPage < 999999 && (
-                         <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
-                           <div className="flex items-center gap-2">
-                             <span className="text-sm text-muted-foreground">Items per page:</span>
-                             <select
-                               value={itemsPerPage >= 999999 ? "all" : itemsPerPage}
-                               onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                               className="border border-border rounded px-2 py-1 text-sm bg-background"
-                             >
-                               <option value={10}>10</option>
-                               <option value={25}>25</option>
-                               <option value={50}>50</option>
-                               <option value={100}>100</option>
-                               <option value="all">All</option>
-                             </select>
-                           </div>
+                      {/* Pagination */}
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Items per page:</span>
+                            <select
+                              value={itemsPerPage}
+                              onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                              className="border border-border rounded px-2 py-1 text-sm bg-background"
+                            >
+                              <option value={10}>10</option>
+                              <option value={25}>25</option>
+                              <option value={50}>50</option>
+                              <option value={100}>100</option>
+                            </select>
+                          </div>
                           
                           <div className="flex items-center gap-2">
                             <Button

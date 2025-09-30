@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: false,
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'An unexpected error occurred',
+        details: error.message,
         timestamp: new Date().toISOString()
       }),
       {

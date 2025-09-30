@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Users, Calendar, FileX, Shield, TrendingUp, Clock, BarChart3, Activity, Zap, AlertTriangle } from "lucide-react";
+import { Users, Calendar, FileX, Shield, TrendingUp, Clock, BarChart3, Activity, Brain, Zap, AlertTriangle } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +8,7 @@ import { AnalyticsCard } from "./analytics/AnalyticsCard";
 import { EmployeeGrowthChart } from "./analytics/EmployeeGrowthChart";
 import { LeaveAnalyticsChart } from "./analytics/LeaveAnalyticsChart";
 import { ComplianceHeatMap } from "./analytics/ComplianceHeatMap";
+import { SmartInsightsPanel } from "./analytics/SmartInsightsPanel";
 import { useRealTimeAnalytics } from "@/hooks/useRealTimeAnalytics";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -162,7 +163,7 @@ export function Dashboard() {
 
       {/* Advanced Analytics Section */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Overview
@@ -170,6 +171,10 @@ export function Dashboard() {
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             Analytics
+          </TabsTrigger>
+          <TabsTrigger value="insights" className="flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            AI Insights
           </TabsTrigger>
           <TabsTrigger value="realtime" className="flex items-center gap-2">
             <Zap className="w-4 h-4" />
@@ -205,41 +210,6 @@ export function Dashboard() {
               <LeaveAnalyticsChart />
             </div>
           </div>
-
-          {/* Quick Actions Section */}
-          <div className="card-premium p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold">Quick Actions</h3>
-                <p className="text-sm text-muted-foreground">Common tasks and shortcuts</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 rounded-lg bg-primary-soft hover:bg-primary-soft/80 transition-colors cursor-pointer">
-                <Users className="w-6 h-6 text-primary mx-auto mb-2" />
-                <div className="text-sm font-medium">Add Employee</div>
-              </div>
-              
-              <div className="text-center p-4 rounded-lg bg-warning-soft hover:bg-warning-soft/80 transition-colors cursor-pointer">
-                <Calendar className="w-6 h-6 text-warning mx-auto mb-2" />
-                <div className="text-sm font-medium">Leave Request</div>
-              </div>
-              
-              <div className="text-center p-4 rounded-lg bg-success-soft hover:bg-success-soft/80 transition-colors cursor-pointer">
-                <Shield className="w-6 h-6 text-success mx-auto mb-2" />
-                <div className="text-sm font-medium">Compliance</div>
-              </div>
-              
-              <div className="text-center p-4 rounded-lg bg-muted hover:bg-muted/80 transition-colors cursor-pointer">
-                <FileX className="w-6 h-6 text-foreground mx-auto mb-2" />
-                <div className="text-sm font-medium">Documents</div>
-              </div>
-            </div>
-          </div>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
@@ -260,87 +230,59 @@ export function Dashboard() {
               </div>
               <DocumentCountryMap />
             </div>
+          </div>
+        </TabsContent>
 
-            {/* Additional Analytics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <TabsContent value="insights" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <div className="card-premium p-6">
+                <SmartInsightsPanel />
+              </div>
+            </div>
+            
+            <div className="space-y-6">
               <div className="card-premium p-6 space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-warning to-warning/80 flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-white" />
+                    <Clock className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">Trend Analysis</h3>
-                    <p className="text-sm text-muted-foreground">Performance metrics</p>
+                    <h3 className="text-lg font-semibold">Critical Alerts</h3>
+                    <p className="text-sm text-muted-foreground">Immediate attention needed</p>
                   </div>
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Employee Retention</span>
-                    <span className="text-sm font-medium text-success">94.2%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Compliance Rate</span>
-                    <span className="text-sm font-medium text-primary">87.5%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Document Processing</span>
-                    <span className="text-sm font-medium text-warning">+12%</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card-premium p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-success to-success/80 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Department Stats</h3>
-                    <p className="text-sm text-muted-foreground">Team performance</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Care Workers</span>
-                    <Badge variant="secondary">42</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Managers</span>
-                    <Badge variant="secondary">8</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Administrators</span>
-                    <Badge variant="secondary">3</Badge>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card-premium p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Upcoming Events</h3>
-                    <p className="text-sm text-muted-foreground">Next 7 days</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="text-sm">
-                    <div className="font-medium">Training Session</div>
-                    <div className="text-muted-foreground">Tomorrow, 2:00 PM</div>
-                  </div>
-                  <div className="text-sm">
-                    <div className="font-medium">Compliance Review</div>
-                    <div className="text-muted-foreground">Friday, 10:00 AM</div>
-                  </div>
-                  <div className="text-sm">
-                    <div className="font-medium">Team Meeting</div>
-                    <div className="text-muted-foreground">Next Monday</div>
-                  </div>
+                  {metrics.overdueCompliance > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-destructive-soft border border-destructive/20">
+                      <div>
+                        <p className="text-sm font-medium text-destructive">Overdue Compliance</p>
+                        <p className="text-xs text-muted-foreground">{metrics.overdueCompliance} tasks</p>
+                      </div>
+                      <Badge variant="destructive">High</Badge>
+                    </div>
+                  )}
+                  
+                  {metrics.expiringDocuments > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-warning-soft border border-warning/20">
+                      <div>
+                        <p className="text-sm font-medium text-warning">Expiring Documents</p>
+                        <p className="text-xs text-muted-foreground">Next 7 days</p>
+                      </div>
+                      <Badge variant="secondary">{metrics.expiringDocuments}</Badge>
+                    </div>
+                  )}
+                  
+                  {metrics.pendingApprovals > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary-soft border border-primary/20">
+                      <div>
+                        <p className="text-sm font-medium text-primary">Pending Approvals</p>
+                        <p className="text-xs text-muted-foreground">Waiting for review</p>
+                      </div>
+                      <Badge variant="secondary">{metrics.pendingApprovals}</Badge>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -402,77 +344,31 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div className="space-y-6">
-              <div className="card-premium p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-warning to-warning/80 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Critical Alerts</h3>
-                    <p className="text-sm text-muted-foreground">Immediate attention needed</p>
-                  </div>
+            <div className="card-premium p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-success to-success/80 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-white" />
                 </div>
-                
-                <div className="space-y-3">
-                  {metrics.overdueCompliance > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-destructive-soft border border-destructive/20">
-                      <div>
-                        <p className="text-sm font-medium text-destructive">Overdue Compliance</p>
-                        <p className="text-xs text-muted-foreground">{metrics.overdueCompliance} tasks</p>
-                      </div>
-                      <Badge variant="destructive">High</Badge>
-                    </div>
-                  )}
-                  
-                  {metrics.expiringDocuments > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-warning-soft border border-warning/20">
-                      <div>
-                        <p className="text-sm font-medium text-warning">Expiring Documents</p>
-                        <p className="text-xs text-muted-foreground">Next 7 days</p>
-                      </div>
-                      <Badge variant="secondary">{metrics.expiringDocuments}</Badge>
-                    </div>
-                  )}
-                  
-                  {metrics.pendingApprovals > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary-soft border border-primary/20">
-                      <div>
-                        <p className="text-sm font-medium text-primary">Pending Approvals</p>
-                        <p className="text-xs text-muted-foreground">Waiting for review</p>
-                      </div>
-                      <Badge variant="secondary">{metrics.pendingApprovals}</Badge>
-                    </div>
-                  )}
+                <div>
+                  <h3 className="text-lg font-semibold">System Health</h3>
+                  <p className="text-sm text-muted-foreground">Real-time monitoring</p>
                 </div>
               </div>
-
-              <div className="card-premium p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-success to-success/80 flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">System Health</h3>
-                    <p className="text-sm text-muted-foreground">Real-time monitoring</p>
-                  </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 rounded-lg bg-primary-soft">
+                  <div className="text-2xl font-bold text-primary">99.9%</div>
+                  <div className="text-sm text-muted-foreground">Uptime</div>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center p-4 rounded-lg bg-primary-soft">
-                    <div className="text-2xl font-bold text-primary">99.9%</div>
-                    <div className="text-sm text-muted-foreground">Uptime</div>
-                  </div>
-                  
-                  <div className="text-center p-4 rounded-lg bg-warning-soft">
-                    <div className="text-2xl font-bold text-warning">{metrics.pendingApprovals}</div>
-                    <div className="text-sm text-muted-foreground">Pending</div>
-                  </div>
-                  
-                  <div className="text-center p-4 rounded-lg bg-muted">
-                    <div className="text-2xl font-bold">24/7</div>
-                    <div className="text-sm text-muted-foreground">Monitoring</div>
-                  </div>
+                <div className="text-center p-4 rounded-lg bg-warning-soft">
+                  <div className="text-2xl font-bold text-warning">{metrics.pendingApprovals}</div>
+                  <div className="text-sm text-muted-foreground">Pending</div>
+                </div>
+                
+                <div className="text-center p-4 rounded-lg bg-muted">
+                  <div className="text-2xl font-bold">24/7</div>
+                  <div className="text-sm text-muted-foreground">Monitoring</div>
                 </div>
               </div>
             </div>
