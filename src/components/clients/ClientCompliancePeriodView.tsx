@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Calendar, Download, AlertTriangle, Plus, Eye, Edit, Trash2, Filter, Users, Search, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, Clock, Shield } from "lucide-react";
+import { ClientCompliancePeriodDialog } from "./ClientCompliancePeriodDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1401,14 +1402,10 @@ export function ClientCompliancePeriodView({
             {periods.map((period, index) => (
               <Card 
                 key={period.period_identifier} 
-                className={`card-premium transition-all duration-300 cursor-pointer hover:shadow-lg ${
+                className={`card-premium transition-all duration-300 hover:shadow-lg ${
                   period.is_current ? 'ring-2 ring-primary border-primary bg-primary/5' : ''
-                } ${selectedPeriod === period.period_identifier ? 'ring-2 ring-secondary border-secondary' : ''}`}
+                }`}
                 style={{ animationDelay: `${index * 50}ms` }}
-                onClick={() => {
-                  setSelectedPeriod(period.period_identifier);
-                  setActiveTab("status");
-                }}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -1449,7 +1446,7 @@ export function ClientCompliancePeriodView({
                   )}
 
                   {/* Download Button */}
-                  {period.download_available && (
+                  {period.download_available ? (
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -1462,6 +1459,23 @@ export function ClientCompliancePeriodView({
                       <Download className="w-4 h-4 mr-2" />
                       Download Archive
                     </Button>
+                  ) : (
+                    <ClientCompliancePeriodDialog
+                      complianceTypeId={complianceTypeId}
+                      complianceTypeName={complianceTypeName}
+                      periodIdentifier={period.period_identifier}
+                      frequency={frequency}
+                      trigger={
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="w-full bg-gradient-primary hover:opacity-90"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Details
+                        </Button>
+                      }
+                    />
                   )}
                 </CardContent>
               </Card>
