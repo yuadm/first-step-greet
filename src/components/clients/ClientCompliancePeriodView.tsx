@@ -704,6 +704,39 @@ export function ClientCompliancePeriodView({
     );
   };
 
+  const isPeriodOverdue = (periodIdentifier: string, frequency: string, currentDate: Date): boolean => {
+    const now = currentDate;
+    
+    switch (frequency.toLowerCase()) {
+      case 'annual': {
+        const year = parseInt(periodIdentifier);
+        const endOfYear = new Date(year, 11, 31); // December 31st
+        return now > endOfYear;
+      }
+      case 'monthly': {
+        const [year, month] = periodIdentifier.split('-').map(Number);
+        const endOfMonth = new Date(year, month, 0); // Last day of the month
+        return now > endOfMonth;
+      }
+      case 'quarterly': {
+        const [year, quarterStr] = periodIdentifier.split('-');
+        const quarter = parseInt(quarterStr.replace('Q', ''));
+        const endMonth = quarter * 3; // Q1=3, Q2=6, Q3=9, Q4=12
+        const endOfQuarter = new Date(parseInt(year), endMonth, 0); // Last day of quarter
+        return now > endOfQuarter;
+      }
+      case 'bi-annual': {
+        const [year, halfStr] = periodIdentifier.split('-');
+        const half = parseInt(halfStr.replace('H', ''));
+        const endMonth = half === 1 ? 6 : 12;
+        const endOfHalf = new Date(parseInt(year), endMonth, 0);
+        return now > endOfHalf;
+      }
+      default:
+        return false;
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
@@ -1031,14 +1064,24 @@ export function ClientCompliancePeriodView({
                           <TableHead className="font-semibold">Actions</TableHead>
                         </TableRow>
                        </TableHeader>
-                       <TableBody>
-                         {paginatedClients.map((client) => {
-                          const record = getClientRecordForPeriod(client.id, selectedPeriod);
-                          // Check both status field and is_overdue flag
-                          const status = (record?.status === 'overdue' || record?.is_overdue === true) 
-                            ? 'overdue' 
-                            : (record?.status || 'pending');
-                          const isCompleted = status === 'completed' || status === 'compliant';
+                        <TableBody>
+                          {paginatedClients.map((client) => {
+                           const record = getClientRecordForPeriod(client.id, selectedPeriod);
+                           
+                           // Determine status with period-based overdue check
+                           let status: string;
+                           if (record?.status === 'completed' || record?.completion_date) {
+                             status = 'completed';
+                           } else if (record?.status === 'overdue' || record?.is_overdue === true) {
+                             status = 'overdue';
+                           } else {
+                             // Check if period is overdue based on actual dates
+                             const now = new Date();
+                             const isOverdue = isPeriodOverdue(selectedPeriod, frequency, now);
+                             status = isOverdue ? 'overdue' : (record?.status || 'pending');
+                           }
+                           
+                           const isCompleted = status === 'completed' || status === 'compliant';
                       
                             return (
                               <TableRow key={client.id} className={`group hover:bg-gradient-to-r hover:from-muted/20 hover:to-transparent transition-all duration-200 border-b border-border/50 ${getStatusColor(status)}`}>
