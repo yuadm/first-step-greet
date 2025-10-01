@@ -18,7 +18,6 @@ export function useUserPermissions() {
   const [permissions, setPermissions] = useState<UserPermission[]>([]);
   const [branchAccess, setBranchAccess] = useState<UserBranchAccess[]>([]);
   const [loading, setLoading] = useState(true);
-  const [permissionsReady, setPermissionsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,7 +25,6 @@ export function useUserPermissions() {
       fetchUserPermissions();
     } else {
       setLoading(false);
-      setPermissionsReady(true);
       setPermissions([]);
       setBranchAccess([]);
     }
@@ -56,7 +54,6 @@ export function useUserPermissions() {
       setPermissions(permData || []);
       setBranchAccess(branchData || []);
       setError(null);
-      setPermissionsReady(true);
     } catch (error: any) {
       console.error('Error fetching user permissions:', error);
       setError(error.message);
@@ -72,7 +69,6 @@ export function useUserPermissions() {
       // Set empty arrays if there's an error and no more retries
       setPermissions([]);
       setBranchAccess([]);
-      setPermissionsReady(true);
     } finally {
       setLoading(false);
     }
@@ -134,7 +130,6 @@ export function useUserPermissions() {
     permissions,
     branchAccess,
     loading,
-    permissionsReady,
     error,
     hasPermission,
     hasPageAccess,
