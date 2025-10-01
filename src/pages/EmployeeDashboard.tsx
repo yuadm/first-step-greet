@@ -331,7 +331,7 @@ function EmployeeDashboardContent() {
               </CardTitle>
               <Button 
                 onClick={() => setShowLeaveDialog(true)} 
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2.5 min-h-[44px] w-full sm:w-auto"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2.5 min-h-[44px] w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Request Holiday
