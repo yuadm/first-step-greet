@@ -46,32 +46,6 @@ export function LeaveTable({
     }
   };
 
-  const getRowColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-50/50 hover:bg-green-50/80';
-      case 'rejected':
-        return 'bg-red-50/50 hover:bg-red-50/80';
-      case 'pending':
-        return 'bg-amber-50/50 hover:bg-amber-50/80';
-      default:
-        return 'hover:bg-muted/50';
-    }
-  };
-
-  const getIconColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'text-green-600';
-      case 'rejected':
-        return 'text-red-600';
-      case 'pending':
-        return 'text-amber-600';
-      default:
-        return 'text-muted-foreground';
-    }
-  };
-
   return (
     <Card className="card-premium animate-fade-in">
       <CardHeader>
@@ -153,7 +127,7 @@ export function LeaveTable({
               </TableHeader>
               <TableBody>
                 {leaves.map((leave) => (
-                  <TableRow key={leave.id} className={`${getRowColor(leave.status)} transition-colors`}>
+                  <TableRow key={leave.id} className="hover:bg-muted/50 transition-colors">
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">
@@ -198,7 +172,7 @@ export function LeaveTable({
                             variant="outline"
                             onClick={() => onViewLeave(leave)}
                           >
-                            <Eye className={`h-4 w-4 ${getIconColor(leave.status)}`} />
+                            <Eye className="h-4 w-4" />
                           </Button>
                         )}
                         {onEditLeave && (
@@ -207,7 +181,7 @@ export function LeaveTable({
                             variant="outline"
                             onClick={() => onEditLeave(leave)}
                           >
-                            <Edit className={`h-4 w-4 ${getIconColor(leave.status)}`} />
+                            <Edit className="h-4 w-4" />
                           </Button>
                         )}
                         {onDeleteLeave && (
