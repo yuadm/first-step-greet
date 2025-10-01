@@ -89,15 +89,10 @@ export const fetchClientCompliancePeriodData = async (complianceTypeId: string, 
 
   if (clientsError) throw clientsError;
 
-  // Fetch client compliance records with audit information
+  // Fetch client compliance records
   const { data: recordsData, error: recordsError } = await supabase
     .from('client_compliance_period_records')
-    .select(`
-      *,
-      completed_by_user:completed_by(name),
-      created_by_user:created_by(name),  
-      updated_by_user:updated_by(name)
-    `)
+    .select('*')
     .eq('client_compliance_type_id', complianceTypeId)
     .order('completion_date', { ascending: false });
 
