@@ -191,8 +191,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const payload = {
-      sender: { name: `${finalCompanyName} HR`, email: senderEmail },
-      replyTo: { name: `${finalCompanyName} HR`, email: senderEmail },
+      sender: { name: finalCompanyName, email: senderEmail },
+      replyTo: { name: finalCompanyName, email: senderEmail },
       to: [{ email: referenceEmail, name: referenceName }],
       subject: emailSubject,
       htmlContent: emailHtml,
