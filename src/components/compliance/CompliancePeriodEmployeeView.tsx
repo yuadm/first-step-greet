@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompliancePeriodEmployeeData } from "@/hooks/queries/useCompliancePeriodQueries";
 import { ComplianceRecordViewDialog } from "./ComplianceRecordViewDialog";
+import { AddComplianceRecordModal } from "./AddComplianceRecordModal";
 
 interface Employee {
   id: string;
@@ -77,7 +78,7 @@ export function CompliancePeriodEmployeeView({
   const { companySettings } = useCompany();
 
   // Fetch data using React Query
-  const { data, isLoading, error } = useCompliancePeriodEmployeeData(complianceTypeId, periodIdentifier);
+  const { data, isLoading, error, refetch } = useCompliancePeriodEmployeeData(complianceTypeId, periodIdentifier);
   
   const employees = data?.employees || [];
   const records = data?.records || [];
@@ -303,15 +304,30 @@ export function CompliancePeriodEmployeeView({
                     Employee Status ({totalItems} of {employees.length} employees)
                   </CardTitle>
                   
-                  {/* Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search employees..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
+                  <div className="flex items-center gap-2">
+                    <AddComplianceRecordModal
+                      complianceTypeId={complianceTypeId}
+                      complianceTypeName={complianceTypeName}
+                      frequency={frequency}
+                      periodIdentifier={periodIdentifier}
+                      onRecordAdded={refetch}
+                      trigger={
+                        <Button size="sm" className="gap-2">
+                          <Plus className="w-4 h-4" />
+                          Add Record
+                        </Button>
+                      }
                     />
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search employees..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
+                      />
+                    </div>
                   </div>
                 </div>
               </CardHeader>
