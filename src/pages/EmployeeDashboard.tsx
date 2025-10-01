@@ -264,17 +264,17 @@ function EmployeeDashboardContent() {
           <Card className="hover:shadow-lg transition-all duration-300 animate-fade-in" style={{
           animationDelay: '0.3s'
         }}>
-            <CardHeader className="pb-3 sm:pb-4">
+            <CardHeader className="pb-3 sm:pb-3">
               <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
-                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="h-8 w-8 sm:h-9 sm:w-9 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
                   <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <span className="truncate">Personal Information</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 sm:space-y-4">
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
+              <div className="space-y-3 sm:space-y-3">
+                <div className="grid grid-cols-1 gap-3 sm:gap-3">
                   {[{
                   label: 'Full Name',
                   value: employee.name,
@@ -291,7 +291,7 @@ function EmployeeDashboardContent() {
                   label: 'Job Title',
                   value: employee.job_title || 'Not specified',
                   icon: CheckCircle
-                }].map((item, index) => <div key={item.label} className="flex items-start sm:items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg sm:rounded-xl hover:bg-gray-50 transition-colors min-h-[44px]">
+                }].map((item, index) => <div key={item.label} className="flex items-start sm:items-center gap-3 sm:gap-3 p-2 sm:p-2.5 rounded-lg sm:rounded-xl hover:bg-gray-50 transition-colors min-h-[44px]">
                       <div className="h-7 w-7 sm:h-8 sm:w-8 bg-gray-100 rounded-md sm:rounded-lg flex items-center justify-center flex-shrink-0 mt-1 sm:mt-0">
                         <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600" />
                       </div>
