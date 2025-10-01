@@ -21,8 +21,8 @@ interface CompanyContextType {
 }
 
 const defaultSettings: CompanySettings = {
-  name: "Daryel Care",
-  tagline: "HR Management",
+  name: "",
+  tagline: "",
   address: "",
   phone: "",
   email: "",
