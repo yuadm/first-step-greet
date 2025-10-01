@@ -61,12 +61,27 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const senderEmail = emailSettings?.sender_email || "noreply@yourcompany.com";
-    const senderDisplayName = emailSettings?.sender_name || "Your Company";
+    const senderName = emailSettings?.sender_name || "HR Team";
+
+    // Get company settings from database if not provided
+    let finalCompanyName = companyName && companyName.trim().length > 0 ? companyName : null;
+    
+    if (!finalCompanyName) {
+      const { data: companySettings, error: companyError } = await supabase
+        .from('company_settings')
+        .select('name')
+        .single();
+      
+      if (companyError) {
+        console.error("Error fetching company settings:", companyError);
+      }
+      
+      finalCompanyName = companySettings?.name || 'Your Company';
+    }
 
     // Derive site origin from request for building public URL
     const siteOrigin = req.headers.get("origin") || `${new URL(req.url).protocol}//${new URL(req.url).host}`;
     const referenceToken = crypto.randomUUID();
-    const safeCompanyName = companyName && companyName.trim().length > 0 ? companyName : 'Your Company Name';
     const roleTitle = positionAppliedFor && positionAppliedFor.trim().length > 0 ? positionAppliedFor : 'Support Worker/Carer';
     const referenceLink = `${siteOrigin}/reference?token=${referenceToken}`;
 
@@ -82,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
         <p style="margin:0 0 16px 0;">Dear ${referenceName},</p>
         <p style="margin:0 0 16px 0;">I hope this message finds you well.</p>
         <p style="margin:0 0 16px 0;">
-          ${applicantName} has applied for the position of ${roleTitle} at ${safeCompanyName}, and listed you as a previous employer. 
+          ${applicantName} has applied for the position of ${roleTitle} at ${finalCompanyName}, and listed you as a previous employer. 
           As part of our recruitment process, we would appreciate it if you could provide an employment reference regarding 
           ${applicantFirstName}'s time at ${employmentDetails?.company || referenceCompany}${employmentDetails?.startDate && employmentDetails?.endDate ? `, from ${employmentDetails.startDate} to ${employmentDetails.endDate}` : ''}.
         </p>
@@ -93,7 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
         <p style="margin:0 0 16px 0;">Dear ${referenceName},</p>
         <p style="margin:0 0 16px 0;">I hope this message finds you well.</p>
         <p style="margin:0 0 16px 0;">
-          ${applicantName} has applied for the position of ${roleTitle} at ${safeCompanyName} and has listed you as a character reference. 
+          ${applicantName} has applied for the position of ${roleTitle} at ${finalCompanyName} and has listed you as a character reference. 
           We would appreciate it if you could provide your perspective on ${applicantFirstName}'s personal qualities, integrity, reliability, and overall character.
         </p>
       `;
@@ -129,7 +144,7 @@ const handler = async (req: Request): Promise<Response> => {
         </p>
         <p style="word-break:break-all; color:#374151; font-size:12px;">${referenceLink}</p>
         <p style="margin:24px 0 0 0;">Thank you very much for your time and assistance.</p>
-        <p style="margin:16px 0 0 0;">Best regards,<br/>Yusuf<br/>Hr<br/>${safeCompanyName}</p>
+        <p style="margin:16px 0 0 0;">Best regards,<br/>${senderName}<br/>HR Team<br/>${finalCompanyName}</p>
       </div>
       <div class="footer">
         <p style="margin:0;">This link is unique to you. Please do not share it.</p>
@@ -158,7 +173,7 @@ const handler = async (req: Request): Promise<Response> => {
         reference_name: referenceName,
         reference_company: referenceCompany,
         reference_address: referenceAddress,
-        company_name: safeCompanyName,
+        company_name: finalCompanyName,
         reference_type: referenceType,
         token: referenceToken,
         reference_data: {
@@ -176,8 +191,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const payload = {
-      sender: { name: `${safeCompanyName} HR`, email: senderEmail },
-      replyTo: { name: `${safeCompanyName} HR`, email: senderEmail },
+      sender: { name: `${finalCompanyName} HR`, email: senderEmail },
+      replyTo: { name: `${finalCompanyName} HR`, email: senderEmail },
       to: [{ email: referenceEmail, name: referenceName }],
       subject: emailSubject,
       htmlContent: emailHtml,
