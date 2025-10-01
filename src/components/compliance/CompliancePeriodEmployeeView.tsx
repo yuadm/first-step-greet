@@ -22,8 +22,10 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
-import { useCompliancePeriodEmployeeData } from "@/hooks/queries/useCompliancePeriodQueries";
+import { useCompliancePeriodEmployeeData, compliancePeriodQueryKeys } from "@/hooks/queries/useCompliancePeriodQueries";
 import { ComplianceRecordViewDialog } from "./ComplianceRecordViewDialog";
+import { AddComplianceRecordModal } from "./AddComplianceRecordModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Employee {
   id: string;
@@ -75,6 +77,7 @@ export function CompliancePeriodEmployeeView({
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const { toast } = useToast();
   const { companySettings } = useCompany();
+  const queryClient = useQueryClient();
 
   // Fetch data using React Query
   const { data, isLoading, error } = useCompliancePeriodEmployeeData(complianceTypeId, periodIdentifier);
@@ -398,6 +401,26 @@ export function CompliancePeriodEmployeeView({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
+                            {!item.record && (
+                              <AddComplianceRecordModal
+                                employeeId={item.employee.id}
+                                employeeName={item.employee.name}
+                                complianceTypeId={complianceTypeId}
+                                complianceTypeName={complianceTypeName}
+                                frequency={frequency}
+                                periodIdentifier={periodIdentifier}
+                                onRecordAdded={() => {
+                                  queryClient.invalidateQueries({ 
+                                    queryKey: compliancePeriodQueryKeys.employees(complianceTypeId, periodIdentifier) 
+                                  });
+                                }}
+                                trigger={
+                                  <Button variant="outline" size="sm" className="hover-scale">
+                                    Add Record
+                                  </Button>
+                                }
+                              />
+                            )}
                             {item.record && (
                               <Button
                                 variant="ghost"
