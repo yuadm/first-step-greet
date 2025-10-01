@@ -83,13 +83,6 @@ export function CompliancePeriodEmployeeView({
   const employees = data?.employees || [];
   const records = data?.records || [];
 
-  // Refetch data when dialog opens
-  useEffect(() => {
-    if (open) {
-      refetch();
-    }
-  }, [open, refetch]);
-
   // Calculate employee status using useMemo
   const employeeStatusList = useMemo(() => {
     if (!employees || !records) return [];
@@ -351,15 +344,8 @@ export function CompliancePeriodEmployeeView({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedEmployeeStatusList.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          {searchTerm ? 'No employees found matching your search' : 'No employees available'}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedEmployeeStatusList.map((item) => (
-                        <TableRow key={item.employee.id} className={getStatusColor(item.status)}>
+                    {paginatedEmployeeStatusList.map((item) => (
+                      <TableRow key={item.employee.id} className={getStatusColor(item.status)}>
                         <TableCell className="font-medium">
                           {item.employee.name}
                         </TableCell>
@@ -578,8 +564,7 @@ export function CompliancePeriodEmployeeView({
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                    )}
+                    ))}
                   </TableBody>
                  </Table>
                 

@@ -92,24 +92,16 @@ export function ClientCompliancePeriodDialog({
   const { getAccessibleBranches, isAdmin } = usePermissions();
 
   // Fetch data using React Query
-  const accessibleBranches = getAccessibleBranches();
   const { data, isLoading, error, refetch } = useClientCompliancePeriodData(
     complianceTypeId, 
     frequency, 
     parseInt(periodIdentifier.split('-')[0]), 
-    accessibleBranches,
+    getAccessibleBranches(),
     isAdmin
   );
   
   const clients = data?.clients || [];
   const records = data?.records || [];
-
-  // Refetch data when dialog opens
-  useEffect(() => {
-    if (open) {
-      refetch();
-    }
-  }, [open, refetch]);
 
   // Filter records for the specific period
   const periodRecords = useMemo(() => {
@@ -448,42 +440,35 @@ export function ClientCompliancePeriodDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedClients.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                          {searchTerm ? 'No clients found matching your search' : 'No clients available'}
+                    {paginatedClients.map(({ client, record, status }) => (
+                      <TableRow 
+                        key={client.id} 
+                        className="group hover:bg-gradient-to-r hover:from-muted/20 hover:to-transparent transition-all duration-200 border-b border-border/50"
+                      >
+                        <TableCell className="font-medium">{client.name}</TableCell>
+                        <TableCell>{client.branches?.name || 'N/A'}</TableCell>
+                        <TableCell>{getStatusBadge(status)}</TableCell>
+                        <TableCell>
+                          {record?.completion_date 
+                            ? new Date(record.completion_date).toLocaleDateString()
+                            : '-'
+                          }
                         </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedClients.map(({ client, record, status }) => (
-                        <TableRow 
-                          key={client.id} 
-                          className="group hover:bg-gradient-to-r hover:from-muted/20 hover:to-transparent transition-all duration-200 border-b border-border/50"
-                        >
-                          <TableCell className="font-medium">{client.name}</TableCell>
-                          <TableCell>{client.branches?.name || 'N/A'}</TableCell>
-                          <TableCell>{getStatusBadge(status)}</TableCell>
-                          <TableCell>
-                            {record?.completion_date 
-                              ? new Date(record.completion_date).toLocaleDateString()
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {record ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewRecord(client, record)}
-                                  className="hover:bg-primary/10"
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  View
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="ghost"
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {record ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewRecord(client, record)}
+                                className="hover:bg-primary/10"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                View
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleAddSpotCheck(client)}
                                 className="hover:bg-primary/10"
@@ -493,10 +478,9 @@ export function ClientCompliancePeriodDialog({
                               </Button>
                             )}
                           </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
                 
