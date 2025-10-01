@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { Calendar, FileText, User, LogOut, Clock, CheckCircle, XCircle, Shield, Plus } from 'lucide-react';
 import { LeaveRequestDialog } from '@/components/employee/LeaveRequestDialog';
 import { DocumentUploadDialog } from '@/components/employee/DocumentUploadDialog';
@@ -37,7 +37,6 @@ function EmployeeDashboardContent() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showDocumentDialog, setShowDocumentDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState('leaves');
   const [statements, setStatements] = useState([]);
   const [selectedStatement, setSelectedStatement] = useState(null);
   const [isStatementFormOpen, setIsStatementFormOpen] = useState(false);
@@ -311,142 +310,160 @@ function EmployeeDashboardContent() {
           </div>
         </div>
 
-        {/* Leave Management & Statements Tabs */}
-        <Card className="hover:shadow-lg transition-all duration-300 animate-fade-in" style={{
-        animationDelay: '0.5s'
-      }}>
-          <CardHeader className="pb-3 sm:pb-4">
-            <div className="flex flex-col gap-3 sm:gap-4">
+        {/* Leave Management Section */}
+        <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 animate-fade-in" style={{
+          animationDelay: '0.5s'
+        }}>
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+          <CardHeader className="pb-3 sm:pb-4 pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
-                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <span className="truncate">Leave Management & Statements</span>
+                <div>
+                  <span className="block truncate">Leave Management</span>
+                  <span className="text-xs sm:text-sm font-normal text-muted-foreground">Track and request your time off</span>
+                </div>
               </CardTitle>
+              <Button 
+                onClick={() => setShowLeaveDialog(true)} 
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2.5 min-h-[44px] w-full sm:w-auto"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Request Leave
+              </Button>
             </div>
           </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-blue-50 to-purple-50 p-1 rounded-xl border-0 h-10 sm:h-auto">
-                <TabsTrigger value="leaves" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 rounded-lg font-medium text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden xs:inline sm:inline">Leaves</span>
-                </TabsTrigger>
-                <TabsTrigger value="statements" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 transition-all duration-300 rounded-lg font-medium text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                  <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden xs:inline sm:inline">Statements</span>
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="leaves" className="mt-4 sm:mt-6">
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="flex justify-end">
-                    <Button onClick={() => setShowLeaveDialog(true)} className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200 text-sm sm:text-base px-3 sm:px-4 py-2 min-h-[44px]">
-                      <Plus className="w-4 h-4 mr-1 sm:mr-2" />
-                      <span className="hidden xs:inline">Request </span>Leave
+          <CardContent className="px-3 sm:px-6 pb-6">
+            {leaveRequests.length === 0 ? (
+              <div className="text-center py-12 sm:py-16">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
+                </div>
+                <p className="text-gray-600 mb-2 text-base sm:text-lg font-medium">No leave requests found</p>
+                <p className="text-sm sm:text-base text-gray-500">Click "Request Leave" above to submit your first request</p>
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                {leaveRequests.map((leave, index) => (
+                  <div 
+                    key={leave.id} 
+                    className="relative flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 bg-gradient-to-br from-white to-blue-50/30 border-2 border-blue-100 rounded-2xl hover:border-blue-300 hover:shadow-lg transition-all duration-300 group"
+                    style={{ animationDelay: `${0.1 * index}s` }}
+                  >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full blur-2xl group-hover:from-blue-500/10 transition-all duration-300" />
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0 relative z-10">
+                      <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300">
+                        {getStatusIcon(leave.status)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-gray-900 text-base sm:text-lg mb-1">{leave.leave_type.name}</h4>
+                            <p className="text-sm sm:text-base text-gray-600 font-medium">
+                              {format(new Date(leave.start_date), 'MMM dd')} - {format(new Date(leave.end_date), 'MMM dd, yyyy')}
+                            </p>
+                          </div>
+                          <Badge 
+                            variant={getStatusColor(leave.status)} 
+                            className="text-xs sm:text-sm px-3 py-1.5 min-h-[28px] w-fit font-medium shadow-sm"
+                          >
+                            {leave.status}
+                          </Badge>
+                        </div>
+                        {leave.notes && (
+                          <p className="text-sm sm:text-base text-gray-600 mt-3 p-3 bg-white/60 rounded-lg border border-blue-100">
+                            {leave.notes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Care Worker Statements Section */}
+        <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 animate-fade-in" style={{
+          animationDelay: '0.6s'
+        }}>
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500" />
+          <CardHeader className="pb-3 sm:pb-4 pt-6">
+            <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div>
+                <span className="block truncate">Care Worker Statements</span>
+                <span className="text-xs sm:text-sm font-normal text-muted-foreground">Complete your assigned statements</span>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 sm:px-6 pb-6">
+            {statements.length === 0 ? (
+              <div className="text-center py-12 sm:py-16">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-purple-500" />
+                </div>
+                <p className="text-gray-600 mb-2 text-base sm:text-lg font-medium">No statements assigned</p>
+                <p className="text-sm sm:text-base text-gray-500">Your care worker statements will appear here when assigned</p>
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                {statements.map((statement, index) => (
+                  <div 
+                    key={statement.id} 
+                    className="relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-gradient-to-br from-white to-purple-50/30 border-2 border-purple-100 rounded-2xl hover:border-purple-300 hover:shadow-lg transition-all duration-300 group"
+                    style={{ animationDelay: `${0.1 * index}s` }}
+                  >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/5 to-transparent rounded-full blur-2xl group-hover:from-purple-500/10 transition-all duration-300" />
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0 relative z-10">
+                      <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300">
+                        <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 mb-2">
+                          <span className="font-bold text-gray-900 text-base sm:text-lg">{statement.care_worker_name}</span>
+                          <Badge 
+                            variant={
+                              statement.status === 'approved' ? 'default' : 
+                              statement.status === 'submitted' ? 'secondary' : 
+                              statement.status === 'rejected' ? 'destructive' : 
+                              'outline'
+                            } 
+                            className="text-xs sm:text-sm px-3 py-1.5 w-fit font-medium shadow-sm"
+                          >
+                            {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
+                          </Badge>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm sm:text-base text-gray-700 font-medium">
+                            <span className="text-gray-500">Client:</span> {statement.client_name}
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-600">
+                            <span className="text-gray-500">Report Date:</span> {new Date(statement.report_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant={statement.status === 'draft' || statement.status === 'rejected' ? 'default' : 'outline'}
+                      size="lg"
+                      onClick={() => {
+                        setSelectedStatement(statement);
+                        setIsStatementFormOpen(true);
+                      }}
+                      className="text-sm sm:text-base px-6 min-h-[44px] w-full sm:w-auto relative z-10 shadow-md hover:shadow-lg transition-all duration-300"
+                    >
+                      {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete Statement' : 'View Statement'}
                     </Button>
                   </div>
-                  
-                  {leaveRequests.length === 0 ? (
-                    <div className="text-center py-8 sm:py-12">
-                      <div className="h-12 w-12 sm:h-16 sm:w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                        <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">No leave requests found</p>
-                      <p className="text-xs sm:text-sm text-gray-400">Your leave requests will appear here</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 sm:space-y-4">
-                      {leaveRequests.map((leave, index) => (
-                        <div key={leave.id} className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200" style={{
-                          animationDelay: `${0.1 * index}s`
-                        }}>
-                          <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                              {getStatusIcon(leave.status)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4">
-                                <div className="min-w-0 flex-1">
-                                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{leave.leave_type.name}</h4>
-                                  <p className="text-xs sm:text-sm text-gray-600 leading-tight mt-0.5">
-                                    {format(new Date(leave.start_date), 'MMM dd')} - {format(new Date(leave.end_date), 'MMM dd, yyyy')}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2 sm:gap-3 mt-2 sm:mt-0">
-                                  <Badge variant={getStatusColor(leave.status)} className="text-xs px-2 py-1 min-h-[24px]">
-                                    {leave.status}
-                                  </Badge>
-                                </div>
-                              </div>
-                              {leave.notes && (
-                                <p className="text-xs sm:text-sm text-gray-500 mt-2 line-clamp-2 leading-relaxed">
-                                  {leave.notes}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="statements" className="mt-4 sm:mt-6">
-                <div className="space-y-3 sm:space-y-4">
-                  {statements.length === 0 ? (
-                    <div className="text-center py-8 sm:py-12">
-                      <div className="h-12 w-12 sm:h-16 sm:w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                        <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">No statements assigned</p>
-                      <p className="text-xs sm:text-sm text-gray-400">Your care worker statements will appear here</p>
-                    </div>
-                  ) : (
-                    <div className="grid gap-3 sm:gap-4">
-                      {statements.map((statement) => (
-                        <div key={statement.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border-2 border-gray-100 rounded-xl hover:border-primary/20 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                              <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1 sm:mb-2">
-                                <span className="font-semibold text-gray-900 text-sm sm:text-base truncate">{statement.care_worker_name}</span>
-                                <Badge variant={statement.status === 'approved' ? 'default' : statement.status === 'submitted' ? 'secondary' : statement.status === 'rejected' ? 'destructive' : 'outline'} className="text-xs px-2 py-1 w-fit">
-                                  {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
-                                </Badge>
-                              </div>
-                              <p className="text-xs sm:text-sm text-gray-600 truncate">Client: {statement.client_name}</p>
-                              <p className="text-xs text-gray-500 leading-tight">Report Date: {new Date(statement.report_date).toLocaleDateString()}</p>
-                            </div>
-                          </div>
-                          <div className="flex justify-end mt-2 sm:mt-0">
-                            <Button
-                              variant={statement.status === 'draft' || statement.status === 'rejected' ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => {
-                                setSelectedStatement(statement);
-                                setIsStatementFormOpen(true);
-                              }}
-                              className="text-xs sm:text-sm px-3 sm:px-4 min-h-[36px] sm:min-h-[40px]"
-                            >
-                              <span className="hidden sm:inline">
-                                {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete' : 'View'}
-                              </span>
-                              <span className="sm:hidden">
-                                {statement.status === 'draft' || statement.status === 'rejected' ? 'Edit' : 'View'}
-                              </span>
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                   )}
-                </div>
-              </TabsContent>
-            </Tabs>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
