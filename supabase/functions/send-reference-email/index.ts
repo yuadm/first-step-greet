@@ -69,14 +69,18 @@ const handler = async (req: Request): Promise<Response> => {
     if (!finalCompanyName) {
       const { data: companySettings, error: companyError } = await supabase
         .from('company_settings')
-        .select('name')
-        .single();
+        .select('name, updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       
       if (companyError) {
         console.error("Error fetching company settings:", companyError);
+      } else {
+        console.log("Fetched company settings name:", companySettings?.name);
       }
       
-      finalCompanyName = companySettings?.name || 'Your Company';
+      finalCompanyName = companySettings?.name?.trim()?.length ? companySettings.name : 'Your Company';
     }
 
     // Derive site origin from request for building public URL
