@@ -160,9 +160,12 @@ function EmployeeDashboardContent() {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <Button variant="outline" onClick={handleSignOut} className="hover:bg-red-50 hover:border-red-200 hover:text-red-700 text-xs sm:text-sm px-2 sm:px-4">
-                <LogOut className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Sign Out</span>
+              <Button 
+                onClick={handleSignOut} 
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-md hover:shadow-lg transition-all duration-200 text-xs sm:text-sm px-3 sm:px-4"
+              >
+                <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                <span>Logout</span>
               </Button>
             </div>
           </div>
