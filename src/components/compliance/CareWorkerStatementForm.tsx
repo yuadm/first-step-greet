@@ -148,7 +148,7 @@ export function CareWorkerStatementForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>
             Care Worker Statement - {statement.care_worker_name}
@@ -258,11 +258,11 @@ export function CareWorkerStatementForm({
             </div>
 
             {/* Digital Signature */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label>Digital Signature</Label>
               {formData.digital_signature ? (
-                <div className="space-y-2">
-                  <div className="border rounded-lg p-4 bg-muted">
+                <div className="space-y-3">
+                  <div className="border rounded-lg p-4 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20">
                     <img 
                       src={formData.digital_signature} 
                       alt="Digital signature" 
@@ -275,6 +275,7 @@ export function CareWorkerStatementForm({
                       variant="outline" 
                       size="sm"
                       onClick={() => setShowSignature(true)}
+                      className="w-full sm:w-auto bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0 hover:from-violet-600 hover:to-purple-600"
                     >
                       <Signature className="mr-2 h-4 w-4" />
                       Update Signature
@@ -287,6 +288,7 @@ export function CareWorkerStatementForm({
                     type="button" 
                     variant="outline"
                     onClick={() => setShowSignature(true)}
+                    className="w-full sm:w-auto bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0 hover:from-violet-600 hover:to-purple-600"
                   >
                     <Signature className="mr-2 h-4 w-4" />
                     Add Digital Signature
@@ -298,30 +300,46 @@ export function CareWorkerStatementForm({
             {/* Signature Canvas Modal */}
             {showSignature && !readOnly && (
               <Dialog open={showSignature} onOpenChange={setShowSignature}>
-                <DialogContent>
+                <DialogContent className="w-[95vw] max-w-lg p-4 sm:p-6">
                   <DialogHeader>
-                    <DialogTitle>Digital Signature</DialogTitle>
+                    <DialogTitle className="text-center bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                      Digital Signature
+                    </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <div className="border rounded-lg">
+                    <div className="border-2 border-violet-200 rounded-lg overflow-hidden bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20">
                       <SignatureCanvas
                         ref={signatureRef}
                         canvasProps={{
-                          width: 500,
+                          width: Math.min(450, window.innerWidth - 80),
                           height: 200,
-                          className: 'signature-canvas'
+                          className: 'signature-canvas w-full'
                         }}
                       />
                     </div>
-                    <div className="flex justify-between">
-                      <Button type="button" variant="outline" onClick={clearSignature}>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:justify-between">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={clearSignature}
+                        className="w-full sm:w-auto"
+                      >
                         Clear
                       </Button>
-                      <div className="space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setShowSignature(false)}>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setShowSignature(false)}
+                          className="w-full sm:w-auto"
+                        >
                           Cancel
                         </Button>
-                        <Button type="button" onClick={handleSaveSignature}>
+                        <Button 
+                          type="button" 
+                          onClick={handleSaveSignature}
+                          className="w-full sm:w-auto bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
+                        >
                           Save Signature
                         </Button>
                       </div>
@@ -344,8 +362,13 @@ export function CareWorkerStatementForm({
 
           {/* Action Buttons */}
           {!readOnly && (
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                className="w-full sm:w-auto"
+              >
                 Cancel
               </Button>
               
@@ -354,6 +377,7 @@ export function CareWorkerStatementForm({
                 variant="outline"
                 onClick={(e) => handleSubmit(e, true)}
                 disabled={loading}
+                className="w-full sm:w-auto"
               >
                 <Save className="mr-2 h-4 w-4" />
                 Save Draft
@@ -363,6 +387,7 @@ export function CareWorkerStatementForm({
                 type="button"
                 onClick={(e) => handleSubmit(e, false)}
                 disabled={loading || !formData.digital_signature || !formData.statement}
+                className="w-full sm:w-auto"
               >
                 <Send className="mr-2 h-4 w-4" />
                 Submit Statement
