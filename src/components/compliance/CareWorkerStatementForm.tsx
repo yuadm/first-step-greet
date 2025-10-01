@@ -69,8 +69,8 @@ export function CareWorkerStatementForm({
         client_address: statement.client_address,
         report_date: new Date(statement.report_date),
         statement: statement.statement || "",
-        person_completing_report: statement.person_completing_report || statement.care_worker_name,
-        position: statement.position || "Support Worker",
+        person_completing_report: statement.person_completing_report || "",
+        position: statement.position || "",
         completion_date: statement.completion_date ? new Date(statement.completion_date) : new Date(),
         digital_signature: statement.digital_signature || "",
       });
@@ -181,30 +181,6 @@ export function CareWorkerStatementForm({
                 <Label>Report Date</Label>
                 <Input value={format(formData.report_date, "PPP")} disabled className="bg-muted" />
               </div>
-              <div>
-                <Label htmlFor="person_completing_report">Person Completing Report</Label>
-                <Input
-                  id="person_completing_report"
-                  value={formData.person_completing_report}
-                  onChange={(e) => setFormData({ ...formData, person_completing_report: e.target.value })}
-                  disabled
-                  required
-                  placeholder="Enter your full name"
-                  className="bg-muted"
-                />
-              </div>
-              <div>
-                <Label htmlFor="position">Position</Label>
-                <Input
-                  id="position"
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                  disabled
-                  required
-                  placeholder="Enter your job title/position"
-                  className="bg-muted"
-                />
-              </div>
             </div>
           </div>
 
@@ -222,6 +198,31 @@ export function CareWorkerStatementForm({
                 disabled={readOnly}
                 required
               />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="person_completing_report">Person Completing Report</Label>
+                <Input
+                  id="person_completing_report"
+                  value={formData.person_completing_report}
+                  onChange={(e) => setFormData({ ...formData, person_completing_report: e.target.value })}
+                  disabled={readOnly}
+                  required
+                  placeholder="Enter your full name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="position">Position</Label>
+                <Input
+                  id="position"
+                  value={formData.position}
+                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  disabled={readOnly}
+                  required
+                  placeholder="Enter your job title/position"
+                />
+              </div>
             </div>
           </div>
 
