@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,10 +22,9 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
-import { useCompliancePeriodEmployeeData, compliancePeriodQueryKeys } from "@/hooks/queries/useCompliancePeriodQueries";
+import { useCompliancePeriodEmployeeData } from "@/hooks/queries/useCompliancePeriodQueries";
 import { ComplianceRecordViewDialog } from "./ComplianceRecordViewDialog";
 import { AddComplianceRecordModal } from "./AddComplianceRecordModal";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface Employee {
   id: string;
@@ -77,10 +76,9 @@ export function CompliancePeriodEmployeeView({
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const { toast } = useToast();
   const { companySettings } = useCompany();
-  const queryClient = useQueryClient();
 
   // Fetch data using React Query
-  const { data, isLoading, error } = useCompliancePeriodEmployeeData(complianceTypeId, periodIdentifier);
+  const { data, isLoading, error, refetch } = useCompliancePeriodEmployeeData(complianceTypeId, periodIdentifier);
   
   const employees = data?.employees || [];
   const records = data?.records || [];
@@ -306,15 +304,30 @@ export function CompliancePeriodEmployeeView({
                     Employee Status ({totalItems} of {employees.length} employees)
                   </CardTitle>
                   
-                  {/* Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search employees..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
+                  <div className="flex items-center gap-2">
+                    <AddComplianceRecordModal
+                      complianceTypeId={complianceTypeId}
+                      complianceTypeName={complianceTypeName}
+                      frequency={frequency}
+                      periodIdentifier={periodIdentifier}
+                      onRecordAdded={refetch}
+                      trigger={
+                        <Button size="sm" className="gap-2">
+                          <Plus className="w-4 h-4" />
+                          Add Record
+                        </Button>
+                      }
                     />
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search employees..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
+                      />
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -401,26 +414,6 @@ export function CompliancePeriodEmployeeView({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {!item.record && (
-                              <AddComplianceRecordModal
-                                employeeId={item.employee.id}
-                                employeeName={item.employee.name}
-                                complianceTypeId={complianceTypeId}
-                                complianceTypeName={complianceTypeName}
-                                frequency={frequency}
-                                periodIdentifier={periodIdentifier}
-                                onRecordAdded={() => {
-                                  queryClient.invalidateQueries({ 
-                                    queryKey: compliancePeriodQueryKeys.employees(complianceTypeId, periodIdentifier) 
-                                  });
-                                }}
-                                trigger={
-                                  <Button variant="outline" size="sm" className="hover-scale">
-                                    Add Record
-                                  </Button>
-                                }
-                              />
-                            )}
                             {item.record && (
                               <Button
                                 variant="ghost"
