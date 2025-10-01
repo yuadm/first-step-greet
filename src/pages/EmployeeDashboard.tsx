@@ -334,7 +334,7 @@ function EmployeeDashboardContent() {
                 className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base px-4 sm:px-6 py-2.5 min-h-[44px] w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Request Leave
+                Request Holiday
               </Button>
             </div>
           </CardHeader>
@@ -345,7 +345,7 @@ function EmployeeDashboardContent() {
                   <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500" />
                 </div>
                 <p className="text-gray-600 mb-2 text-base sm:text-lg font-medium">No leave requests found</p>
-                <p className="text-sm sm:text-base text-gray-500">Click "Request Leave" above to submit your first request</p>
+                <p className="text-sm sm:text-base text-gray-500">Click "Request Holiday" above to submit your first request</p>
               </div>
             ) : (
               <div className="space-y-3 sm:space-y-4">

@@ -158,7 +158,7 @@ export function LeaveRequestDialog({ open, onOpenChange, employeeId, onSuccess }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Request Leave</DialogTitle>
+          <DialogTitle>Request Holiday</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-1">
