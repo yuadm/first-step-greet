@@ -179,7 +179,7 @@ export function useCompliancePeriodEmployeeData(complianceTypeId: string, period
 
 export function useClientCompliancePeriodData(complianceTypeId: string, frequency: string, selectedYear: number, accessibleBranches?: string[], isAdmin?: boolean) {
   return useQuery({
-    queryKey: [...compliancePeriodQueryKeys.clientPeriods(complianceTypeId, selectedYear), accessibleBranches, isAdmin],
+    queryKey: compliancePeriodQueryKeys.clientPeriods(complianceTypeId, selectedYear),
     queryFn: () => fetchClientCompliancePeriodData(complianceTypeId, frequency, selectedYear, accessibleBranches, isAdmin),
     enabled: !!complianceTypeId,
     ...cacheConfig.dynamic,
