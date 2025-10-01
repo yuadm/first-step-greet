@@ -70,7 +70,9 @@ const handler = async (req: Request): Promise<Response> => {
       const { data: companySettings, error: companyError } = await supabase
         .from('company_settings')
         .select('name')
-        .single();
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       
       if (companyError) {
         console.error("Error fetching company settings:", companyError);
