@@ -69,8 +69,8 @@ export function CareWorkerStatementForm({
         client_address: statement.client_address,
         report_date: new Date(statement.report_date),
         statement: statement.statement || "",
-        person_completing_report: statement.person_completing_report || "",
-        position: statement.position || "",
+        person_completing_report: statement.person_completing_report || statement.care_worker_name,
+        position: statement.position || "Support Worker",
         completion_date: statement.completion_date ? new Date(statement.completion_date) : new Date(),
         digital_signature: statement.digital_signature || "",
       });
@@ -181,26 +181,6 @@ export function CareWorkerStatementForm({
                 <Label>Report Date</Label>
                 <Input value={format(formData.report_date, "PPP")} disabled className="bg-muted" />
               </div>
-            </div>
-          </div>
-
-          {/* Statement Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold border-b pb-2">Statement</h3>
-            <div>
-              <Label htmlFor="statement">Care Worker Statement</Label>
-              <Textarea
-                id="statement"
-                placeholder="Enter your detailed statement here..."
-                value={formData.statement}
-                onChange={(e) => setFormData({ ...formData, statement: e.target.value })}
-                rows={8}
-                disabled={readOnly}
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="person_completing_report">Person Completing Report</Label>
                 <Input
@@ -223,6 +203,23 @@ export function CareWorkerStatementForm({
                   placeholder="Enter your job title/position"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Statement Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-b pb-2">Statement</h3>
+            <div>
+              <Label htmlFor="statement">Care Worker Statement</Label>
+              <Textarea
+                id="statement"
+                placeholder="Enter your detailed statement here..."
+                value={formData.statement}
+                onChange={(e) => setFormData({ ...formData, statement: e.target.value })}
+                rows={8}
+                disabled={readOnly}
+                required
+              />
             </div>
           </div>
 
