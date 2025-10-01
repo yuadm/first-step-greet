@@ -102,9 +102,25 @@ export function ClientCompliancePeriodDialog({
   const clients = data?.clients || [];
   const records = data?.records || [];
 
+  console.log('ClientCompliancePeriodDialog Debug:', {
+    periodIdentifier,
+    frequency,
+    complianceTypeId,
+    totalClients: clients.length,
+    totalRecords: records.length,
+    accessibleBranches: getAccessibleBranches(),
+    isAdmin
+  });
+
   // Filter records for the specific period
   const periodRecords = useMemo(() => {
-    return records.filter(r => r.period_identifier === periodIdentifier);
+    const filtered = records.filter(r => r.period_identifier === periodIdentifier);
+    console.log('Filtered period records:', {
+      periodIdentifier,
+      filteredCount: filtered.length,
+      allRecordPeriods: records.map(r => r.period_identifier)
+    });
+    return filtered;
   }, [records, periodIdentifier]);
 
   const isPeriodOverdue = (periodIdentifier: string, frequency: string, currentDate: Date): boolean => {
