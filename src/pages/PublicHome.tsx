@@ -48,7 +48,7 @@ function PublicHomeContent() {
               <Building className="w-10 h-10 text-primary" />
             )}
           </div>
-          <h1 className="text-4xl font-bold mb-2">{!companyLoading ? companySettings.name : 'Welcome to Our Company'}</h1>
+          <h1 className="text-4xl font-bold mb-2">{companySettings.name}</h1>
           <p className="text-lg text-muted-foreground mb-2">{!companyLoading && companySettings.tagline}</p>
           <p className="text-lg text-muted-foreground">Choose what you need to do today</p>
         </div>
