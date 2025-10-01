@@ -65,11 +65,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Get company settings from database if not provided
     let finalCompanyName = companyName && companyName.trim().length > 0 ? companyName : null;
+    let companyLogo = null;
     
     if (!finalCompanyName) {
       const { data: companySettings, error: companyError } = await supabase
         .from('company_settings')
-        .select('name')
+        .select('name, logo')
         .single();
       
       if (companyError) {
@@ -77,6 +78,17 @@ const handler = async (req: Request): Promise<Response> => {
       }
       
       finalCompanyName = companySettings?.name || 'Your Company';
+      companyLogo = companySettings?.logo;
+    } else {
+      // If company name was provided, still fetch the logo
+      const { data: companySettings, error: companyError } = await supabase
+        .from('company_settings')
+        .select('logo')
+        .single();
+      
+      if (!companyError) {
+        companyLogo = companySettings?.logo;
+      }
     }
 
     // Derive site origin from request for building public URL
@@ -124,6 +136,8 @@ const handler = async (req: Request): Promise<Response> => {
     <style>
       body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f9fafb;margin:0;padding:0}
       .container{max-width:640px;margin:0 auto;background:#fff}
+      .header{padding:24px 32px;border-bottom:1px solid #e5e7eb}
+      .logo{max-width:120px;height:auto}
       .content{padding:32px}
       .btn{display:inline-block;background:#111827;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600}
       .footer{background:#f3f4f6;padding:20px;text-align:center;color:#6b7280;font-size:12px}
@@ -131,6 +145,7 @@ const handler = async (req: Request): Promise<Response> => {
   </head>
   <body>
     <div class="container">
+      ${companyLogo ? `<div class="header"><img src="${companyLogo}" alt="${finalCompanyName}" class="logo" /></div>` : ''}
       <div class="content">
         ${emailContent}
         <p style="margin:0 0 16px 0;">To provide your reference, please click the link below and complete the short form:</p>
