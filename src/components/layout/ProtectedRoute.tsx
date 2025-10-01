@@ -18,11 +18,12 @@ export function ProtectedRoute({
   fallbackPath = "/admin" 
 }: ProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
-  const { hasPageAccess, loading: permissionsLoading, error, isAdmin } = usePermissions();
+  const { hasPageAccess, loading: permissionsLoading, permissionsReady, error, isAdmin } = usePermissions();
   const location = useLocation();
 
   // Show loading state while auth or permissions are loading
-  if (authLoading || permissionsLoading) {
+  // For admins, allow immediate access to prevent flashing
+  if (authLoading || (permissionsLoading && !isAdmin)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
         <Card className="w-80">
@@ -81,7 +82,8 @@ export function ProtectedRoute({
   }
 
   // Check page access permission (admins bypass this check)
-  if (requiredPage && !isAdmin && !hasPageAccess(requiredPage)) {
+  // Only show access restriction if permissions are ready to avoid flashing
+  if (requiredPage && !isAdmin && permissionsReady && !hasPageAccess(requiredPage)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
         <Card className="w-96">

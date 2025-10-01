@@ -11,6 +11,7 @@ interface PermissionsContextType {
   getAccessibleBranches: () => string[];
   isAdmin: boolean;
   loading: boolean;
+  permissionsReady: boolean;
   error: string | null;
 }
 
@@ -18,7 +19,7 @@ const PermissionsContext = createContext<PermissionsContextType | undefined>(und
 
 export function PermissionsProvider({ children }: { children: ReactNode }) {
   const { userRole } = useAuth();
-  const { hasPageAccess, hasFeatureAccess, hasPageAction, getAccessibleBranches, loading, error } = useUserPermissions();
+  const { hasPageAccess, hasFeatureAccess, hasPageAction, getAccessibleBranches, loading, permissionsReady, error } = useUserPermissions();
   const [allBranches, setAllBranches] = useState<string[]>([]);
   
   const isAdmin = userRole === 'admin';
@@ -54,6 +55,7 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     },
     isAdmin,
     loading,
+    permissionsReady,
     error
   };
 
