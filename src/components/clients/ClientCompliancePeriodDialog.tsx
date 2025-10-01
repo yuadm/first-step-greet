@@ -128,9 +128,19 @@ export function ClientCompliancePeriodDialog({
         const endOfQuarter = new Date(parseInt(year), endMonth, 0);
         return now > endOfQuarter;
       }
-      case 'bi-annual': {
-        const [year, halfStr] = periodIdentifier.split('-');
-        const half = parseInt(halfStr.replace('H', ''));
+      case 'weekly': {
+        const [year, weekStr] = periodIdentifier.split('-W');
+        const weekNum = parseInt(weekStr);
+        // Calculate end of week (Sunday)
+        const startOfYear = new Date(parseInt(year), 0, 1);
+        const daysToAdd = (weekNum * 7) - startOfYear.getDay();
+        const endOfWeek = new Date(parseInt(year), 0, daysToAdd);
+        return now > endOfWeek;
+      }
+      case 'bi-annual':
+      case 'biannual': {
+        const [year, halfStr] = periodIdentifier.split('-H');
+        const half = parseInt(halfStr);
         const endMonth = half === 1 ? 6 : 12;
         const endOfHalf = new Date(parseInt(year), endMonth, 0);
         return now > endOfHalf;

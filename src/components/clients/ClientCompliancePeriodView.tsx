@@ -165,6 +165,16 @@ export function ClientCompliancePeriodView({
         return now.getFullYear().toString();
       case 'monthly':
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      case 'weekly':
+        // Calculate week number (ISO week)
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+        const weekNum = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+        return `${now.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+      case 'bi-annual':
+      case 'biannual':
+        const half = now.getMonth() < 6 ? 1 : 2;
+        return `${now.getFullYear()}-H${half}`;
       default:
         return now.getFullYear().toString();
     }
@@ -234,6 +244,55 @@ export function ClientCompliancePeriodView({
                 archive_due_date: shouldShowDownload ? `${archiveDueYear}-01-01` : undefined,
                 download_available_date: shouldShowDownload ? `${archiveDueYear - 1}-10-01` : undefined,
                 is_current: isCurrentMonth
+              });
+            }
+          }
+          break;
+        
+        case 'weekly':
+          if (year === selectedYear) {
+            const now = new Date();
+            const currentWeek = year === currentYear ? (() => {
+              const startOfYear = new Date(year, 0, 1);
+              const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+              return Math.ceil((days + startOfYear.getDay() + 1) / 7);
+            })() : 52;
+            
+            for (let week = currentWeek; week >= 1; week--) {
+              const periodId = `${year}-W${String(week).padStart(2, '0')}`;
+              const isCurrentWeek = year === currentYear && week === currentWeek;
+              const weekStats = calculatePeriodStats(periodId, clientsData, recordsData);
+              periods.push({
+                period_identifier: periodId,
+                year,
+                record_count: weekStats.record_count,
+                completion_rate: weekStats.completion_rate,
+                download_available: shouldShowDownload,
+                archive_due_date: shouldShowDownload ? `${archiveDueYear}-01-01` : undefined,
+                download_available_date: shouldShowDownload ? `${archiveDueYear - 1}-10-01` : undefined,
+                is_current: isCurrentWeek
+              });
+            }
+          }
+          break;
+        
+        case 'bi-annual':
+        case 'biannual':
+          if (year === selectedYear) {
+            const currentHalf = year === currentYear ? (new Date().getMonth() < 6 ? 1 : 2) : 2;
+            for (let half = currentHalf; half >= 1; half--) {
+              const periodId = `${year}-H${half}`;
+              const isCurrentHalf = year === currentYear && ((new Date().getMonth() < 6 && half === 1) || (new Date().getMonth() >= 6 && half === 2));
+              const halfStats = calculatePeriodStats(periodId, clientsData, recordsData);
+              periods.push({
+                period_identifier: periodId,
+                year,
+                record_count: halfStats.record_count,
+                completion_rate: halfStats.completion_rate,
+                download_available: shouldShowDownload,
+                archive_due_date: shouldShowDownload ? `${archiveDueYear}-01-01` : undefined,
+                download_available_date: shouldShowDownload ? `${archiveDueYear - 1}-10-01` : undefined,
+                is_current: isCurrentHalf
               });
             }
           }
@@ -675,6 +734,13 @@ export function ClientCompliancePeriodView({
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         return `${monthNames[parseInt(month) - 1]} ${year}`;
+      case 'weekly':
+        const [weekYear, weekNum] = periodId.split('-W');
+        return `Week ${parseInt(weekNum)} ${weekYear}`;
+      case 'bi-annual':
+      case 'biannual':
+        const [halfYear, half] = periodId.split('-H');
+        return `H${half} ${halfYear}`;
       case 'annual':
         return `Year ${periodId}`;
       default:
@@ -726,9 +792,19 @@ export function ClientCompliancePeriodView({
         const endOfQuarter = new Date(parseInt(year), endMonth, 0); // Last day of quarter
         return now > endOfQuarter;
       }
-      case 'bi-annual': {
-        const [year, halfStr] = periodIdentifier.split('-');
-        const half = parseInt(halfStr.replace('H', ''));
+      case 'weekly': {
+        const [year, weekStr] = periodIdentifier.split('-W');
+        const weekNum = parseInt(weekStr);
+        // Calculate end of week (Sunday)
+        const startOfYear = new Date(parseInt(year), 0, 1);
+        const daysToAdd = (weekNum * 7) - startOfYear.getDay();
+        const endOfWeek = new Date(parseInt(year), 0, daysToAdd);
+        return now > endOfWeek;
+      }
+      case 'bi-annual':
+      case 'biannual': {
+        const [year, halfStr] = periodIdentifier.split('-H');
+        const half = parseInt(halfStr);
         const endMonth = half === 1 ? 6 : 12;
         const endOfHalf = new Date(parseInt(year), endMonth, 0);
         return now > endOfHalf;
