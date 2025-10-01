@@ -158,7 +158,7 @@ export function ReferenceButtons({ application, references, onUpdate }: Referenc
         referenceName: reference.name,
         referenceCompany: reference.company,
         referenceAddress: `${reference.address || ''}, ${reference.town || ''}`,
-        companyName: 'Your Company',
+        companyName: companySettings.name || 'Daryel Cared',
         referenceType: referenceType,
         employmentDetails: application.employment_history?.recentEmployer
       };
