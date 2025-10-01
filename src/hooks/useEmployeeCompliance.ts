@@ -199,8 +199,8 @@ export function useEmployeeCompliance(employeeId: string | undefined): Complianc
         });
 
         setData({
-          dueItems: dueItems.slice(0, 5), // Limit to 5 most recent
-          completedItems: completedItems.slice(0, 5), // Limit to 5 most recent
+          dueItems: dueItems, // Show all due items
+          completedItems: completedItems, // Show all completed items
           loading: false,
           error: null
         });
