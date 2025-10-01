@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Download, Search } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DownloadButton } from "@/components/ui/download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -415,135 +416,81 @@ export function CompliancePeriodEmployeeView({
                               </Button>
                             )}
                             {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (item.record?.notes) {
-                                      try {
-                                        const parsedData = JSON.parse(item.record.notes);
-                                        // Import the PDF generator
-                                        import('@/lib/annual-appraisal-pdf').then(({ generateAnnualAppraisalPDF }) => {
-                                          generateAnnualAppraisalPDF(parsedData, item.employee.name, {
-                                            name: companySettings?.name || 'Company',
-                                            logo: companySettings?.logo
-                                          });
-                                        });
-                                      } catch (error) {
-                                        console.error('Error generating PDF:', error);
-                                      }
-                                    }
-                                  }}
-                                  className="h-6 w-6 p-0"
-                                  title="Download PDF"
-                                >
-                                  <Download className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (item.record?.notes) {
-                                      try {
-                                        const parsedData = JSON.parse(item.record.notes);
-                                        // Import the PDF generator
-                                        import('@/lib/annual-appraisal-pdf').then(({ generateAnnualAppraisalPDF }) => {
-                                          generateAnnualAppraisalPDF(parsedData, item.employee.name, {
-                                            name: companySettings?.name || 'Company',
-                                            logo: companySettings?.logo
-                                          });
-                                        });
-                                      } catch (error) {
-                                        console.error('Error generating PDF:', error);
-                                      }
-                                    }
-                                  }}
-                                  className="h-6 w-6 p-0"
-                                  title="Download PDF"
-                                >
-                                  <Download className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
-                            {(item.record?.status === 'completed' && ((item.record?.completion_method === 'medication_competency') || (item.record?.completion_method === 'questionnaire' && item.record?.form_data && (item.record.form_data as any)?.competencyItems))) && ((item.record?.form_data) || item.record?.notes) && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  try {
-                                    const parsedData = item.record.form_data || (item.record?.notes ? JSON.parse(item.record.notes) : null);
-                                    if (!parsedData) return;
-                                    
-                                    // Transform legacy data to new format
-                                    const items = parsedData.competencyItems;
-                                    const responses = Array.isArray(items)
-                                      ? items.map((item: any) => ({
-                                          question: item?.performanceCriteria || item?.id || 'Competency Item',
-                                          answer: item?.competent === 'yes' ? 'yes' : item?.competent === 'not-yet' ? 'not-yet' : 'yes',
-                                          comment: item?.comments || 'No comment provided',
-                                          section: 'Competency Assessment',
-                                          helpText: item?.examples || 'Direct observation / discussion'
-                                        }))
-                                      : items && typeof items === 'object'
-                                      ? Object.values(items).map((value: any) => ({
-                                          question: value?.performanceCriteria || value?.id || 'Competency Item',
-                                          answer: value?.competent === 'yes' ? 'yes' : value?.competent === 'not-yet' ? 'not-yet' : 'yes',
-                                          comment: value?.comments || 'No comment provided',
-                                          section: 'Competency Assessment',
-                                          helpText: value?.examples || 'Direct observation / discussion'
-                                        }))
-                                      : [];
-  
-                                    // Add signature if available
-                                    if (parsedData.acknowledgement?.signature) {
-                                      responses.push({
-                                        question: 'Employee Signature',
-                                        answer: 'yes',
-                                        comment: parsedData.acknowledgement.signature,
-                                        section: 'Acknowledgement',
-                                        helpText: 'Employee acknowledgement'
-                                      });
-                                    }
-                                    
-                                     const competencyData = {
-                                       employeeId: item.record.employee_id,
-                                       employeeName: item.employee.name,
-                                       periodIdentifier: item.record.period_identifier,
-                                       assessmentDate: item.record.completion_date,
-                                       responses: responses,
-                                       signature: parsedData.acknowledgement?.signature || '',
-                                       completedAt: item.record.created_at,
-                                       questionnaireName: 'Medication Competency Assessment',
-                                       assessorName: parsedData.signatures?.assessorName || '',
-                                       assessorSignatureData: parsedData.signatures?.assessorSignatureData || '',
-                                       employeeSignatureData: parsedData.signatures?.employeeSignatureData || ''
-                                     };
-  
-                                    // Import the PDF generator
-                                    import('@/lib/medication-competency-pdf').then(({ generateMedicationCompetencyPdf }) => {
-                                      generateMedicationCompetencyPdf(competencyData, {
-                                        name: companySettings?.name || 'Company',
-                                        logo: companySettings?.logo
-                                      });
-                                    });
-                                  } catch (error) {
-                                    console.error('Error generating medication competency PDF:', error);
-                                    toast({
-                                      title: "Download failed",
-                                      description: "Could not download the medication competency PDF.",
-                                      variant: "destructive",
+                              <DownloadButton
+                                onDownload={async () => {
+                                  if (item.record?.notes) {
+                                    const parsedData = JSON.parse(item.record.notes);
+                                    const { generateAnnualAppraisalPDF } = await import('@/lib/annual-appraisal-pdf');
+                                    await generateAnnualAppraisalPDF(parsedData, item.employee.name, {
+                                      name: companySettings?.name || 'Company',
+                                      logo: companySettings?.logo
                                     });
                                   }
                                 }}
-                                className="h-6 w-6 p-0"
-                                title="Download Medication Competency PDF"
-                              >
-                                <Download className="h-3 w-3" />
-                              </Button>
+                                downloadingText="Generating PDF..."
+                                completedText="Downloaded"
+                              />
+                            )}
+                            {(item.record?.status === 'completed' && ((item.record?.completion_method === 'medication_competency') || (item.record?.completion_method === 'questionnaire' && item.record?.form_data && (item.record.form_data as any)?.competencyItems))) && ((item.record?.form_data) || item.record?.notes) && (
+                              <DownloadButton
+                                onDownload={async () => {
+                                  const parsedData = item.record.form_data || (item.record?.notes ? JSON.parse(item.record.notes) : null);
+                                  if (!parsedData) return;
+                                  
+                                  // Transform legacy data to new format
+                                  const items = parsedData.competencyItems;
+                                  const responses = Array.isArray(items)
+                                    ? items.map((item: any) => ({
+                                        question: item?.performanceCriteria || item?.id || 'Competency Item',
+                                        answer: item?.competent === 'yes' ? 'yes' : item?.competent === 'not-yet' ? 'not-yet' : 'yes',
+                                        comment: item?.comments || 'No comment provided',
+                                        section: 'Competency Assessment',
+                                        helpText: item?.examples || 'Direct observation / discussion'
+                                      }))
+                                    : items && typeof items === 'object'
+                                    ? Object.values(items).map((value: any) => ({
+                                        question: value?.performanceCriteria || value?.id || 'Competency Item',
+                                        answer: value?.competent === 'yes' ? 'yes' : value?.competent === 'not-yet' ? 'not-yet' : 'yes',
+                                        comment: value?.comments || 'No comment provided',
+                                        section: 'Competency Assessment',
+                                        helpText: value?.examples || 'Direct observation / discussion'
+                                      }))
+                                    : [];
+
+                                  // Add signature if available
+                                  if (parsedData.acknowledgement?.signature) {
+                                    responses.push({
+                                      question: 'Employee Signature',
+                                      answer: 'yes',
+                                      comment: parsedData.acknowledgement.signature,
+                                      section: 'Acknowledgement',
+                                      helpText: 'Employee acknowledgement'
+                                    });
+                                  }
+                                  
+                                  const competencyData = {
+                                    employeeId: item.record.employee_id,
+                                    employeeName: item.employee.name,
+                                    periodIdentifier: item.record.period_identifier,
+                                    assessmentDate: item.record.completion_date,
+                                    responses: responses,
+                                    signature: parsedData.acknowledgement?.signature || '',
+                                    completedAt: item.record.created_at,
+                                    questionnaireName: 'Medication Competency Assessment',
+                                    assessorName: parsedData.signatures?.assessorName || '',
+                                    assessorSignatureData: parsedData.signatures?.assessorSignatureData || '',
+                                    employeeSignatureData: parsedData.signatures?.employeeSignatureData || ''
+                                  };
+
+                                  const { generateMedicationCompetencyPdf } = await import('@/lib/medication-competency-pdf');
+                                  await generateMedicationCompetencyPdf(competencyData, {
+                                    name: companySettings?.name || 'Company',
+                                    logo: companySettings?.logo
+                                  });
+                                }}
+                                downloadingText="Generating PDF..."
+                                completedText="Downloaded"
+                              />
                             )}
                           </div>
                         </TableCell>

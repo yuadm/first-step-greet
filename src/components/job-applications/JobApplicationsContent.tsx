@@ -23,6 +23,7 @@ import { DateRange } from "react-day-picker";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { TimeSlotsList } from "./TimeSlotsList";
 import { ReferenceButtons } from "./ReferenceButtons";
+import { DownloadButton } from "@/components/ui/download-button";
 // Helper function to format dates from YYYY-MM-DD to MM/DD/YYYY
 const formatDateDisplay = (dateString: string | null | undefined): string => {
   if (!dateString) return 'Not provided';
@@ -816,15 +817,23 @@ try {
         </div>
         <div className="flex gap-2">
           {(isAdmin || hasPageAction('job-applications', 'download-pdf')) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={downloadApplication}
-              className="flex items-center gap-2"
+            <DownloadButton
+              onDownload={async () => {
+                await generateJobApplicationPdf(toJobAppData() as any, {
+                  logoUrl: companySettings.logo,
+                  companyName: companySettings.name,
+                });
+                toast({
+                  title: "PDF Generated",
+                  description: "The application has been downloaded as a PDF.",
+                });
+              }}
+              downloadingText="Generating PDF..."
+              completedText="Downloaded"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-4 h-4 mr-2" />
               Download PDF
-            </Button>
+            </DownloadButton>
           )}
           {isEditing ? (
             <div className="flex gap-2">
