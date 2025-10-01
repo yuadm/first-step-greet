@@ -187,9 +187,10 @@ export function CareWorkerStatementForm({
                   id="person_completing_report"
                   value={formData.person_completing_report}
                   onChange={(e) => setFormData({ ...formData, person_completing_report: e.target.value })}
-                  disabled={readOnly}
+                  disabled
                   required
                   placeholder="Enter your full name"
+                  className="bg-muted"
                 />
               </div>
               <div>
@@ -198,9 +199,10 @@ export function CareWorkerStatementForm({
                   id="position"
                   value={formData.position}
                   onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                  disabled={readOnly}
+                  disabled
                   required
                   placeholder="Enter your job title/position"
+                  className="bg-muted"
                 />
               </div>
             </div>
