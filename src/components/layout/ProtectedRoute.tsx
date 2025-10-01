@@ -21,6 +21,20 @@ export function ProtectedRoute({
   const { hasPageAccess, loading: permissionsLoading, permissionsReady, error, isAdmin } = usePermissions();
   const location = useLocation();
 
+  // Block route until permissions are fully resolved to prevent flashing
+  if (!isAdmin && requiredPage && !permissionsReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
+        <Card className="w-80">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Show loading state while auth or permissions are loading
   // For admins, allow immediate access to prevent flashing
   if (authLoading || (permissionsLoading && !isAdmin)) {
