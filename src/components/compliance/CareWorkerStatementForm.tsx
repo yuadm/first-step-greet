@@ -148,7 +148,7 @@ export function CareWorkerStatementForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6 [&>button]:bg-red-500 [&>button]:text-white [&>button]:hover:bg-red-600 [&>button]:transition-colors">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6 [&>button]:bg-red-500 [&>button]:text-white [&>button]:hover:bg-red-600 [&>button]:transition-colors">
         <DialogHeader>
           <DialogTitle>
             Care Worker Statement - {statement.care_worker_name}
