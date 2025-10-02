@@ -49,10 +49,18 @@ export default function EmployeeCareWorkerStatements() {
         .from('care_worker_statements')
         .select('*')
         .eq('assigned_employee_id', employee.id)
+        .order('status', { ascending: true })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setStatements(data || []);
+      
+      // Custom sort: draft/rejected first, then submitted/approved
+      const sorted = (data || []).sort((a, b) => {
+        const statusOrder: Record<string, number> = { draft: 0, rejected: 1, submitted: 2, approved: 3 };
+        return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
+      });
+      
+      setStatements(sorted);
     } catch (error) {
       console.error('Error fetching statements:', error);
       toast({
@@ -189,7 +197,7 @@ export default function EmployeeCareWorkerStatements() {
                       {statement.status === 'draft' || statement.status === 'rejected' ? (
                         <>
                           <Edit className="h-4 w-4" />
-                          Complete Statement
+                          Write Statement
                         </>
                       ) : (
                         <>

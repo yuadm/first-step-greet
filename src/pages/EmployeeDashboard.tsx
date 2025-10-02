@@ -77,10 +77,18 @@ function EmployeeDashboardContent() {
         .from('care_worker_statements')
         .select('*')
         .eq('assigned_employee_id', employee.id)
+        .order('status', { ascending: true })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setStatements(data || []);
+      
+      // Custom sort: draft/rejected first, then submitted/approved
+      const sorted = (data || []).sort((a, b) => {
+        const statusOrder: Record<string, number> = { draft: 0, rejected: 1, submitted: 2, approved: 3 };
+        return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
+      });
+      
+      setStatements(sorted);
     } catch (error) {
       console.error('Error fetching statements:', error);
     }
@@ -465,7 +473,7 @@ function EmployeeDashboardContent() {
                           : "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 hover:from-green-600 hover:to-emerald-600"
                       )}
                     >
-                      {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete Statement' : 'View Completed Statement'}
+                      {statement.status === 'draft' || statement.status === 'rejected' ? 'Write Statement' : 'View Completed Statement'}
                     </Button>
                   </div>
                 ))}
