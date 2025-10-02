@@ -148,7 +148,7 @@ export function CareWorkerStatementForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6 [&>button]:bg-red-500 [&>button]:text-white [&>button]:hover:bg-red-600 [&>button]:transition-colors">
         <DialogHeader>
           <DialogTitle>
             Care Worker Statement - {statement.care_worker_name}
@@ -370,7 +370,7 @@ export function CareWorkerStatementForm({
                 variant="outline"
                 onClick={(e) => handleSubmit(e, true)}
                 disabled={loading}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 hover:from-blue-600 hover:to-cyan-600"
               >
                 <Save className="mr-2 h-4 w-4" />
                 Save Draft
@@ -380,7 +380,7 @@ export function CareWorkerStatementForm({
                 type="button"
                 onClick={(e) => handleSubmit(e, false)}
                 disabled={loading || !formData.digital_signature || !formData.statement}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 hover:from-green-600 hover:to-emerald-600"
               >
                 <Send className="mr-2 h-4 w-4" />
                 Submit Statement
