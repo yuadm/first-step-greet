@@ -143,8 +143,7 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
       // Pre-fill form with existing data if available
       setFormData(prev => ({
         ...prev,
-        refereeEmail: referenceData.reference_email,
-        refereeFullName: referenceData.reference_name
+        refereeEmail: referenceData.reference_email
       }));
 
     } catch (error) {
