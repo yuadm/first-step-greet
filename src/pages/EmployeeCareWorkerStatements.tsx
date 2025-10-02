@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useEmployeeAuth } from "@/contexts/EmployeeAuthContext";
 import { CareWorkerStatementForm } from "@/components/compliance/CareWorkerStatementForm";
+import { cn } from "@/lib/utils";
 
 interface CareWorkerStatement {
   id: string;
@@ -75,13 +76,7 @@ export default function EmployeeCareWorkerStatements() {
   };
 
   const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'approved': return 'default';
-      case 'submitted': return 'secondary';
-      case 'rejected': return 'destructive';
-      case 'draft': return 'outline';
-      default: return 'outline';
-    }
+    return status;
   };
 
   const handleViewStatement = (statement: CareWorkerStatement) => {
@@ -143,8 +138,16 @@ export default function EmployeeCareWorkerStatements() {
                         Client: {statement.client_name}
                       </p>
                     </div>
-                    <Badge variant={getStatusBadgeVariant(statement.status)}>
-                      {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
+                    <Badge 
+                      className={cn(
+                        "capitalize",
+                        statement.status === 'approved' && "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0",
+                        statement.status === 'submitted' && "bg-blue-500 text-white border-0",
+                        statement.status === 'rejected' && "bg-red-500 text-white border-0",
+                        statement.status === 'draft' && "bg-orange-500 text-white border-0"
+                      )}
+                    >
+                      {statement.status}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -174,10 +177,14 @@ export default function EmployeeCareWorkerStatements() {
 
                   <div className="flex gap-2 pt-2">
                     <Button
-                      variant={statement.status === 'draft' || statement.status === 'rejected' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => handleViewStatement(statement)}
-                      className="flex items-center gap-1"
+                      className={cn(
+                        "flex items-center gap-1",
+                        statement.status === 'draft' || statement.status === 'rejected' 
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                          : "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 hover:from-green-600 hover:to-emerald-600"
+                      )}
                     >
                       {statement.status === 'draft' || statement.status === 'rejected' ? (
                         <>
@@ -187,7 +194,7 @@ export default function EmployeeCareWorkerStatements() {
                       ) : (
                         <>
                           <Eye className="h-4 w-4" />
-                          View Statement
+                          View Completed Statement
                         </>
                       )}
                     </Button>

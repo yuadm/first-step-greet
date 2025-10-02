@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
+import { cn } from '@/lib/utils';
 import { Calendar, FileText, User, LogOut, Clock, CheckCircle, XCircle, Shield, Plus } from 'lucide-react';
 import { LeaveRequestDialog } from '@/components/employee/LeaveRequestDialog';
 import { DocumentUploadDialog } from '@/components/employee/DocumentUploadDialog';
@@ -453,15 +453,19 @@ function EmployeeDashboardContent() {
                       </div>
                     </div>
                     <Button
-                      variant={statement.status === 'draft' || statement.status === 'rejected' ? 'default' : 'outline'}
                       size="lg"
                       onClick={() => {
                         setSelectedStatement(statement);
                         setIsStatementFormOpen(true);
                       }}
-                      className="text-sm sm:text-base px-6 min-h-[44px] w-full sm:w-auto relative z-10 shadow-md hover:shadow-lg transition-all duration-300"
+                      className={cn(
+                        "text-sm sm:text-base px-6 min-h-[44px] w-full sm:w-auto relative z-10 shadow-md hover:shadow-lg transition-all duration-300",
+                        statement.status === 'draft' || statement.status === 'rejected' 
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                          : "bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 hover:from-green-600 hover:to-emerald-600"
+                      )}
                     >
-                      {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete Statement' : 'View Statement'}
+                      {statement.status === 'draft' || statement.status === 'rejected' ? 'Complete Statement' : 'View Completed Statement'}
                     </Button>
                   </div>
                 ))}
