@@ -136,11 +136,12 @@ const handler = async (req: Request): Promise<Response> => {
     <style>
       body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f9fafb;margin:0;padding:0}
       .container{max-width:640px;margin:0 auto;background:#fff}
-      .header{padding:24px 32px;border-bottom:1px solid #e5e7eb}
-      .logo{max-width:120px;height:auto}
+      .header{padding:24px 32px;border-bottom:1px solid #e5e7eb;text-align:center}
+      .logo{max-width:120px;height:auto;display:inline-block}
       .content{padding:32px}
       .btn{display:inline-block;background:#111827;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600}
       .footer{background:#f3f4f6;padding:20px;text-align:center;color:#6b7280;font-size:12px}
+      @media only screen and (max-width:600px){.header{padding:16px}.logo{max-width:100px}}
     </style>
   </head>
   <body>
