@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ReferenceForm } from '@/components/job-application/ReferenceForm';
 import { CompanyProvider } from '@/contexts/CompanyContext';
+import { Card } from '@/components/ui/card';
 
 export default function Reference() {
   const location = useLocation();
@@ -32,21 +33,45 @@ export default function Reference() {
 
   return (
     <CompanyProvider>
-      <div className="mx-auto max-w-4xl px-4 py-10">
-        <header className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Provide a Job Reference</h1>
-        </header>
-        <main>
-          {token ? (
-            <ReferenceForm token={token} />
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                Your secure reference link is missing or invalid. Please use the link provided in your email.
-              </p>
+      <div className="min-h-screen bg-gradient-subtle">
+        {/* Decorative background elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+          <header className="mb-8 sm:mb-12 text-center animate-fade-in">
+            <div className="inline-block bg-gradient-primary p-1 rounded-2xl mb-4 shadow-glow">
+              <div className="bg-background px-6 py-3 rounded-xl">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  Provide a Job Reference
+                </h1>
+              </div>
             </div>
-          )}
-        </main>
+            <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto px-4">
+              Your reference helps us make informed decisions. Please complete the form below.
+            </p>
+          </header>
+
+          <main className="animate-slide-up">
+            {token ? (
+              <ReferenceForm token={token} />
+            ) : (
+              <Card className="card-premium text-center py-12 px-6">
+                <div className="max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-destructive-soft rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-3xl">🔒</span>
+                  </div>
+                  <h2 className="text-xl font-semibold mb-2">Invalid Reference Link</h2>
+                  <p className="text-muted-foreground">
+                    Your secure reference link is missing or invalid. Please use the link provided in your email.
+                  </p>
+                </div>
+              </Card>
+            )}
+          </main>
+        </div>
       </div>
     </CompanyProvider>
   );

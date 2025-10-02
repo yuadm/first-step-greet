@@ -199,27 +199,42 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-64">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
+      <Card className="card-premium">
+        <CardContent className="flex flex-col items-center justify-center min-h-64 py-12">
+          <div className="w-16 h-16 bg-primary-soft rounded-full flex items-center justify-center mb-4">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          </div>
+          <p className="text-muted-foreground">Loading your reference form...</p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!referenceRequest || !application) {
     return (
-      <div className="text-center py-8">
-        <h2 className="text-xl font-semibold mb-2">Reference Not Found</h2>
-        <p className="text-muted-foreground">This reference link is invalid or has expired.</p>
-      </div>
+      <Card className="card-premium text-center py-12">
+        <CardContent>
+          <div className="w-16 h-16 bg-destructive-soft rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">❌</span>
+          </div>
+          <h2 className="text-xl font-semibold mb-2">Reference Not Found</h2>
+          <p className="text-muted-foreground">This reference link is invalid or has expired.</p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (referenceRequest.status === 'completed') {
     return (
-      <div className="text-center py-8">
-        <h2 className="text-xl font-semibold mb-2">Reference Already Submitted</h2>
-        <p className="text-muted-foreground">Thank you for providing your reference. It has been successfully submitted.</p>
-      </div>
+      <Card className="card-premium text-center py-12">
+        <CardContent>
+          <div className="w-16 h-16 bg-success-soft rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">✅</span>
+          </div>
+          <h2 className="text-xl font-semibold mb-2 text-success">Reference Already Submitted</h2>
+          <p className="text-muted-foreground">Thank you for providing your reference. It has been successfully submitted.</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -229,329 +244,393 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
   return (
     <div className="space-y-6">
       {/* Company Header */}
-      <div className="text-center border-b border-border pb-6">
-        {companySettings.logo && (
-          <div className="flex justify-center mb-4">
-            <img 
-              src={companySettings.logo} 
-              alt={`${companySettings.name} logo`}
-              className="h-16 w-auto object-contain"
-            />
-          </div>
-        )}
-        <h2 className="text-xl font-semibold text-foreground">{companySettings.name}</h2>
-        {companySettings.tagline && (
-          <p className="text-sm text-muted-foreground mt-1">{companySettings.tagline}</p>
-        )}
-      </div>
+      <Card className="card-premium border-none bg-gradient-card overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-primary opacity-5" />
+        <CardContent className="relative text-center py-8">
+          {companySettings.logo && (
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-background rounded-2xl shadow-md">
+                <img 
+                  src={companySettings.logo} 
+                  alt={`${companySettings.name} logo`}
+                  className="h-12 sm:h-16 w-auto object-contain"
+                />
+              </div>
+            </div>
+          )}
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">{companySettings.name}</h2>
+          {companySettings.tagline && (
+            <p className="text-sm text-muted-foreground mt-2">{companySettings.tagline}</p>
+          )}
+        </CardContent>
+      </Card>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {isEmployerReference ? 'Employer Reference' : 'Character Reference'} for {applicantName}
-            </CardTitle>
+        <Card className="card-premium">
+          <CardHeader className="bg-gradient-surface border-b border-border">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-soft rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="text-xl sm:text-2xl">📝</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg sm:text-xl break-words">
+                  {isEmployerReference ? 'Employer Reference' : 'Character Reference'} for {applicantName}
+                </CardTitle>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pt-6">
             {/* Basic Information */}
-            <div className="bg-muted/30 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Reference for:</h4>
-              <p><strong>Name:</strong> {applicantName}</p>
-              <p><strong>Date of Birth:</strong> {application.personal_info?.dateOfBirth || 'Not provided'}</p>
-              <p><strong>Postcode:</strong> {application.personal_info?.postcode || 'Not provided'}</p>
+            <div className="bg-gradient-surface p-4 sm:p-6 rounded-xl border border-border">
+              <h4 className="font-semibold mb-3 text-primary flex items-center gap-2">
+                <span>👤</span>
+                Reference for:
+              </h4>
+              <div className="space-y-2 text-sm sm:text-base">
+                <p className="flex flex-wrap gap-2"><strong className="text-foreground">Name:</strong> <span className="text-muted-foreground">{applicantName}</span></p>
+                <p className="flex flex-wrap gap-2"><strong className="text-foreground">Date of Birth:</strong> <span className="text-muted-foreground">{application.personal_info?.dateOfBirth || 'Not provided'}</span></p>
+                <p className="flex flex-wrap gap-2"><strong className="text-foreground">Postcode:</strong> <span className="text-muted-foreground">{application.personal_info?.postcode || 'Not provided'}</span></p>
+              </div>
             </div>
 
             {/* Referee Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="refereeFullName">Referee Name *</Label>
+            <div>
+              <h4 className="font-semibold mb-4 text-foreground flex items-center gap-2">
+                <span>✍️</span>
+                Your Information
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="refereeFullName" className="text-sm font-medium">Referee Name *</Label>
                 <Input
                   id="refereeFullName"
                   value={formData.refereeFullName}
                   onChange={(e) => setFormData(prev => ({ ...prev, refereeFullName: e.target.value }))}
+                  className="border-input-border focus:border-primary"
                   required
                 />
               </div>
-              <div>
-                <Label htmlFor="refereeJobTitle">Referee Job Title *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="refereeJobTitle" className="text-sm font-medium">Referee Job Title *</Label>
                 <Input
                   id="refereeJobTitle"
                   value={formData.refereeJobTitle}
                   onChange={(e) => setFormData(prev => ({ ...prev, refereeJobTitle: e.target.value }))}
+                  className="border-input-border focus:border-primary"
                   required
                 />
               </div>
             </div>
+          </div>
 
             {/* Reference Type Specific Questions */}
             {isEmployerReference ? (
-              <>
-                <div>
-                  <Label className="text-base font-medium">Are you this person's current or previous employer? *</Label>
+              <div className="space-y-6">
+                <div className="bg-primary-soft p-4 sm:p-6 rounded-xl">
+                  <Label className="text-base font-semibold flex items-center gap-2 mb-3">
+                    <span>💼</span>
+                    Are you this person's current or previous employer? *
+                  </Label>
                   <RadioGroup 
                     value={formData.employmentStatus} 
                     onValueChange={(value) => setFormData(prev => ({ ...prev, employmentStatus: value }))}
-                    className="mt-2"
+                    className="space-y-3"
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="current" id="current" />
-                      <Label htmlFor="current">Current</Label>
+                      <Label htmlFor="current" className="cursor-pointer flex-1">Current</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="previous" id="previous" />
-                      <Label htmlFor="previous">Previous</Label>
+                      <Label htmlFor="previous" className="cursor-pointer flex-1">Previous</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="neither" id="neither" />
-                      <Label htmlFor="neither">Neither</Label>
+                      <Label htmlFor="neither" className="cursor-pointer flex-1">Neither</Label>
                     </div>
                   </RadioGroup>
                 </div>
 
-                <div>
-                  <Label htmlFor="relationshipDescription">What is your relationship to this person (e.g. "I am her/his manager")? *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="relationshipDescription" className="text-sm font-medium">What is your relationship to this person (e.g. "I am her/his manager")? *</Label>
                   <Input
                     id="relationshipDescription"
                     value={formData.relationshipDescription}
                     onChange={(e) => setFormData(prev => ({ ...prev, relationshipDescription: e.target.value }))}
                     placeholder="e.g., I am their direct manager"
+                    className="border-input-border focus:border-primary"
                     required
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="jobTitle">Please state the person's job title *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="jobTitle" className="text-sm font-medium">Please state the person's job title *</Label>
                   <Input
                     id="jobTitle"
                     value={formData.jobTitle}
                     onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                    className="border-input-border focus:border-primary"
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="startDate">Employment Start Date *</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate" className="text-sm font-medium">Employment Start Date *</Label>
                     <Input
                       id="startDate"
                       type="date"
                       value={formData.startDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="border-input-border focus:border-primary"
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="endDate">Employment End Date *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate" className="text-sm font-medium">Employment End Date *</Label>
                     <Input
                       id="endDate"
                       type="date"
                       value={formData.endDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="border-input-border focus:border-primary"
                       required
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label className="text-base font-medium">How would you describe their recent attendance record? *</Label>
+                <div className="bg-accent-soft p-4 sm:p-6 rounded-xl">
+                  <Label className="text-base font-semibold mb-3 block">How would you describe their recent attendance record? *</Label>
                   <RadioGroup 
                     value={formData.attendance} 
                     onValueChange={(value) => setFormData(prev => ({ ...prev, attendance: value }))}
-                    className="mt-2"
+                    className="space-y-3"
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="good" id="att-good" />
-                      <Label htmlFor="att-good">Good</Label>
+                      <Label htmlFor="att-good" className="cursor-pointer flex-1">Good</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="average" id="att-average" />
-                      <Label htmlFor="att-average">Average</Label>
+                      <Label htmlFor="att-average" className="cursor-pointer flex-1">Average</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="poor" id="att-poor" />
-                      <Label htmlFor="att-poor">Poor</Label>
+                      <Label htmlFor="att-poor" className="cursor-pointer flex-1">Poor</Label>
                     </div>
                   </RadioGroup>
                 </div>
 
-                <div>
-                  <Label htmlFor="leavingReason">Why did the person leave your employment (if they are still employed, please write 'still employed')? *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="leavingReason" className="text-sm font-medium">Why did the person leave your employment (if they are still employed, please write 'still employed')? *</Label>
                   <Textarea
                     id="leavingReason"
                     value={formData.leavingReason}
                     onChange={(e) => setFormData(prev => ({ ...prev, leavingReason: e.target.value }))}
+                    className="border-input-border focus:border-primary min-h-[100px]"
                     required
                   />
                 </div>
-              </>
+              </div>
             ) : (
-              <>
-                <div>
-                  <Label className="text-base font-medium">Do you know this person from outside employment or education? *</Label>
+              <div className="space-y-6">
+                <div className="bg-accent-soft p-4 sm:p-6 rounded-xl">
+                  <Label className="text-base font-semibold flex items-center gap-2 mb-3">
+                    <span>🤝</span>
+                    Do you know this person from outside employment or education? *
+                  </Label>
                   <RadioGroup 
                     value={formData.employmentStatus} 
                     onValueChange={(value) => setFormData(prev => ({ ...prev, employmentStatus: value }))}
-                    className="mt-2"
+                    className="space-y-3"
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="yes" id="outside-yes" />
-                      <Label htmlFor="outside-yes">Yes</Label>
+                      <Label htmlFor="outside-yes" className="cursor-pointer flex-1">Yes</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="no" id="outside-no" />
-                      <Label htmlFor="outside-no">No</Label>
+                      <Label htmlFor="outside-no" className="cursor-pointer flex-1">No</Label>
                     </div>
                   </RadioGroup>
                 </div>
 
-                <div>
-                  <Label htmlFor="relationshipDescription">Please describe your relationship with this person, including how long you have known them *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="relationshipDescription" className="text-sm font-medium">Please describe your relationship with this person, including how long you have known them *</Label>
                   <Textarea
                     id="relationshipDescription"
                     value={formData.relationshipDescription}
                     onChange={(e) => setFormData(prev => ({ ...prev, relationshipDescription: e.target.value }))}
                     placeholder="Describe how you know them and for how long"
+                    className="border-input-border focus:border-primary min-h-[100px]"
                     required
                   />
                 </div>
-              </>
+              </div>
             )}
 
             {/* Common Character Assessment */}
-            <div>
-              <Label className="text-base font-medium">In your opinion, which of the following describes this person (tick each that is true)? *</Label>
-              <div className="mt-3 space-y-3">
+            <div className="bg-success-soft p-4 sm:p-6 rounded-xl">
+              <Label className="text-base font-semibold mb-4 flex items-center gap-2">
+                <span>⭐</span>
+                In your opinion, which of the following describes this person (tick each that is true)? *
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
-                  { key: 'honestTrustworthy', label: 'Honest and trustworthy' },
-                  { key: 'communicatesEffectively', label: 'Communicates effectively' },
-                  { key: 'effectiveTeamMember', label: 'An effective team member' },
-                  { key: 'respectfulConfidentiality', label: 'Respectful of confidentiality' },
-                  { key: 'reliablePunctual', label: 'Reliable and punctual' },
-                  { key: 'suitablePosition', label: 'Suitable for the position applied for' },
-                  { key: 'kindCompassionate', label: 'Kind and compassionate' },
-                  { key: 'worksIndependently', label: 'Able to work well without close supervision' },
+                  { key: 'honestTrustworthy', label: 'Honest and trustworthy', emoji: '🤝' },
+                  { key: 'communicatesEffectively', label: 'Communicates effectively', emoji: '💬' },
+                  { key: 'effectiveTeamMember', label: 'An effective team member', emoji: '👥' },
+                  { key: 'respectfulConfidentiality', label: 'Respectful of confidentiality', emoji: '🔒' },
+                  { key: 'reliablePunctual', label: 'Reliable and punctual', emoji: '⏰' },
+                  { key: 'suitablePosition', label: 'Suitable for the position applied for', emoji: '✅' },
+                  { key: 'kindCompassionate', label: 'Kind and compassionate', emoji: '❤️' },
+                  { key: 'worksIndependently', label: 'Able to work well without close supervision', emoji: '🎯' },
                 ].map((item) => (
-                  <div key={item.key} className="flex items-center space-x-2">
+                  <div key={item.key} className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                     <input
                       type="checkbox"
                       id={item.key}
                       checked={formData[item.key as keyof typeof formData] as boolean}
                       onChange={(e) => setFormData(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                      className="rounded border-gray-300"
+                      className="rounded border-input-border w-5 h-5 text-primary focus:ring-primary"
                     />
-                    <Label htmlFor={item.key}>{item.label}</Label>
+                    <Label htmlFor={item.key} className="cursor-pointer flex-1 flex items-center gap-2">
+                      <span>{item.emoji}</span>
+                      <span>{item.label}</span>
+                    </Label>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="qualitiesNotTickedReason">If you did not tick one or more of the above, please tell us why here</Label>
+            <div className="space-y-2">
+              <Label htmlFor="qualitiesNotTickedReason" className="text-sm font-medium">If you did not tick one or more of the above, please tell us why here</Label>
               <Textarea
                 id="qualitiesNotTickedReason"
                 value={formData.qualitiesNotTickedReason}
                 onChange={(e) => setFormData(prev => ({ ...prev, qualitiesNotTickedReason: e.target.value }))}
                 placeholder="Please explain any concerns"
+                className="border-input-border focus:border-primary min-h-[100px]"
               />
             </div>
 
             {/* Criminal Background Questions */}
-            <div>
-              <Label className="text-base font-medium">
-                The position this person has applied for involves working with vulnerable people. Are you aware of any convictions, cautions, reprimands or final warnings that the person may have received that are not 'protected' as defined by the Rehabilitation of Offenders Act 1974 (Exceptions) Order 1975 (as amended in 2013 by SI 210 1198)? *
-              </Label>
-              <RadioGroup 
-                value={formData.convictionsKnown} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, convictionsKnown: value }))}
-                className="mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="convictions-yes" />
-                  <Label htmlFor="convictions-yes">Yes</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="convictions-no" />
-                  <Label htmlFor="convictions-no">No</Label>
-                </div>
-              </RadioGroup>
-            </div>
+            <div className="bg-warning-soft p-4 sm:p-6 rounded-xl space-y-6">
+              <h4 className="font-semibold text-foreground flex items-center gap-2 mb-4">
+                <span>⚠️</span>
+                Background Check Questions
+              </h4>
 
-            <div>
-              <Label className="text-base font-medium">
-                To your knowledge, is this person currently the subject of any criminal proceedings (for example, charged or summoned but not yet dealt with) or any police investigation? *
-              </Label>
-              <RadioGroup 
-                value={formData.criminalProceedingsKnown} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, criminalProceedingsKnown: value }))}
-                className="mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="proceedings-yes" />
-                  <Label htmlFor="proceedings-yes">Yes</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="proceedings-no" />
-                  <Label htmlFor="proceedings-no">No</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {(formData.convictionsKnown === 'yes' || formData.criminalProceedingsKnown === 'yes') && (
-              <div>
-                <Label htmlFor="criminalDetails">If you answered 'yes' to either of the two previous questions, please provide details *</Label>
-                <Textarea
-                  id="criminalDetails"
-                  value={formData.criminalDetails}
-                  onChange={(e) => setFormData(prev => ({ ...prev, criminalDetails: e.target.value }))}
-                  placeholder="Please provide full details"
-                  required={formData.convictionsKnown === 'yes' || formData.criminalProceedingsKnown === 'yes'}
-                />
+              <div className="space-y-2">
+                <Label className="text-sm font-medium leading-relaxed">
+                  The position this person has applied for involves working with vulnerable people. Are you aware of any convictions, cautions, reprimands or final warnings that the person may have received that are not 'protected' as defined by the Rehabilitation of Offenders Act 1974 (Exceptions) Order 1975 (as amended in 2013 by SI 210 1198)? *
+                </Label>
+                <RadioGroup 
+                  value={formData.convictionsKnown} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, convictionsKnown: value }))}
+                  className="space-y-2 mt-3"
+                >
+                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
+                    <RadioGroupItem value="yes" id="convictions-yes" />
+                    <Label htmlFor="convictions-yes" className="cursor-pointer flex-1">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
+                    <RadioGroupItem value="no" id="convictions-no" />
+                    <Label htmlFor="convictions-no" className="cursor-pointer flex-1">No</Label>
+                  </div>
+                </RadioGroup>
               </div>
-            )}
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium leading-relaxed">
+                  To your knowledge, is this person currently the subject of any criminal proceedings (for example, charged or summoned but not yet dealt with) or any police investigation? *
+                </Label>
+                <RadioGroup 
+                  value={formData.criminalProceedingsKnown} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, criminalProceedingsKnown: value }))}
+                  className="space-y-2 mt-3"
+                >
+                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
+                    <RadioGroupItem value="yes" id="proceedings-yes" />
+                    <Label htmlFor="proceedings-yes" className="cursor-pointer flex-1">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
+                    <RadioGroupItem value="no" id="proceedings-no" />
+                    <Label htmlFor="proceedings-no" className="cursor-pointer flex-1">No</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {(formData.convictionsKnown === 'yes' || formData.criminalProceedingsKnown === 'yes') && (
+                <div className="space-y-2 animate-slide-up">
+                  <Label htmlFor="criminalDetails" className="text-sm font-medium">If you answered 'yes' to either of the two previous questions, please provide details *</Label>
+                  <Textarea
+                    id="criminalDetails"
+                    value={formData.criminalDetails}
+                    onChange={(e) => setFormData(prev => ({ ...prev, criminalDetails: e.target.value }))}
+                    placeholder="Please provide full details"
+                    className="border-input-border focus:border-primary min-h-[100px]"
+                    required={formData.convictionsKnown === 'yes' || formData.criminalProceedingsKnown === 'yes'}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Additional Comments */}
-            <div>
-              <Label htmlFor="additionalComments">Any additional comments you would like to make about this person</Label>
+            <div className="space-y-2">
+              <Label htmlFor="additionalComments" className="text-sm font-medium flex items-center gap-2">
+                <span>💭</span>
+                Any additional comments you would like to make about this person
+              </Label>
               <Textarea
                 id="additionalComments"
                 value={formData.additionalComments}
                 onChange={(e) => setFormData(prev => ({ ...prev, additionalComments: e.target.value }))}
                 placeholder="Any other relevant information"
+                className="border-input-border focus:border-primary min-h-[120px]"
               />
             </div>
 
             {/* Declaration and Signature */}
-            <div className="bg-muted/30 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Declaration</h4>
-              <p className="text-sm text-muted-foreground mb-4">
+            <div className="bg-gradient-surface p-4 sm:p-6 rounded-xl border border-border">
+              <h4 className="font-semibold mb-3 flex items-center gap-2 text-foreground">
+                <span>📋</span>
+                Declaration
+              </h4>
+              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                 I certify that, to the best of my knowledge, the information I have given is true and complete. I understand that any deliberate omission, falsification or misrepresentation may lead to refusal of appointment or dismissal. I consent to enquiries being made of third parties, which may include previous employers (if applicable), in order to verify the information I have provided.
               </p>
               
-              <div>
-                <Label htmlFor="signatureDate">Date of completion *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="signatureDate" className="text-sm font-medium">Date of completion *</Label>
                 <Input
                   id="signatureDate"
                   type="date"
                   value={formData.signatureDate}
                   onChange={(e) => setFormData(prev => ({ ...prev, signatureDate: e.target.value }))}
+                  className="border-input-border focus:border-primary max-w-xs"
                   required
                 />
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4 pt-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-border">
               <Button
                 type="submit"
                 disabled={submitting}
-                className="min-w-32"
+                className="bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold px-8 py-6 text-base shadow-glow"
+                size="lg"
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Submitting...
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Submitting Reference...
                   </>
                 ) : (
-                  'Submit Reference'
+                  <>
+                    <span className="mr-2">✓</span>
+                    Submit Reference
+                  </>
                 )}
               </Button>
             </div>
