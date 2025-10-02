@@ -360,7 +360,7 @@ export function CareWorkerStatementForm({
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-gradient-to-r from-red-500 to-rose-500 text-white border-0 hover:from-red-600 hover:to-rose-600"
               >
                 Cancel
               </Button>
@@ -383,7 +383,7 @@ export function CareWorkerStatementForm({
                 className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 hover:from-green-600 hover:to-emerald-600"
               >
                 <Send className="mr-2 h-4 w-4" />
-                Submit Statement
+                Complete Statement
               </Button>
             </div>
           )}
