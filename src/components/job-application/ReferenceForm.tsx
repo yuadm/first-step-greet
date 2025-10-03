@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
-import { Loader2, User, Briefcase } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface ReferenceRequest {
   id: string;
@@ -333,15 +333,15 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
                     onValueChange={(value) => setFormData(prev => ({ ...prev, employmentStatus: value }))}
                     className="space-y-3"
                   >
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="current" id="current" />
                       <Label htmlFor="current" className="cursor-pointer flex-1">Current</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="previous" id="previous" />
                       <Label htmlFor="previous" className="cursor-pointer flex-1">Previous</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="neither" id="neither" />
                       <Label htmlFor="neither" className="cursor-pointer flex-1">Neither</Label>
                     </div>
