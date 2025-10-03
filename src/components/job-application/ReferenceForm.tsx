@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User, Briefcase } from 'lucide-react';
 
 interface ReferenceRequest {
   id: string;
@@ -292,10 +292,12 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
 
             {/* Referee Information */}
             <div>
-              <h4 className="font-semibold mb-4 text-foreground flex items-center gap-2">
-                <span>✍️</span>
-                Your Information
-              </h4>
+              <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-200 dark:border-slate-700">
+                <div className="h-7 w-7 rounded-md bg-primary/10 flex items-center justify-center ring-1 ring-primary/20">
+                  <User className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Your Information</h4>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="refereeFullName" className="text-sm font-medium">Referee Name *</Label>
@@ -323,27 +325,27 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
             {/* Reference Type Specific Questions */}
             {isEmployerReference ? (
               <div className="space-y-6">
-                <div className="bg-primary-soft p-4 sm:p-6 rounded-xl">
-                  <Label className="text-base font-semibold flex items-center gap-2 mb-3">
-                    <span>💼</span>
+                <div className="bg-slate-50 dark:bg-slate-900 p-5 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <Label className="text-sm font-semibold flex items-center gap-2 mb-3">
+                    <Briefcase className="h-4 w-4 text-primary" />
                     Are you this person's current or previous employer? *
                   </Label>
                   <RadioGroup 
                     value={formData.employmentStatus} 
                     onValueChange={(value) => setFormData(prev => ({ ...prev, employmentStatus: value }))}
-                    className="space-y-3"
+                    className="space-y-2"
                   >
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-slate-200 dark:border-slate-700">
                       <RadioGroupItem value="current" id="current" />
-                      <Label htmlFor="current" className="cursor-pointer flex-1">Current</Label>
+                      <Label htmlFor="current" className="cursor-pointer flex-1 text-sm">Current</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-slate-200 dark:border-slate-700">
                       <RadioGroupItem value="previous" id="previous" />
-                      <Label htmlFor="previous" className="cursor-pointer flex-1">Previous</Label>
+                      <Label htmlFor="previous" className="cursor-pointer flex-1 text-sm">Previous</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-slate-200 dark:border-slate-700">
                       <RadioGroupItem value="neither" id="neither" />
-                      <Label htmlFor="neither" className="cursor-pointer flex-1">Neither</Label>
+                      <Label htmlFor="neither" className="cursor-pointer flex-1 text-sm">Neither</Label>
                     </div>
                   </RadioGroup>
                 </div>
