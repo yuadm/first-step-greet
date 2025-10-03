@@ -33,13 +33,7 @@ export default function Reference() {
 
   return (
     <CompanyProvider>
-      <div className="min-h-screen bg-gradient-subtle">
-        {/* Decorative background elements */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-        </div>
-
+      <div className="min-h-screen bg-background">
         <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <header className="mb-4 sm:mb-6 text-center animate-fade-in">
             <div className="inline-block bg-gradient-primary p-0.5 rounded-xl mb-2">
