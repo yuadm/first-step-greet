@@ -40,17 +40,17 @@ export default function Reference() {
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-          <header className="mb-8 sm:mb-12 text-center animate-fade-in">
-            <div className="inline-block bg-gradient-primary p-1 rounded-2xl mb-4 shadow-glow">
-              <div className="bg-background px-6 py-3 rounded-xl">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <header className="mb-4 sm:mb-6 text-center animate-fade-in">
+            <div className="inline-block bg-gradient-primary p-0.5 rounded-xl mb-2">
+              <div className="bg-background px-4 py-2 rounded-lg">
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                   Provide a Job Reference
                 </h1>
               </div>
             </div>
-            <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto px-4">
-              Your reference helps us make informed decisions. Please complete the form below.
+            <p className="text-muted-foreground text-xs sm:text-sm max-w-2xl mx-auto">
+              Your reference helps us make informed decisions.
             </p>
           </header>
 

@@ -246,22 +246,19 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
       {/* Company Header */}
       <Card className="card-premium border-none bg-gradient-card overflow-hidden">
         <div className="absolute inset-0 bg-gradient-primary opacity-5" />
-        <CardContent className="relative text-center py-8">
+        <CardContent className="relative text-center py-4">
           {companySettings.logo && (
-            <div className="flex justify-center mb-4">
-              <div className="p-3 bg-background rounded-2xl shadow-md">
+            <div className="flex justify-center mb-2">
+              <div className="p-2 bg-background rounded-xl shadow-sm">
                 <img 
                   src={companySettings.logo} 
                   alt={`${companySettings.name} logo`}
-                  className="h-12 sm:h-16 w-auto object-contain"
+                  className="h-8 sm:h-10 w-auto object-contain"
                 />
               </div>
             </div>
           )}
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">{companySettings.name}</h2>
-          {companySettings.tagline && (
-            <p className="text-sm text-muted-foreground mt-2">{companySettings.tagline}</p>
-          )}
+          <h2 className="text-base sm:text-lg font-bold text-foreground">{companySettings.name}</h2>
         </CardContent>
       </Card>
 
