@@ -30,7 +30,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   size="sm" 
                   className="relative hover:scale-110 transition-all duration-200 hover:bg-primary/10 rounded-xl group"
                 >
-                  <Bell className="w-5 h-5 transition-all duration-300 group-hover:rotate-12" />
+                  <Bell className="w-5 h-5 transition-all duration-300" />
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-gradient-to-r from-destructive to-destructive-foreground rounded-full animate-pulse shadow-lg shadow-destructive/50"></span>
                 </Button>
 

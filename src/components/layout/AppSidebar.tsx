@@ -173,7 +173,7 @@ export function AppSidebar() {
       <SidebarHeader className="relative px-4 py-5 border-b border-sidebar-border/50">
         {/* Premium header with glassmorphism */}
         <div className="flex items-center justify-between">
-          {!collapsed && (
+          {!collapsed ? (
             <div className="flex items-center gap-3 animate-fade-in">
               {/* Logo with glow effect */}
               <div className="relative group">
@@ -201,35 +201,49 @@ export function AppSidebar() {
                 </p>
               </div>
             </div>
+          ) : (
+            <div className="mx-auto">
+              {/* Logo in collapsed state */}
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary-hover rounded-xl blur-md opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center overflow-hidden shadow-lg">
+                  {companySettings.logo ? (
+                    <img
+                      src={companySettings.logo}
+                      alt="Company Logo"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <Sparkles className="w-5 h-5 text-white" />
+                  )}
+                </div>
+              </div>
+            </div>
           )}
           
           {/* Toggle button with animation */}
+          {!collapsed && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleSidebar}
+              className="w-9 h-9 p-0 rounded-lg transition-all duration-300 hover:bg-sidebar-accent hover:scale-110 hover:shadow-md active:scale-95"
+            >
+              <ChevronLeft className="w-4 h-4 transition-transform duration-300" />
+            </Button>
+          )}
+        </div>
+
+        {/* Toggle button for collapsed state */}
+        {collapsed && (
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleSidebar}
-            className={cn(
-              "w-9 h-9 p-0 rounded-lg transition-all duration-300",
-              "hover:bg-sidebar-accent hover:scale-110 hover:shadow-md",
-              "active:scale-95",
-              collapsed && "mx-auto"
-            )}
+            className="w-9 h-9 mx-auto mt-4 p-0 rounded-lg transition-all duration-300 hover:bg-sidebar-accent hover:scale-110 hover:shadow-md active:scale-95"
           >
-            {collapsed ? (
-              <ChevronRight className="w-4 h-4 transition-transform duration-300" />
-            ) : (
-              <ChevronLeft className="w-4 h-4 transition-transform duration-300" />
-            )}
+            <ChevronRight className="w-4 h-4 transition-transform duration-300" />
           </Button>
-        </div>
-
-        {/* Quick actions bar (collapsed state) */}
-        {collapsed && (
-          <div className="mt-4 flex justify-center">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center shadow-lg">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-          </div>
         )}
       </SidebarHeader>
 
@@ -278,7 +292,7 @@ export function AppSidebar() {
                               "w-5 h-5 flex-shrink-0 transition-all duration-300",
                               isActive(item.url) 
                                 ? "scale-110" 
-                                : "group-hover:scale-110 group-hover:rotate-3"
+                                : "group-hover:scale-105"
                             )} />
                             {!collapsed && (
                               <div className="flex-1 min-w-0">
@@ -320,7 +334,7 @@ export function AppSidebar() {
                                 "w-5 h-5 flex-shrink-0 transition-all duration-300",
                                 isActive(item.url) 
                                   ? "scale-110" 
-                                  : "group-hover:scale-110 group-hover:rotate-3"
+                                  : "group-hover:scale-105"
                               )} />
                               {!collapsed && (
                                 <div className="flex-1 min-w-0">
@@ -381,7 +395,7 @@ export function AppSidebar() {
               onClick={signOut}
               className="w-full justify-start gap-3 px-3 py-2.5 text-sidebar-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-95 group"
             >
-              <LogOut className="w-4 h-4 transition-transform duration-300 group-hover:-rotate-12" />
+              <LogOut className="w-4 h-4 transition-transform duration-300" />
               <span className="font-medium">Sign Out</span>
             </Button>
           </>
@@ -405,7 +419,7 @@ export function AppSidebar() {
               onClick={signOut}
               className="w-10 h-10 mx-auto p-0 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-all duration-300 hover:scale-110 active:scale-95 group"
             >
-              <LogOut className="w-4 h-4 transition-transform duration-300 group-hover:-rotate-12" />
+              <LogOut className="w-4 h-4 transition-transform duration-300" />
             </Button>
           </div>
         )}
