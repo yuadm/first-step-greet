@@ -69,18 +69,18 @@ export const generateReferencePDF = async (
   // Set font to support Unicode characters
   pdf.setFont('helvetica', 'normal');
 
-  // Add subtle border with brand color
-  pdf.setDrawColor(100, 116, 139); // Slate color
-  pdf.setLineWidth(0.3);
+  // Add page border
+  pdf.setDrawColor(0, 0, 0);
+  pdf.setLineWidth(0.5);
   pdf.rect(10, 10, pageWidth - 20, pageHeight - 20);
 
   // Helper function to ensure space on page
   const ensureSpace = (needed: number) => {
     if (yPosition + needed > pageHeight - 25) { // Account for border
       pdf.addPage();
-      // Add subtle border to new page
-      pdf.setDrawColor(100, 116, 139);
-      pdf.setLineWidth(0.3);
+      // Add border to new page
+      pdf.setDrawColor(0, 0, 0);
+      pdf.setLineWidth(0.5);
       pdf.rect(10, 10, pageWidth - 20, pageHeight - 20);
       yPosition = 25; // Start closer to border on new page
     }
@@ -117,41 +117,29 @@ export const generateReferencePDF = async (
     }
   }
 
-  // Add company name with modern styling
-  pdf.setFontSize(16);
+  // Add company name
+  pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(15, 23, 42); // Slate-900
   pdf.text(companySettings.name, pageWidth / 2, yPosition, { align: 'center' });
-  yPosition += 10;
+  yPosition += 12;
 
   // Helper function to add text with word wrap
-  const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 10): number => {
+  const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 11): number => {
     pdf.setFontSize(fontSize);
     const lines = pdf.splitTextToSize(text, maxWidth);
     pdf.text(lines, x, y);
     return y + (lines.length * lineHeight);
   };
 
-  // Header with modern styling
-  pdf.setFontSize(13);
+  // Header
+  pdf.setFontSize(14);
   pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(51, 65, 85); // Slate-700
-  const referenceType = reference.reference_type === 'employer' ? 'Employment Reference' : 'Character Reference';
+  const referenceType = reference.reference_type === 'employer' ? 'Employment reference for' : 'Character reference for';
   pdf.text(referenceType, pageWidth / 2, yPosition, { align: 'center' });
-  yPosition += 10;
+  yPosition += 12;
 
-  // Applicant Information - Clean header bar
-  pdf.setFillColor(248, 250, 252); // Slate-50
-  pdf.rect(margin - 2, yPosition - 5, pageWidth - 2 * margin + 4, 10, 'F');
-  
-  pdf.setFontSize(10);
-  pdf.setTextColor(71, 85, 105); // Slate-600
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('APPLICANT INFORMATION', margin, yPosition);
-  yPosition += 10;
-  
-  // Reset text color
-  pdf.setTextColor(30, 41, 59); // Slate-800
+  // Applicant Information - Horizontal Layout
+  pdf.setFontSize(12);
   
   // Name
   pdf.setFont('helvetica', 'bold');
@@ -163,31 +151,21 @@ export const generateReferencePDF = async (
   
   // Date of Birth
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Date of Birth:', margin + nameWidth + 15, yPosition);
+  pdf.text('Date of Birth:', margin + nameWidth + 20, yPosition);
   const dobLabelWidth = pdf.getTextWidth('Date of Birth:');
   pdf.setFont('helvetica', 'normal');
-  pdf.text(` ${applicantDOB}`, margin + nameWidth + 15 + dobLabelWidth, yPosition);
+  pdf.text(` ${applicantDOB}`, margin + nameWidth + 20 + dobLabelWidth, yPosition);
   const dobWidth = pdf.getTextWidth(`Date of Birth: ${applicantDOB}`);
   
   // Postcode
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Postcode:', margin + nameWidth + dobWidth + 30, yPosition);
+  pdf.text('Postcode:', margin + nameWidth + dobWidth + 40, yPosition);
   const postcodeLabelWidth = pdf.getTextWidth('Postcode:');
   pdf.setFont('helvetica', 'normal');
-  pdf.text(` ${applicantPostcode}`, margin + nameWidth + dobWidth + 30 + postcodeLabelWidth, yPosition);
-  yPosition += 12;
+  pdf.text(` ${applicantPostcode}`, margin + nameWidth + dobWidth + 40 + postcodeLabelWidth, yPosition);
+  yPosition += 15;
 
-  // Referee Information header
-  pdf.setFillColor(248, 250, 252);
-  pdf.rect(margin - 2, yPosition - 5, pageWidth - 2 * margin + 4, 10, 'F');
-  
-  pdf.setFontSize(10);
-  pdf.setTextColor(71, 85, 105);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('REFEREE INFORMATION', margin, yPosition);
-  yPosition += 10;
-  
-  pdf.setTextColor(30, 41, 59);
+  // Referee Information
   pdf.setFont('helvetica', 'bold');
   pdf.text('Referee Name:', margin, yPosition);
   pdf.setFont('helvetica', 'normal');
@@ -199,7 +177,7 @@ export const generateReferencePDF = async (
     pdf.setFont('helvetica', 'normal');
     pdf.text(reference.form_data.refereeJobTitle, margin + 250, yPosition);
   }
-  yPosition += 12;
+  yPosition += 15;
 
   // Reference specific content
   ensureSpace(60);
