@@ -34,7 +34,7 @@ function PublicHomeContent() {
 
   // Show both job application and employee login for non-authenticated users
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12 pt-8">
           <div className="mx-auto mb-6 w-20 h-20 bg-primary/10 rounded-lg flex items-center justify-center">

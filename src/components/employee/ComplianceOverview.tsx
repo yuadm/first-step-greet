@@ -205,7 +205,7 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                                     variant={quarter.status === 'completed' ? 'default' : 'outline'}
                                     className="text-[10px] px-1.5 py-0.5 h-auto w-full justify-center"
                                   >
-                                    {quarter.status === 'completed' ? 'Completed' : quarter.status === 'due' ? 'Due' : 'Soon'}
+                                    {quarter.status === 'completed' ? '✓' : quarter.status === 'due' ? '!' : '○'}
                                   </Badge>
                                 </div>
                               ))}
@@ -218,6 +218,68 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Completed Items */}
+        {completedItems.length > 0 && (
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full" />
+              <h4 className="font-semibold text-sm sm:text-base text-gray-900">
+                Recently Completed
+              </h4>
+              <Badge className="bg-green-500 text-white border-0 text-xs ml-auto flex-shrink-0">
+                {completedItems.length}
+              </Badge>
+            </div>
+            
+            <div className="grid gap-3 sm:gap-4">
+              {completedItems.slice(0, 3).map((item, index) => (
+                <div 
+                  key={`${item.id}-${item.period}`} 
+                  className="group relative overflow-hidden rounded-xl sm:rounded-2xl border-2 border-green-100 bg-gradient-to-br from-green-50/80 via-white to-emerald-50/40 hover:border-green-200 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
+                  
+                  <div className="p-3 sm:p-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-md flex-shrink-0">
+                        <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                        <div className="absolute inset-0 bg-white/20 rounded-lg sm:rounded-xl" />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-start sm:items-center justify-between gap-2 flex-wrap">
+                          <span className="font-bold text-sm sm:text-base text-gray-900 break-words">{item.name}</span>
+                          <Badge className="bg-green-100 text-green-700 border-green-200 text-xs flex-shrink-0">
+                            ✓ Done
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center justify-between gap-2 text-xs sm:text-sm">
+                          <div className="flex items-center gap-2 text-gray-600 min-w-0">
+                            <FileCheck className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="truncate">{formatPeriod(item.period)} • {formatFrequency(item.frequency)}</span>
+                          </div>
+                          {item.completedDate && (
+                            <span className="text-gray-500 flex-shrink-0 hidden sm:block">{formatDate(item.completedDate)}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {completedItems.length > 3 && (
+              <div className="text-center pt-2">
+                <p className="text-xs sm:text-sm text-gray-500">
+                  +{completedItems.length - 3} more completed items
+                </p>
+              </div>
+            )}
           </div>
         )}
 
