@@ -2273,6 +2273,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_period_end_date: {
+        Args: { p_frequency: string; p_period_identifier: string }
+        Returns: string
+      }
       get_period_identifier: {
         Args: { frequency: string; target_date?: string }
         Returns: string
