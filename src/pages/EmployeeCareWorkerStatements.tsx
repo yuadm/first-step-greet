@@ -54,10 +54,16 @@ export default function EmployeeCareWorkerStatements() {
 
       if (error) throw error;
       
-      // Custom sort: draft/rejected first, then submitted/approved
+      // Custom sort: draft/rejected first, then submitted/approved, with newest first within each group
       const sorted = (data || []).sort((a, b) => {
-        const statusOrder: Record<string, number> = { draft: 0, rejected: 1, submitted: 2, approved: 3 };
-        return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
+        const statusOrder: Record<string, number> = { draft: 0, rejected: 0, submitted: 1, approved: 1 };
+        const statusDiff = (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99);
+        
+        // If same priority group, sort by created_at descending (newest first)
+        if (statusDiff === 0) {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+        return statusDiff;
       });
       
       setStatements(sorted);
