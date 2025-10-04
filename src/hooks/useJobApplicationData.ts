@@ -1,4 +1,4 @@
-import { useJobApplications, useJobApplicationStatusOptions, useLanguageStatistics } from '@/hooks/queries/useJobApplicationQueries';
+import { useJobApplications, useJobApplicationStatusOptions } from '@/hooks/queries/useJobApplicationQueries';
 
 export function useJobApplicationData(filters?: {
   statusFilter?: string;
@@ -7,11 +7,9 @@ export function useJobApplicationData(filters?: {
   dateRange?: { from?: Date; to?: Date };
   page?: number;
   pageSize?: number;
-  languages?: string[];
 }) {
   const applicationsQuery = useJobApplications(filters);
   const statusOptionsQuery = useJobApplicationStatusOptions();
-  const languageStatsQuery = useLanguageStatistics();
 
   // Aggregate loading state from all queries
   const loading = applicationsQuery.isLoading || statusOptionsQuery.isLoading;
@@ -21,7 +19,6 @@ export function useJobApplicationData(filters?: {
     await Promise.all([
       applicationsQuery.refetch(),
       statusOptionsQuery.refetch(),
-      languageStatsQuery.refetch(),
     ]);
   };
 
@@ -29,11 +26,8 @@ export function useJobApplicationData(filters?: {
     applications: applicationsQuery.data?.applications || [],
     totalCount: applicationsQuery.data?.totalCount || 0,
     statusOptions: statusOptionsQuery.data || ['new', 'reviewing', 'interviewed', 'accepted', 'rejected'],
-    languageStats: languageStatsQuery.data?.languageStats || [],
-    totalLanguages: languageStatsQuery.data?.totalLanguages || 0,
-    allLanguages: languageStatsQuery.data?.allLanguages || [],
     loading,
-    error: applicationsQuery.error || statusOptionsQuery.error || languageStatsQuery.error,
+    error: applicationsQuery.error || statusOptionsQuery.error,
     refetchData
   };
 }

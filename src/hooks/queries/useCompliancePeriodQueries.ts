@@ -305,36 +305,9 @@ export function useCompliancePeriodActions() {
     },
   });
 
-  const deleteStatement = useMutation({
-    mutationFn: async (statementId: string) => {
-      const { error } = await supabase
-        .from('care_worker_statements')
-        .delete()
-        .eq('id', statementId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: compliancePeriodQueryKeys.statements() });
-      toast({
-        title: "Success",
-        description: "Statement deleted successfully",
-      });
-    },
-    onError: (error) => {
-      console.error('Error deleting statement:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete statement",
-        variant: "destructive",
-      });
-    },
-  });
-
   return {
     updateStatementStatus,
     createStatement,
     updateStatement,
-    deleteStatement,
   };
 }

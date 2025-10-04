@@ -24,9 +24,6 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { TimeSlotsList } from "./TimeSlotsList";
 import { ReferenceButtons } from "./ReferenceButtons";
 import { DownloadButton } from "@/components/ui/download-button";
-import { LanguageStatsCard } from "./LanguageStatsCard";
-import { LanguageFilter } from "./LanguageFilter";
-import { useJobApplicationData } from "@/hooks/useJobApplicationData";
 // Helper function to format dates from YYYY-MM-DD to MM/DD/YYYY
 const formatDateDisplay = (dateString: string | null | undefined): string => {
   if (!dateString) return 'Not provided';
@@ -65,6 +62,8 @@ export type JobApplicationSortField = 'applicant_name' | 'position' | 'created_a
 export type JobApplicationSortDirection = 'asc' | 'desc';
 
 export function JobApplicationsContent() {
+  const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortField, setSortField] = useState<JobApplicationSortField>('created_at');
@@ -73,32 +72,13 @@ export function JobApplicationsContent() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-  
+  const [totalCount, setTotalCount] = useState(0);
+  const [statusOptions, setStatusOptions] = useState<string[]>(['new','reviewing','interviewed','accepted','rejected']);
   const { toast } = useToast();
   const { companySettings } = useCompany();
   const { user } = useAuth();
   const { getAccessibleBranches, isAdmin } = usePermissions();
   const { hasPageAction } = usePermissions();
-  
-  // Use the custom hook for data fetching
-  const { 
-    applications, 
-    totalCount, 
-    statusOptions, 
-    languageStats, 
-    totalLanguages, 
-    allLanguages,
-    loading 
-  } = useJobApplicationData({
-    statusFilter,
-    sortField,
-    sortDirection,
-    dateRange,
-    page,
-    pageSize,
-    languages: selectedLanguages.length > 0 ? selectedLanguages : undefined
-  });
 
   // Check if user has permission to view job applications
   if (!isAdmin && !hasPageAction('job-applications', 'view')) {
@@ -111,6 +91,14 @@ export function JobApplicationsContent() {
     );
   }
 
+  useEffect(() => {
+    fetchStatusOptions();
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchApplications();
+  }, [statusFilter, sortField, sortDirection, dateRange, page, pageSize]);
 
   // Filter applications locally using useMemo
   const filteredApplications = useMemo(() => {
@@ -119,19 +107,85 @@ export function JobApplicationsContent() {
     // Filter by search term
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(app => {
-        const personalInfo = app.personal_info as any;
-        return (
-          (personalInfo?.fullName || '').toLowerCase().includes(term) ||
-          (personalInfo?.email || '').toLowerCase().includes(term) ||
-          (personalInfo?.positionAppliedFor || '').toLowerCase().includes(term)
-        );
-      });
+      filtered = filtered.filter(app => 
+        (app.personal_info?.fullName || '').toLowerCase().includes(term) ||
+        (app.personal_info?.email || '').toLowerCase().includes(term) ||
+        (app.personal_info?.positionAppliedFor || '').toLowerCase().includes(term)
+      );
     }
 
     return filtered;
   }, [applications, searchTerm]);
 
+  const fetchStatusOptions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('job_application_settings')
+        .select('setting_value, display_order, is_active')
+        .eq('category', 'status')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      if (!error && data) {
+        const opts = data.map((d: any) => {
+          try {
+            const statusValue = typeof d.setting_value === 'string' 
+              ? JSON.parse(d.setting_value) 
+              : d.setting_value;
+            return statusValue?.status_name || statusValue?.value;
+          } catch {
+            return d.setting_value?.status_name || d.setting_value?.value;
+          }
+        }).filter(Boolean);
+        if (opts.length) setStatusOptions(opts);
+      }
+    } catch (e) {
+      // ignore, use defaults
+    }
+  };
+
+  const fetchApplications = async () => {
+    try {
+      let query = supabase
+        .from('job_applications')
+        .select('*', { count: 'exact' });
+
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
+      if (dateRange?.from) {
+        query = query.gte('created_at', dateRange.from.toISOString());
+      }
+      if (dateRange?.to) {
+        const toDate = new Date(dateRange.to);
+        toDate.setDate(toDate.getDate() + 1); // exclusive upper bound
+        query = query.lt('created_at', toDate.toISOString());
+      }
+
+      if (sortField === 'created_at') {
+        query = query.order('created_at', { ascending: sortDirection === 'asc' });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const from = (page - 1) * pageSize;
+      const toIdx = from + pageSize - 1;
+      const { data, error, count } = await query.range(from, toIdx);
+
+      if (error) throw error;
+      setApplications(data || []);
+      setTotalCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch job applications",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   const deleteApplication = async (id: string) => {
     try {
       const { error } = await supabase
@@ -140,6 +194,8 @@ export function JobApplicationsContent() {
         .eq('id', id);
 
       if (error) throw error;
+
+      setApplications(prev => prev.filter(app => app.id !== id));
 
       toast({
         title: "Application Deleted",
@@ -156,10 +212,9 @@ export function JobApplicationsContent() {
   };
 
   const sendReferenceEmail = (application: JobApplication, referenceIndex: number) => {
-    const employmentHistory = application.employment_history as any;
     const reference = referenceIndex === 1 
-      ? employmentHistory?.recentEmployer 
-      : employmentHistory?.previousEmployers?.[0];
+      ? application.employment_history?.recentEmployer 
+      : application.employment_history?.previousEmployers?.[0];
     
     if (!reference?.email) {
       toast({
@@ -170,11 +225,10 @@ export function JobApplicationsContent() {
       return;
     }
 
-    const personalInfo = application.personal_info as any;
-    const applicantName = personalInfo?.fullName || 
-                         `${personalInfo?.firstName || ''} ${personalInfo?.lastName || ''}`.trim() ||
+    const applicantName = application.personal_info?.fullName || 
+                         `${application.personal_info?.firstName || ''} ${application.personal_info?.lastName || ''}`.trim() ||
                          'Unknown Applicant';
-    const position = personalInfo?.positionAppliedFor || 'Unknown Position';
+    const position = application.personal_info?.positionAppliedFor || 'Unknown Position';
     const referenceName = reference.name || reference.company || 'Reference';
     const referenceCompany = reference.company || 'Unknown Company';
     const referenceAddress = [
@@ -239,25 +293,22 @@ Please complete and return this reference as soon as possible.`;
       let aVal: any;
       let bVal: any;
       
-      const aPersonalInfo = a.personal_info as any;
-      const bPersonalInfo = b.personal_info as any;
-      
       switch (sortField) {
         case 'applicant_name':
-          aVal = aPersonalInfo?.fullName || '';
-          bVal = bPersonalInfo?.fullName || '';
+          aVal = a.personal_info?.fullName || '';
+          bVal = b.personal_info?.fullName || '';
           break;
         case 'position':
-          aVal = aPersonalInfo?.positionAppliedFor || '';
-          bVal = bPersonalInfo?.positionAppliedFor || '';
+          aVal = a.personal_info?.positionAppliedFor || '';
+          bVal = b.personal_info?.positionAppliedFor || '';
           break;
         case 'postcode':
-          aVal = aPersonalInfo?.postcode || '';
-          bVal = bPersonalInfo?.postcode || '';
+          aVal = a.personal_info?.postcode || '';
+          bVal = b.personal_info?.postcode || '';
           break;
         case 'english_proficiency':
-          aVal = aPersonalInfo?.englishProficiency || '';
-          bVal = bPersonalInfo?.englishProficiency || '';
+          aVal = a.personal_info?.englishProficiency || '';
+          bVal = b.personal_info?.englishProficiency || '';
           break;
         default:
           return 0;
@@ -307,18 +358,6 @@ Please complete and return this reference as soon as possible.`;
         </div>
       </div>
 
-      {/* Language Statistics */}
-      {languageStats.length > 0 && (
-        <LanguageStatsCard
-          languageStats={languageStats}
-          totalLanguages={totalLanguages}
-          onLanguageClick={(language) => {
-            setSelectedLanguages([language]);
-            setPage(1);
-          }}
-        />
-      )}
-
       {/* Filters */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center">
         <div className="relative flex-1">
@@ -341,14 +380,6 @@ Please complete and return this reference as soon as possible.`;
             ))}
           </SelectContent>
         </Select>
-        <LanguageFilter
-          allLanguages={allLanguages}
-          selectedLanguages={selectedLanguages}
-          onLanguagesChange={(languages) => {
-            setSelectedLanguages(languages);
-            setPage(1);
-          }}
-        />
         <DatePickerWithRange date={dateRange} setDate={(d) => { setPage(1); setDateRange(d); }} />
       </div>
       {/* Applications Table */}
@@ -409,70 +440,68 @@ Please complete and return this reference as soon as possible.`;
                    <TableHead>Actions</TableHead>
                  </TableRow>
                </TableHeader>
-               <TableBody>
-                 {paginatedApplications.map((application) => {
-                   const personalInfo = application.personal_info as any;
-                   return (
-                     <TableRow key={application.id}>
-                       <TableCell>
-                         <div className="font-medium">
-                           {personalInfo?.fullName || 'Unknown'}
-                         </div>
-                       </TableCell>
-                       <TableCell>
-                         {personalInfo?.positionAppliedFor || 'Not specified'}
-                       </TableCell>
-                       <TableCell>
-                         {new Date(application.created_at).toLocaleDateString()}
-                       </TableCell>
-                       <TableCell>
-                         {personalInfo?.postcode || 'Not provided'}
-                       </TableCell>
-                       <TableCell>
-                         {personalInfo?.englishProficiency || 'Not specified'}
-                       </TableCell>
-                       <TableCell>
-                         <div className="flex gap-2">
-                           <Dialog>
-                             <DialogTrigger asChild>
-                               <Button
-                                 variant="outline"
-                                 size="sm"
-                                 onClick={() => setSelectedApplication(application)}
-                               >
-                                 <Eye className="w-4 h-4 mr-1" />
-                                 View
+              <TableBody>
+                {paginatedApplications.map((application) => (
+                  <TableRow key={application.id}>
+                    <TableCell>
+                      <div className="font-medium">
+                        {application.personal_info?.fullName || 'Unknown'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {application.personal_info?.positionAppliedFor || 'Not specified'}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(application.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {application.personal_info?.postcode || 'Not provided'}
+                    </TableCell>
+                    <TableCell>
+                      {application.personal_info?.englishProficiency || 'Not specified'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedApplication(application)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-6xl max-h-[90vh]">
+                            <DialogHeader>
+                              <DialogTitle>Application Details - {application.personal_info?.fullName}</DialogTitle>
+                            </DialogHeader>
+                            <ScrollArea className="max-h-[75vh]">
+                              {selectedApplication && (
+                                <ApplicationDetails 
+                                  application={selectedApplication} 
+                                  onUpdate={fetchApplications}
+                                  onSendReferenceEmail={sendReferenceEmail}
+                                />
+                              )}
+                            </ScrollArea>
+                          </DialogContent>
+                        </Dialog>
+                        
+                         {(isAdmin || hasPageAction('job-applications', 'delete')) && (
+                           <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                               <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                                 <Trash2 className="w-4 h-4 mr-1" />
+                                 Delete
                                </Button>
-                             </DialogTrigger>
-                             <DialogContent className="max-w-6xl max-h-[90vh]">
-                               <DialogHeader>
-                                 <DialogTitle>Application Details - {personalInfo?.fullName}</DialogTitle>
-                               </DialogHeader>
-                               <ScrollArea className="max-h-[75vh]">
-                                 {selectedApplication && (
-                                   <ApplicationDetails 
-                                     application={selectedApplication} 
-                                     onUpdate={() => {}}
-                                     onSendReferenceEmail={sendReferenceEmail}
-                                   />
-                                 )}
-                               </ScrollArea>
-                             </DialogContent>
-                           </Dialog>
-                           
-                            {(isAdmin || hasPageAction('job-applications', 'delete')) && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                                    <Trash2 className="w-4 h-4 mr-1" />
-                                    Delete
-                                  </Button>
-                                </AlertDialogTrigger>
-                             <AlertDialogContent>
-                               <AlertDialogHeader>
-                                 <AlertDialogTitle>Delete Application</AlertDialogTitle>
-                                 <AlertDialogDescription>
-                                   Are you sure you want to delete the application from {personalInfo?.fullName}?
+                             </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Application</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete the application from {application.personal_info?.fullName}? 
                                 This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -485,14 +514,13 @@ Please complete and return this reference as soon as possible.`;
                                 Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          )}
-                       </div>
-                     </TableCell>
-                   </TableRow>
-                   );
-                 })}
+                           </AlertDialogContent>
+                         </AlertDialog>
+                         )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
