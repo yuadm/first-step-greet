@@ -131,10 +131,10 @@ export const generateReferencePDF = async (
     return y + (lines.length * lineHeight);
   };
 
-  // Header with emoji
+  // Header
   pdf.setFontSize(15);
   pdf.setFont('helvetica', 'bold');
-  const referenceType = reference.reference_type === 'employer' ? '📝 Employment Reference' : '📝 Character Reference';
+  const referenceType = reference.reference_type === 'employer' ? 'Employment Reference' : 'Character Reference';
   pdf.text(referenceType, pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 15;
 
@@ -145,7 +145,7 @@ export const generateReferencePDF = async (
   
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('👤 Reference for:', margin + 3, yPosition + 2);
+  pdf.text('Reference for:', margin + 3, yPosition + 2);
   yPosition += 8;
   
   pdf.setFontSize(10);
@@ -170,7 +170,7 @@ export const generateReferencePDF = async (
   
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('✍️ Your Information:', margin + 3, yPosition + 2);
+  pdf.text('Your Information:', margin + 3, yPosition + 2);
   yPosition += 8;
   
   pdf.setFontSize(10);
@@ -195,13 +195,13 @@ export const generateReferencePDF = async (
   
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('💼 Are you this person\'s current or previous employer?', margin + 3, yPosition + 3);
+  pdf.text('Are you this person\'s current or previous employer?', margin + 3, yPosition + 3);
   yPosition += 9;
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
-  const currentBox = reference.form_data.employmentStatus === 'current' ? '[✓]' : '[ ]';
-  const previousBox = reference.form_data.employmentStatus === 'previous' ? '[✓]' : '[ ]';
-  const neitherBox = reference.form_data.employmentStatus === 'neither' ? '[✓]' : '[ ]';
+  const currentBox = reference.form_data.employmentStatus === 'current' ? '[X]' : '[ ]';
+  const previousBox = reference.form_data.employmentStatus === 'previous' ? '[X]' : '[ ]';
+  const neitherBox = reference.form_data.employmentStatus === 'neither' ? '[X]' : '[ ]';
   pdf.text(`${currentBox} Current    ${previousBox} Previous    ${neitherBox} Neither`, margin + 3, yPosition);
   yPosition += 12;
 
@@ -245,9 +245,9 @@ export const generateReferencePDF = async (
     yPosition += 9;
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    const goodBox = reference.form_data.attendance === 'good' ? '[✓]' : '[ ]';
-    const averageBox = reference.form_data.attendance === 'average' ? '[✓]' : '[ ]';
-    const poorBox = reference.form_data.attendance === 'poor' ? '[✓]' : '[ ]';
+    const goodBox = reference.form_data.attendance === 'good' ? '[X]' : '[ ]';
+    const averageBox = reference.form_data.attendance === 'average' ? '[X]' : '[ ]';
+    const poorBox = reference.form_data.attendance === 'poor' ? '[X]' : '[ ]';
     pdf.text(`${goodBox} Good    ${averageBox} Average    ${poorBox} Poor`, margin + 3, yPosition);
     yPosition += 10;
 
@@ -267,12 +267,12 @@ export const generateReferencePDF = async (
     
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('🤝 Do you know this person from outside employment or education?', margin + 3, yPosition + 3);
+    pdf.text('Do you know this person from outside employment or education?', margin + 3, yPosition + 3);
     yPosition += 9;
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    const outsideYesBox = reference.form_data.employmentStatus === 'yes' ? '[✓]' : '[ ]';
-    const outsideNoBox = reference.form_data.employmentStatus === 'no' ? '[✓]' : '[ ]';
+    const outsideYesBox = reference.form_data.employmentStatus === 'yes' ? '[X]' : '[ ]';
+    const outsideNoBox = reference.form_data.employmentStatus === 'no' ? '[X]' : '[ ]';
     pdf.text(`${outsideYesBox} Yes    ${outsideNoBox} No`, margin + 3, yPosition);
     yPosition += 12;
 
@@ -291,7 +291,7 @@ export const generateReferencePDF = async (
   
   pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('⭐ In your opinion, which of the following describes this person?', margin + 3, yPosition + 3);
+  pdf.text('In your opinion, which of the following describes this person (tick each that is true)?', margin + 3, yPosition + 3);
   yPosition += 10;
 
   const qualities = [
@@ -314,7 +314,7 @@ export const generateReferencePDF = async (
     // Left column quality
     const leftQuality = qualities[i];
     const leftChecked = reference.form_data[leftQuality.key as keyof ReferenceData];
-    const leftCheckbox = leftChecked ? '[✓]' : '[ ]';
+    const leftCheckbox = leftChecked ? '[X]' : '[ ]';
     pdf.text(leftCheckbox, margin + 3, yPosition);
     pdf.text(leftQuality.label, margin + 13, yPosition);
     
@@ -322,7 +322,7 @@ export const generateReferencePDF = async (
     if (i + 1 < qualities.length) {
       const rightQuality = qualities[i + 1];
       const rightChecked = reference.form_data[rightQuality.key as keyof ReferenceData];
-      const rightCheckbox = rightChecked ? '[✓]' : '[ ]';
+      const rightCheckbox = rightChecked ? '[X]' : '[ ]';
       const rightStartX = margin + columnWidth;
       pdf.text(rightCheckbox, rightStartX, yPosition);
       pdf.text(rightQuality.label, rightStartX + 10, yPosition);
@@ -349,15 +349,15 @@ export const generateReferencePDF = async (
   
   pdf.setFontSize(12);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('⚠️ BACKGROUND CHECK QUESTIONS', margin + 3, yPosition + 3);
+  pdf.text('BACKGROUND CHECK QUESTIONS', margin + 3, yPosition + 3);
   yPosition += 10;
   
   pdf.setFontSize(10);
   yPosition = addWrappedText('The position this person has applied for involves working with vulnerable people. Are you aware of any convictions, cautions, reprimands or final warnings that the person may have received that are not \'protected\' as defined by the Rehabilitation of Offenders Act 1974 (Exceptions) Order 1975 (as amended in 2013 by SI 210 1198)?', margin + 3, yPosition, pageWidth - 2 * margin - 6, 10);
   yPosition += 3;
   pdf.setFont('helvetica', 'normal');
-  const convictionsYesBox = reference.form_data.convictionsKnown === 'yes' ? '[✓]' : '[ ]';
-  const convictionsNoBox = reference.form_data.convictionsKnown === 'no' ? '[✓]' : '[ ]';
+  const convictionsYesBox = reference.form_data.convictionsKnown === 'yes' ? '[X]' : '[ ]';
+  const convictionsNoBox = reference.form_data.convictionsKnown === 'no' ? '[X]' : '[ ]';
   const convictionsAnswer = reference.form_data.convictionsKnown ? `${convictionsYesBox} Yes    ${convictionsNoBox} No` : 'Not answered';
   pdf.text(convictionsAnswer, margin + 3, yPosition);
   yPosition += 10;
@@ -365,8 +365,8 @@ export const generateReferencePDF = async (
   pdf.setFont('helvetica', 'normal');
   yPosition = addWrappedText('To your knowledge, is this person currently the subject of any criminal proceedings (for example, charged or summoned but not yet dealt with) or any police investigation?', margin + 3, yPosition, pageWidth - 2 * margin - 6, 10);
   yPosition += 3;
-  const proceedingsYesBox = reference.form_data.criminalProceedingsKnown === 'yes' ? '[✓]' : '[ ]';
-  const proceedingsNoBox = reference.form_data.criminalProceedingsKnown === 'no' ? '[✓]' : '[ ]';
+  const proceedingsYesBox = reference.form_data.criminalProceedingsKnown === 'yes' ? '[X]' : '[ ]';
+  const proceedingsNoBox = reference.form_data.criminalProceedingsKnown === 'no' ? '[X]' : '[ ]';
   const proceedingsAnswer = reference.form_data.criminalProceedingsKnown ? `${proceedingsYesBox} Yes    ${proceedingsNoBox} No` : 'Not answered';
   pdf.text(proceedingsAnswer, margin + 3, yPosition);
   yPosition += 15;
