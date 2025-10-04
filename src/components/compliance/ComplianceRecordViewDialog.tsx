@@ -158,7 +158,7 @@ export function ComplianceRecordViewDialog({
             </div>
           </div>
 
-          {record.notes && (
+          {record.notes && !record.notes.startsWith('Auto-generated for period:') && (
             <div>
               <h4 className="font-semibold text-sm text-muted-foreground mb-2">Notes</h4>
               <p className="text-sm bg-muted p-3 rounded-md">
