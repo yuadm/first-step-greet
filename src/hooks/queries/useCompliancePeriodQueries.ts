@@ -46,15 +46,10 @@ export const fetchCompliancePeriodEmployeeData = async (complianceTypeId: string
 
   if (employeesError) throw employeesError;
 
-  // Fetch compliance records for this type and period with audit information
+  // Fetch compliance records for this type and period
   const { data: recordsData, error: recordsError } = await supabase
     .from('compliance_period_records')
-    .select(`
-      *,
-      completed_by_user:completed_by(name),
-      created_by_user:created_by(name),
-      updated_by_user:updated_by(name)
-    `)
+    .select('*')
     .eq('compliance_type_id', complianceTypeId)
     .eq('period_identifier', periodIdentifier)
     .order('completion_date', { ascending: false });
@@ -89,15 +84,10 @@ export const fetchClientCompliancePeriodData = async (complianceTypeId: string, 
 
   if (clientsError) throw clientsError;
 
-  // Fetch client compliance records with audit information
+  // Fetch client compliance records
   const { data: recordsData, error: recordsError } = await supabase
     .from('client_compliance_period_records')
-    .select(`
-      *,
-      completed_by_user:completed_by(name),
-      created_by_user:created_by(name),  
-      updated_by_user:updated_by(name)
-    `)
+    .select('*')
     .eq('client_compliance_type_id', complianceTypeId)
     .order('completion_date', { ascending: false });
 
