@@ -1286,6 +1286,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                if (!item.record) return '';
                                if (item.record?.completion_method === 'medication_competency') return '';
                                if (!item.record?.notes) return '';
+                               // Filter out auto-generated messages
+                               if (item.record.notes.startsWith('Auto-generated for period:')) return '';
                                if (item.record?.completion_method === 'supervision' || item.record?.completion_method === 'annual_appraisal') {
                                  try {
                                    const j = JSON.parse(item.record.notes);
@@ -1301,6 +1303,8 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                  if (!item.record) return '-';
                                  if (item.record?.completion_method === 'medication_competency') return '-';
                                  if (!item.record?.notes) return '-';
+                                 // Filter out auto-generated messages
+                                 if (item.record.notes.startsWith('Auto-generated for period:')) return '-';
                                  if (item.record?.completion_method === 'supervision' || item.record?.completion_method === 'annual_appraisal') {
                                    try {
                                      const j = JSON.parse(item.record.notes);
@@ -1458,7 +1462,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
                                             </div>
                                           </div>
                                         )}
-                                        {item.record.notes && item.record.completion_method !== 'medication_competency' && (
+                                        {item.record.notes && item.record.completion_method !== 'medication_competency' && !item.record.notes.startsWith('Auto-generated for period:') && (
                                           <div>
                                             <h4 className="font-semibold text-sm text-muted-foreground mb-2">Notes</h4>
                                             {(() => {
