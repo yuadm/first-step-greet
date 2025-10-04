@@ -291,8 +291,8 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
             </div>
 
             {/* Referee Information */}
-            <div className="bg-gradient-surface p-4 sm:p-6 rounded-xl border border-border">
-              <h4 className="font-semibold mb-4 text-primary flex items-center gap-2">
+            <div>
+              <h4 className="font-semibold mb-4 text-foreground flex items-center gap-2">
                 <span>✍️</span>
                 Your Information
               </h4>
@@ -323,8 +323,8 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
             {/* Reference Type Specific Questions */}
             {isEmployerReference ? (
               <div className="space-y-6">
-                <div className="bg-gradient-surface p-4 sm:p-6 rounded-xl border border-border">
-                  <Label className="text-base font-semibold flex items-center gap-2 mb-3 text-primary">
+                <div className="bg-primary-soft p-4 sm:p-6 rounded-xl">
+                  <Label className="text-base font-semibold flex items-center gap-2 mb-3">
                     <span>💼</span>
                     Are you this person's current or previous employer? *
                   </Label>
@@ -333,15 +333,15 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
                     onValueChange={(value) => setFormData(prev => ({ ...prev, employmentStatus: value }))}
                     className="space-y-3"
                   >
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="current" id="current" />
                       <Label htmlFor="current" className="cursor-pointer flex-1">Current</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="previous" id="previous" />
                       <Label htmlFor="previous" className="cursor-pointer flex-1">Previous</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="neither" id="neither" />
                       <Label htmlFor="neither" className="cursor-pointer flex-1">Neither</Label>
                     </div>
@@ -396,22 +396,22 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
                   </div>
                 </div>
 
-                <div className="bg-gradient-surface p-4 sm:p-6 rounded-xl border border-border">
-                  <Label className="text-base font-semibold mb-3 block text-primary">How would you describe their recent attendance record? *</Label>
+                <div className="bg-accent-soft p-4 sm:p-6 rounded-xl">
+                  <Label className="text-base font-semibold mb-3 block">How would you describe their recent attendance record? *</Label>
                   <RadioGroup 
                     value={formData.attendance} 
                     onValueChange={(value) => setFormData(prev => ({ ...prev, attendance: value }))}
                     className="space-y-3"
                   >
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="good" id="att-good" />
                       <Label htmlFor="att-good" className="cursor-pointer flex-1">Good</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="average" id="att-average" />
                       <Label htmlFor="att-average" className="cursor-pointer flex-1">Average</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="poor" id="att-poor" />
                       <Label htmlFor="att-poor" className="cursor-pointer flex-1">Poor</Label>
                     </div>
@@ -431,8 +431,8 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="bg-gradient-surface p-4 sm:p-6 rounded-xl border border-border">
-                  <Label className="text-base font-semibold flex items-center gap-2 mb-3 text-primary">
+                <div className="bg-accent-soft p-4 sm:p-6 rounded-xl">
+                  <Label className="text-base font-semibold flex items-center gap-2 mb-3">
                     <span>🤝</span>
                     Do you know this person from outside employment or education? *
                   </Label>
@@ -441,11 +441,11 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
                     onValueChange={(value) => setFormData(prev => ({ ...prev, employmentStatus: value }))}
                     className="space-y-3"
                   >
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="yes" id="outside-yes" />
                       <Label htmlFor="outside-yes" className="cursor-pointer flex-1">Yes</Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                    <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                       <RadioGroupItem value="no" id="outside-no" />
                       <Label htmlFor="outside-no" className="cursor-pointer flex-1">No</Label>
                     </div>
@@ -467,8 +467,8 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
             )}
 
             {/* Common Character Assessment */}
-            <div className="bg-gradient-surface p-4 sm:p-6 rounded-xl border border-border">
-              <Label className="text-base font-semibold mb-4 flex items-center gap-2 text-primary">
+            <div className="bg-success-soft p-4 sm:p-6 rounded-xl">
+              <Label className="text-base font-semibold mb-4 flex items-center gap-2">
                 <span>⭐</span>
                 In your opinion, which of the following describes this person (tick each that is true)? *
               </Label>
@@ -483,7 +483,7 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
                   { key: 'kindCompassionate', label: 'Kind and compassionate', emoji: '❤️' },
                   { key: 'worksIndependently', label: 'Able to work well without close supervision', emoji: '🎯' },
                 ].map((item) => (
-                  <div key={item.key} className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                  <div key={item.key} className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                     <input
                       type="checkbox"
                       id={item.key}
@@ -512,8 +512,8 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
             </div>
 
             {/* Criminal Background Questions */}
-            <div className="bg-gradient-surface p-4 sm:p-6 rounded-xl border border-border space-y-6">
-              <h4 className="font-semibold text-primary flex items-center gap-2 mb-4">
+            <div className="bg-warning-soft p-4 sm:p-6 rounded-xl space-y-6">
+              <h4 className="font-semibold text-foreground flex items-center gap-2 mb-4">
                 <span>⚠️</span>
                 Background Check Questions
               </h4>
@@ -527,11 +527,11 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
                   onValueChange={(value) => setFormData(prev => ({ ...prev, convictionsKnown: value }))}
                   className="space-y-2 mt-3"
                 >
-                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                     <RadioGroupItem value="yes" id="convictions-yes" />
                     <Label htmlFor="convictions-yes" className="cursor-pointer flex-1">Yes</Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                     <RadioGroupItem value="no" id="convictions-no" />
                     <Label htmlFor="convictions-no" className="cursor-pointer flex-1">No</Label>
                   </div>
@@ -547,11 +547,11 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
                   onValueChange={(value) => setFormData(prev => ({ ...prev, criminalProceedingsKnown: value }))}
                   className="space-y-2 mt-3"
                 >
-                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                     <RadioGroupItem value="yes" id="proceedings-yes" />
                     <Label htmlFor="proceedings-yes" className="cursor-pointer flex-1">Yes</Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg border border-border transition-all">
+                  <div className="flex items-center space-x-3 p-3 bg-background rounded-lg hover:shadow-sm transition-shadow">
                     <RadioGroupItem value="no" id="proceedings-no" />
                     <Label htmlFor="proceedings-no" className="cursor-pointer flex-1">No</Label>
                   </div>
