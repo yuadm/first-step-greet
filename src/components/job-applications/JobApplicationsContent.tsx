@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Eye, FileText, Edit, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Plus, Minus } from "lucide-react";
+import { Search, Eye, FileText, Edit, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Plus, Minus, Languages, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { generateJobApplicationPdf } from "@/lib/job-application-pdf";
@@ -74,6 +74,8 @@ export function JobApplicationsContent() {
   const [pageSize, setPageSize] = useState(50);
   const [totalCount, setTotalCount] = useState(0);
   const [statusOptions, setStatusOptions] = useState<string[]>(['new','reviewing','interviewed','accepted','rejected']);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
   const { toast } = useToast();
   const { companySettings } = useCompany();
   const { user } = useAuth();
@@ -100,6 +102,22 @@ export function JobApplicationsContent() {
     fetchApplications();
   }, [statusFilter, sortField, sortDirection, dateRange, page, pageSize]);
 
+  // Extract available languages from applications
+  useEffect(() => {
+    const languagesSet = new Set<string>();
+    applications.forEach(app => {
+      const langs = app.personal_info?.otherLanguages || [];
+      if (Array.isArray(langs)) {
+        langs.forEach((lang: string) => {
+          if (lang && lang.trim()) {
+            languagesSet.add(lang.trim());
+          }
+        });
+      }
+    });
+    setAvailableLanguages(Array.from(languagesSet).sort());
+  }, [applications]);
+
   // Filter applications locally using useMemo
   const filteredApplications = useMemo(() => {
     let filtered = applications;
@@ -114,8 +132,23 @@ export function JobApplicationsContent() {
       );
     }
 
+    // Filter by language
+    if (selectedLanguages.length > 0) {
+      filtered = filtered.filter(app => {
+        const appLanguages = app.personal_info?.otherLanguages || [];
+        if (!Array.isArray(appLanguages)) return false;
+        
+        // Check if applicant speaks ANY of the selected languages
+        return selectedLanguages.some(selectedLang => 
+          appLanguages.some((appLang: string) => 
+            appLang.toLowerCase().includes(selectedLang.toLowerCase())
+          )
+        );
+      });
+    }
+
     return filtered;
-  }, [applications, searchTerm]);
+  }, [applications, searchTerm, selectedLanguages]);
 
   const fetchStatusOptions = async () => {
     try {
@@ -381,7 +414,97 @@ Please complete and return this reference as soon as possible.`;
           </SelectContent>
         </Select>
         <DatePickerWithRange date={dateRange} setDate={(d) => { setPage(1); setDateRange(d); }} />
+        <Select 
+          value={selectedLanguages.length > 0 ? "selected" : "all"} 
+          onValueChange={(val) => {
+            if (val === "all") {
+              setSelectedLanguages([]);
+              setPage(1);
+            }
+          }}
+        >
+          <SelectTrigger className="w-48">
+            <div className="flex items-center gap-2">
+              <Languages className="w-4 h-4" />
+              <SelectValue placeholder="All Languages" />
+              {selectedLanguages.length > 0 && (
+                <Badge variant="secondary" className="ml-auto">
+                  {selectedLanguages.length}
+                </Badge>
+              )}
+            </div>
+          </SelectTrigger>
+          <SelectContent className="max-h-80">
+            <SelectItem value="all">All Languages</SelectItem>
+            {availableLanguages.map((lang) => {
+              const count = applications.filter(app => 
+                app.personal_info?.otherLanguages?.includes(lang)
+              ).length;
+              const isSelected = selectedLanguages.includes(lang);
+              
+              return (
+                <div
+                  key={lang}
+                  className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage(1);
+                    setSelectedLanguages(prev => 
+                      isSelected 
+                        ? prev.filter(l => l !== lang)
+                        : [...prev, lang]
+                    );
+                  }}
+                >
+                  <div className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? 'bg-primary border-primary' : 'border-input'}`}>
+                    {isSelected && <span className="text-primary-foreground text-xs">✓</span>}
+                  </div>
+                  <span className="flex-1">{lang}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {count}
+                  </Badge>
+                </div>
+              );
+            })}
+          </SelectContent>
+        </Select>
       </div>
+      
+      {/* Selected Languages Display */}
+      {selectedLanguages.length > 0 && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-muted-foreground">Filtering by:</span>
+          {selectedLanguages.map(lang => (
+            <Badge 
+              key={lang} 
+              variant="secondary" 
+              className="gap-1 pr-1 pl-2.5"
+            >
+              {lang}
+              <button
+                onClick={() => {
+                  setPage(1);
+                  setSelectedLanguages(prev => prev.filter(l => l !== lang));
+                }}
+                className="hover:bg-background/50 rounded-full p-0.5 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setPage(1);
+              setSelectedLanguages([]);
+            }}
+            className="h-6 text-xs"
+          >
+            Clear all
+          </Button>
+        </div>
+      )}
       {/* Applications Table */}
       <Card>
         <CardHeader>
@@ -428,16 +551,17 @@ Please complete and return this reference as soon as possible.`;
                        Postcode {getSortIcon('postcode')}
                      </Button>
                    </TableHead>
-                   <TableHead>
-                     <Button 
-                       variant="ghost" 
-                       className="p-0 h-auto font-medium hover:bg-transparent"
-                       onClick={() => handleSort('english_proficiency')}
-                     >
-                       Proficiency In English {getSortIcon('english_proficiency')}
-                     </Button>
-                   </TableHead>
-                   <TableHead>Actions</TableHead>
+                    <TableHead>
+                      <Button 
+                        variant="ghost" 
+                        className="p-0 h-auto font-medium hover:bg-transparent"
+                        onClick={() => handleSort('english_proficiency')}
+                      >
+                        Proficiency In English {getSortIcon('english_proficiency')}
+                      </Button>
+                    </TableHead>
+                    <TableHead>Other Languages</TableHead>
+                    <TableHead>Actions</TableHead>
                  </TableRow>
                </TableHeader>
               <TableBody>
@@ -457,10 +581,30 @@ Please complete and return this reference as soon as possible.`;
                     <TableCell>
                       {application.personal_info?.postcode || 'Not provided'}
                     </TableCell>
-                    <TableCell>
-                      {application.personal_info?.englishProficiency || 'Not specified'}
-                    </TableCell>
-                    <TableCell>
+                     <TableCell>
+                       {application.personal_info?.englishProficiency || 'Not specified'}
+                     </TableCell>
+                     <TableCell>
+                       {application.personal_info?.otherLanguages && 
+                        Array.isArray(application.personal_info.otherLanguages) && 
+                        application.personal_info.otherLanguages.length > 0 ? (
+                         <div className="flex flex-wrap gap-1 max-w-[200px]">
+                           {application.personal_info.otherLanguages.slice(0, 3).map((lang: string, idx: number) => (
+                             <Badge key={idx} variant="outline" className="text-xs">
+                               {lang}
+                             </Badge>
+                           ))}
+                           {application.personal_info.otherLanguages.length > 3 && (
+                             <Badge variant="outline" className="text-xs">
+                               +{application.personal_info.otherLanguages.length - 3}
+                             </Badge>
+                           )}
+                         </div>
+                       ) : (
+                         <span className="text-muted-foreground text-sm">None</span>
+                       )}
+                     </TableCell>
+                     <TableCell>
                       <div className="flex gap-2">
                         <Dialog>
                           <DialogTrigger asChild>
