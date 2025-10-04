@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Eye, FileText, Edit, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Plus, Minus, Languages, X } from "lucide-react";
+import { Search, Eye, FileText, Edit, Trash2, Send, ArrowUpDown, ArrowUp, ArrowDown, Plus, Minus, Languages, X, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { generateJobApplicationPdf } from "@/lib/job-application-pdf";
@@ -24,6 +24,9 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { TimeSlotsList } from "./TimeSlotsList";
 import { ReferenceButtons } from "./ReferenceButtons";
 import { DownloadButton } from "@/components/ui/download-button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 // Helper function to format dates from YYYY-MM-DD to MM/DD/YYYY
 const formatDateDisplay = (dateString: string | null | undefined): string => {
   if (!dateString) return 'Not provided';
@@ -76,6 +79,8 @@ export function JobApplicationsContent() {
   const [statusOptions, setStatusOptions] = useState<string[]>(['new','reviewing','interviewed','accepted','rejected']);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
+  const [languageSearch, setLanguageSearch] = useState("");
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const { toast } = useToast();
   const { companySettings } = useCompany();
   const { user } = useAuth();
@@ -117,6 +122,15 @@ export function JobApplicationsContent() {
     });
     setAvailableLanguages(Array.from(languagesSet).sort());
   }, [applications]);
+
+  // Filter languages based on search
+  const filteredLanguages = useMemo(() => {
+    if (!languageSearch) return availableLanguages;
+    
+    return availableLanguages.filter(lang =>
+      lang.toLowerCase().includes(languageSearch.toLowerCase())
+    );
+  }, [availableLanguages, languageSearch]);
 
   // Filter applications locally using useMemo
   const filteredApplications = useMemo(() => {
@@ -414,60 +428,71 @@ Please complete and return this reference as soon as possible.`;
           </SelectContent>
         </Select>
         <DatePickerWithRange date={dateRange} setDate={(d) => { setPage(1); setDateRange(d); }} />
-        <Select 
-          value={selectedLanguages.length > 0 ? "selected" : "all"} 
-          onValueChange={(val) => {
-            if (val === "all") {
-              setSelectedLanguages([]);
-              setPage(1);
-            }
-          }}
-        >
-          <SelectTrigger className="w-48">
-            <div className="flex items-center gap-2">
-              <Languages className="w-4 h-4" />
-              <SelectValue placeholder="All Languages" />
-              {selectedLanguages.length > 0 && (
-                <Badge variant="secondary" className="ml-auto">
-                  {selectedLanguages.length}
-                </Badge>
-              )}
-            </div>
-          </SelectTrigger>
-          <SelectContent className="max-h-80">
-            <SelectItem value="all">All Languages</SelectItem>
-            {availableLanguages.map((lang) => {
-              const count = applications.filter(app => 
-                app.personal_info?.otherLanguages?.includes(lang)
-              ).length;
-              const isSelected = selectedLanguages.includes(lang);
-              
-              return (
-                <div
-                  key={lang}
-                  className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setPage(1);
-                    setSelectedLanguages(prev => 
-                      isSelected 
-                        ? prev.filter(l => l !== lang)
-                        : [...prev, lang]
+        <Popover open={isLanguageDropdownOpen} onOpenChange={setIsLanguageDropdownOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={isLanguageDropdownOpen}
+              className="w-[200px] justify-between"
+            >
+              <Languages className="mr-2 h-4 w-4 shrink-0" />
+              <span className="truncate">
+                {selectedLanguages.length > 0
+                  ? `${selectedLanguages.length} selected`
+                  : "Search languages..."}
+              </span>
+              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[250px] p-0" align="start">
+            <Command>
+              <CommandInput 
+                placeholder="Search languages..." 
+                value={languageSearch}
+                onValueChange={setLanguageSearch}
+              />
+              <CommandList>
+                <CommandEmpty>No languages found.</CommandEmpty>
+                <CommandGroup>
+                  {filteredLanguages.map((language) => {
+                    const count = applications.filter(app => {
+                      const langs = app.personal_info?.otherLanguages || [];
+                      return Array.isArray(langs) && langs.includes(language);
+                    }).length;
+                    const isSelected = selectedLanguages.includes(language);
+
+                    return (
+                      <CommandItem
+                        key={language}
+                        value={language}
+                        onSelect={() => {
+                          setPage(1);
+                          if (isSelected) {
+                            setSelectedLanguages(selectedLanguages.filter(l => l !== language));
+                          } else {
+                            setSelectedLanguages([...selectedLanguages, language]);
+                          }
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            isSelected ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        <span className="flex-1">{language}</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {count}
+                        </Badge>
+                      </CommandItem>
                     );
-                  }}
-                >
-                  <div className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? 'bg-primary border-primary' : 'border-input'}`}>
-                    {isSelected && <span className="text-primary-foreground text-xs">✓</span>}
-                  </div>
-                  <span className="flex-1">{lang}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {count}
-                  </Badge>
-                </div>
-              );
-            })}
-          </SelectContent>
-        </Select>
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
       
       {/* Selected Languages Display */}
