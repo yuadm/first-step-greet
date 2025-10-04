@@ -83,6 +83,40 @@ export function CompliancePeriodEmployeeView({
   const employees = data?.employees || [];
   const records = data?.records || [];
 
+  // Helper function to check if a period is overdue (must be defined before useMemo)
+  const isPeriodOverdue = (periodIdentifier: string, frequency: string, currentDate: Date): boolean => {
+    const now = currentDate;
+    
+    switch (frequency.toLowerCase()) {
+      case 'annual': {
+        const year = parseInt(periodIdentifier);
+        const endOfYear = new Date(year, 11, 31); // December 31st
+        return now > endOfYear;
+      }
+      case 'monthly': {
+        const [year, month] = periodIdentifier.split('-').map(Number);
+        const endOfMonth = new Date(year, month, 0); // Last day of the month
+        return now > endOfMonth;
+      }
+      case 'quarterly': {
+        const [year, quarterStr] = periodIdentifier.split('-');
+        const quarter = parseInt(quarterStr.replace('Q', ''));
+        const endMonth = quarter * 3; // Q1=3, Q2=6, Q3=9, Q4=12
+        const endOfQuarter = new Date(parseInt(year), endMonth, 0); // Last day of quarter
+        return now > endOfQuarter;
+      }
+      case 'bi-annual': {
+        const [year, halfStr] = periodIdentifier.split('-');
+        const half = parseInt(halfStr.replace('H', ''));
+        const endMonth = half === 1 ? 6 : 12;
+        const endOfHalf = new Date(parseInt(year), endMonth, 0);
+        return now > endOfHalf;
+      }
+      default:
+        return false;
+    }
+  };
+
   // Calculate employee status using useMemo
   const employeeStatusList = useMemo(() => {
     if (!employees || !records) return [];
@@ -116,39 +150,6 @@ export function CompliancePeriodEmployeeView({
       };
     });
   }, [employees, records, periodIdentifier, frequency]);
-
-  const isPeriodOverdue = (periodIdentifier: string, frequency: string, currentDate: Date): boolean => {
-    const now = currentDate;
-    
-    switch (frequency.toLowerCase()) {
-      case 'annual': {
-        const year = parseInt(periodIdentifier);
-        const endOfYear = new Date(year, 11, 31); // December 31st
-        return now > endOfYear;
-      }
-      case 'monthly': {
-        const [year, month] = periodIdentifier.split('-').map(Number);
-        const endOfMonth = new Date(year, month, 0); // Last day of the month
-        return now > endOfMonth;
-      }
-      case 'quarterly': {
-        const [year, quarterStr] = periodIdentifier.split('-');
-        const quarter = parseInt(quarterStr.replace('Q', ''));
-        const endMonth = quarter * 3; // Q1=3, Q2=6, Q3=9, Q4=12
-        const endOfQuarter = new Date(parseInt(year), endMonth, 0); // Last day of quarter
-        return now > endOfQuarter;
-      }
-      case 'bi-annual': {
-        const [year, halfStr] = periodIdentifier.split('-');
-        const half = parseInt(halfStr.replace('H', ''));
-        const endMonth = half === 1 ? 6 : 12;
-        const endOfHalf = new Date(parseInt(year), endMonth, 0);
-        return now > endOfHalf;
-      }
-      default:
-        return false;
-    }
-  };
 
   const getStatusBadge = (status: 'compliant' | 'overdue' | 'due' | 'pending') => {
     switch (status) {
