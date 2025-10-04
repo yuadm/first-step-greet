@@ -192,7 +192,7 @@ export function ReferenceButtons({ application, references, onUpdate }: Referenc
       const applicantName = application.personal_info?.fullName || 'Unknown Applicant';
       const applicantDOB = application.personal_info?.dateOfBirth || 'Not provided';
       const applicantPostcode = application.personal_info?.postcode || 'Not provided';
-      const pdf = await generateReferencePDF(
+      const pdfDoc = await generateReferencePDF(
         completedRef, 
         applicantName, 
         applicantDOB, 
@@ -200,8 +200,15 @@ export function ReferenceButtons({ application, references, onUpdate }: Referenc
         { name: companySettings.name, logo: companySettings.logo }
       );
       
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
       const fileName = `reference-${completedRef.reference_name.replace(/\s+/g, '-')}-${applicantName.replace(/\s+/g, '-')}.pdf`;
-      pdf.save(fileName);
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
       
       toast({
         title: "Reference Downloaded",
@@ -249,7 +256,7 @@ export function ReferenceButtons({ application, references, onUpdate }: Referenc
         }
       }
       
-      const pdf = await generateManualReferencePDF({
+      const pdfDoc = await generateManualReferencePDF({
         applicantName,
         applicantPosition: refType === 'employer' ? (matchedEmployer?.position || application.employment_history?.recentEmployer?.position || '') : personalInfo.positionAppliedFor,
         referenceType: refType as 'employer' | 'character',
@@ -272,8 +279,15 @@ export function ReferenceButtons({ application, references, onUpdate }: Referenc
         },
       }, { name: companySettings.name, logo: companySettings.logo });
 
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
       const fileName = `manual-reference-${reference.name?.replace(/\s+/g, '-') || referenceKey}-${applicantName.replace(/\s+/g, '-')}.pdf`;
-      pdf.save(fileName);
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
 
       toast({
         title: 'Manual PDF Generated',
