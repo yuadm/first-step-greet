@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Filter, Download, Eye, Edit, Check, X, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Filter, Download, Eye, Edit, Check, X, FileText, ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CareWorkerStatementModal } from "./CareWorkerStatementModal";
 import { CareWorkerStatementForm } from "./CareWorkerStatementForm";
@@ -22,6 +22,16 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { generateCareWorkerStatementPDF } from "@/lib/care-worker-statement-pdf";
 import { useCareWorkerStatements, useStatementBranches, useCompliancePeriodActions } from "@/hooks/queries/useCompliancePeriodQueries";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CareWorkerStatement {
   id: string;
@@ -68,6 +78,8 @@ export function CareWorkerStatementContent() {
   const [branchFilter, setBranchFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<StatementSortField>('created_at');
   const [sortDirection, setSortDirection] = useState<StatementSortDirection>('desc');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [statementToDelete, setStatementToDelete] = useState<CareWorkerStatement | null>(null);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -82,7 +94,7 @@ export function CareWorkerStatementContent() {
   // Fetch data using React Query
   const { data: statementsData, isLoading: statementsLoading, refetch: refetchStatements } = useCareWorkerStatements();
   const { data: branchesData, isLoading: branchesLoading } = useStatementBranches();
-  const { updateStatementStatus } = useCompliancePeriodActions();
+  const { updateStatementStatus, deleteStatement } = useCompliancePeriodActions();
 
   // Filter statements based on user permissions
   const statements = useMemo(() => {
@@ -120,6 +132,19 @@ export function CareWorkerStatementContent() {
 
   const handleStatusUpdate = (statementId: string, status: string, rejectionReason?: string) => {
     updateStatementStatus.mutate({ statementId, status, rejectionReason });
+  };
+
+  const handleDeleteClick = (statement: CareWorkerStatement) => {
+    setStatementToDelete(statement);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (statementToDelete) {
+      deleteStatement.mutate(statementToDelete.id);
+      setDeleteDialogOpen(false);
+      setStatementToDelete(null);
+    }
   };
 
   const exportToPDF = async (statement: CareWorkerStatement) => {
@@ -447,6 +472,17 @@ export function CareWorkerStatementContent() {
                       >
                         <Download className="h-4 w-4" />
                       </Button>
+
+                      {canDeleteCompliance() && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(statement)}
+                          className="hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -487,6 +523,28 @@ export function CareWorkerStatementContent() {
         }}
         readOnly={!canEditCompliance() && selectedStatement?.status !== 'draft' && selectedStatement?.status !== 'rejected'}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Statement</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the statement for{" "}
+              <strong>{statementToDelete?.care_worker_name}</strong> regarding{" "}
+              <strong>{statementToDelete?.client_name}</strong>?
+              <br />
+              <br />
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
