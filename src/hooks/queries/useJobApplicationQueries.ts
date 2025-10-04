@@ -23,6 +23,7 @@ export const jobApplicationQueryKeys = {
   all: ['job-applications'] as const,
   list: (filters?: any) => [...jobApplicationQueryKeys.all, 'list', filters] as const,
   statusSettings: () => [...jobApplicationQueryKeys.all, 'status-settings'] as const,
+  languageStats: () => [...jobApplicationQueryKeys.all, 'language-stats'] as const,
 } as const;
 
 // Data fetching functions
@@ -33,6 +34,7 @@ export const fetchJobApplications = async (filters?: {
   dateRange?: { from?: Date; to?: Date };
   page?: number;
   pageSize?: number;
+  languages?: string[];
 }) => {
   let query = supabase
     .from('job_applications')
@@ -67,9 +69,53 @@ export const fetchJobApplications = async (filters?: {
 
   if (error) throw error;
   
+  let applications = data || [];
+  
+  // Filter by languages client-side (JSONB array filtering)
+  if (filters?.languages && filters.languages.length > 0) {
+    applications = applications.filter(app => {
+      const personalInfo = app.personal_info as any;
+      const otherLanguages = personalInfo?.otherLanguages || [];
+      // ANY logic: Show if applicant speaks at least one selected language
+      return filters.languages.some(lang => otherLanguages.includes(lang));
+    });
+  }
+  
   return {
-    applications: data || [],
+    applications,
     totalCount: count || 0,
+  };
+};
+
+export const fetchLanguageStatistics = async () => {
+  const { data, error } = await supabase
+    .from('job_applications')
+    .select('personal_info');
+    
+  if (error) throw error;
+  
+  const languageCount: Record<string, number> = {};
+  
+  (data || []).forEach(app => {
+    const personalInfo = app.personal_info as any;
+    const languages = personalInfo?.otherLanguages || [];
+    languages.forEach((lang: string) => {
+      if (lang && lang.trim()) {
+        languageCount[lang] = (languageCount[lang] || 0) + 1;
+      }
+    });
+  });
+  
+  const languageStats = Object.entries(languageCount)
+    .map(([language, count]) => ({ language, count }))
+    .sort((a, b) => b.count - a.count);
+  
+  const allLanguages = Object.keys(languageCount).sort();
+  
+  return {
+    languageStats,
+    totalLanguages: allLanguages.length,
+    allLanguages,
   };
 };
 
@@ -99,6 +145,7 @@ export function useJobApplications(filters?: {
   dateRange?: { from?: Date; to?: Date };
   page?: number;
   pageSize?: number;
+  languages?: string[];
 }) {
   return useQuery({
     queryKey: jobApplicationQueryKeys.list(filters),
@@ -112,6 +159,14 @@ export function useJobApplicationStatusOptions() {
     queryKey: jobApplicationQueryKeys.statusSettings(),
     queryFn: fetchStatusOptions,
     ...cacheConfig.static,
+  });
+}
+
+export function useLanguageStatistics() {
+  return useQuery({
+    queryKey: jobApplicationQueryKeys.languageStats(),
+    queryFn: fetchLanguageStatistics,
+    ...cacheConfig.dynamic,
   });
 }
 
