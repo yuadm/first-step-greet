@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Search } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Search, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/ui/download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompliancePeriodEmployeeData } from "@/hooks/queries/useCompliancePeriodQueries";
 import { ComplianceRecordViewDialog } from "./ComplianceRecordViewDialog";
+import { AddComplianceRecordModal } from "./AddComplianceRecordModal";
+import { EditComplianceRecordModal } from "./EditComplianceRecordModal";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Employee {
   id: string;
@@ -78,10 +81,40 @@ export function CompliancePeriodEmployeeView({
   const { companySettings } = useCompany();
 
   // Fetch data using React Query
-  const { data, isLoading, error } = useCompliancePeriodEmployeeData(complianceTypeId, periodIdentifier);
+  const { data, isLoading, error, refetch } = useCompliancePeriodEmployeeData(complianceTypeId, periodIdentifier);
   
   const employees = data?.employees || [];
   const records = data?.records || [];
+
+  // Handler to delete a record
+  const handleDeleteRecord = async (recordId: string, employeeName: string) => {
+    if (!confirm(`Are you sure you want to delete the compliance record for ${employeeName}?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('compliance_period_records')
+        .delete()
+        .eq('id', recordId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Compliance record deleted successfully",
+      });
+
+      refetch();
+    } catch (error: any) {
+      console.error('Error deleting record:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete compliance record",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Helper function to check if a period is overdue (must be defined before useMemo)
   const isPeriodOverdue = (periodIdentifier: string, frequency: string, currentDate: Date): boolean => {
@@ -404,6 +437,25 @@ export function CompliancePeriodEmployeeView({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
+                            {/* Add Record Button - shown when no record exists */}
+                            {!item.record && (
+                              <AddComplianceRecordModal
+                                employeeId={item.employee.id}
+                                employeeName={item.employee.name}
+                                complianceTypeId={complianceTypeId}
+                                complianceTypeName={complianceTypeName}
+                                frequency={frequency}
+                                periodIdentifier={periodIdentifier}
+                                onRecordAdded={refetch}
+                                trigger={
+                                  <Button variant="link" size="sm" className="text-primary">
+                                    Add Record
+                                  </Button>
+                                }
+                              />
+                            )}
+                            
+                            {/* View Button - shown when record exists */}
                             {item.record && (
                               <Button
                                 variant="ghost"
@@ -414,10 +466,47 @@ export function CompliancePeriodEmployeeView({
                                   setSelectedEmployee(item.employee);
                                   setViewDialogOpen(true);
                                 }}
-                                className="h-6 w-6 p-0"
+                                className="h-8 w-8 p-0"
                                 title="View Details"
                               >
-                                <Eye className="h-3 w-3" />
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            )}
+                            
+                            {/* Edit Button - shown when record exists */}
+                            {item.record && (
+                              <EditComplianceRecordModal
+                                record={item.record}
+                                employeeName={item.employee.name}
+                                complianceTypeName={complianceTypeName}
+                                frequency={frequency}
+                                onRecordUpdated={refetch}
+                                trigger={
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    title="Edit Record"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+                            )}
+                            
+                            {/* Delete Button - shown when record exists */}
+                            {item.record && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteRecord(item.record.id, item.employee.name);
+                                }}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                title="Delete Record"
+                              >
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             )}
                             {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && (
