@@ -1176,11 +1176,16 @@ export function ClientCompliancePeriodView({
                                    : '-'
                                  }
                                </TableCell>
-                               <TableCell className="text-muted-foreground">
-                                 <div className="max-w-xs truncate">
-                                   {record?.notes || '-'}
-                                 </div>
-                               </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  <div className="max-w-xs truncate">
+                                    {(() => {
+                                      const notes = record?.notes || '';
+                                      // Filter out auto-generated messages
+                                      if (!notes || notes.startsWith('Auto-generated for period:')) return '-';
+                                      return notes;
+                                    })()}
+                                  </div>
+                                </TableCell>
                                <TableCell>
                                   <div className="flex items-center gap-2">
                                     {isCompleted && (

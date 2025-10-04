@@ -353,6 +353,8 @@ export function CompliancePeriodEmployeeView({
                         <TableCell className="max-w-xs">
                           <div className="truncate" title={(() => {
                             if (!item.record?.notes) return '';
+                            // Filter out auto-generated messages
+                            if (item.record.notes.startsWith('Auto-generated for period:')) return '';
                             if (item.record?.completion_method === 'supervision') {
                               try {
                                 const j = JSON.parse(item.record.notes);
@@ -375,6 +377,8 @@ export function CompliancePeriodEmployeeView({
                           })()}>
                             {(() => {
                               if (!item.record?.notes) return '-';
+                              // Filter out auto-generated messages
+                              if (item.record.notes.startsWith('Auto-generated for period:')) return '-';
                               if (item.record?.completion_method === 'supervision') {
                                 try {
                                   const j = JSON.parse(item.record.notes);
