@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Download, AlertTriangle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,12 +28,34 @@ interface PeriodData {
 }
 
 export function CompliancePeriodView({ complianceTypeId, complianceTypeName, frequency }: CompliancePeriodViewProps) {
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [currentPeriod, setCurrentPeriod] = useState<string>("");
   const { toast } = useToast();
 
-  // Fetch data using React Query
+  // Auto-detect the most recent year with data (including future years from automation)
+  const [selectedYear, setSelectedYear] = useState<number>(() => {
+    const currentYear = new Date().getFullYear();
+    return currentYear;
+  });
+
+  // Fetch data using React Query - will fetch for initially selected year
   const { data, isLoading, error } = useCompliancePeriodData(complianceTypeId, frequency, selectedYear);
+  
+  // Auto-select the most recent year with data when records are loaded
+  useEffect(() => {
+    if (data?.records && data.records.length > 0) {
+      const years = data.records.map(record => {
+        const periodId = record.period_identifier;
+        if (frequency.toLowerCase() === 'annual') {
+          return parseInt(periodId);
+        }
+        return parseInt(periodId.split('-')[0]);
+      });
+      const maxYear = Math.max(...years);
+      if (maxYear > selectedYear) {
+        setSelectedYear(maxYear);
+      }
+    }
+  }, [data?.records, frequency]);
   
   const employees = data?.employees || [];
   const records = data?.records || [];
