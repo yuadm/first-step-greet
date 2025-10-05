@@ -157,19 +157,17 @@ export function ClientCompliancePeriodDialog({
     return clients.map(client => {
       const record = periodRecords.find(record => record.client_id === client.id);
 
-      let status: 'completed' | 'overdue' | 'due' | 'pending' = 'pending';
+      let status: 'completed' | 'overdue' | 'due' | 'pending' = 'due';
       
       if (record?.status === 'completed' || record?.completion_date) {
         status = 'completed';
       } else if (record?.status === 'overdue' || (record as any)?.is_overdue === true) {
         status = 'overdue';
-      } else if (record) {
+      } else {
+        // Check if period is overdue based on actual dates
         const now = new Date();
         const isOverdue = isPeriodOverdue(periodIdentifier, frequency, now);
         status = isOverdue ? 'overdue' : 'due';
-      } else {
-        // No record exists - remains pending
-        status = 'pending';
       }
 
       return {
@@ -185,13 +183,12 @@ export function ClientCompliancePeriodDialog({
     const completed = clientStatusList.filter(c => c.status === 'completed').length;
     const overdue = clientStatusList.filter(c => c.status === 'overdue').length;
     const due = clientStatusList.filter(c => c.status === 'due').length;
-    const pending = clientStatusList.filter(c => c.status === 'pending').length;
 
     return {
       completedCount: completed,
       overdueCount: overdue,
       dueCount: due,
-      pendingCount: pending
+      pendingCount: 0
     };
   }, [clientStatusList]);
 
@@ -227,13 +224,13 @@ export function ClientCompliancePeriodDialog({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-success/10 text-success border-success/20">Completed</Badge>;
+        return <Badge className="bg-success/10 text-success border-success/20">Compliant</Badge>;
       case 'overdue':
         return <Badge className="bg-destructive/10 text-destructive border-destructive/20">Overdue</Badge>;
       case 'due':
         return <Badge className="bg-warning/10 text-warning border-warning/20">Due</Badge>;
       default:
-        return <Badge className="bg-muted/10 text-muted-foreground border-muted/20">Pending</Badge>;
+        return <Badge className="bg-muted/10 text-muted-foreground border-muted/20">Due</Badge>;
     }
   };
 
@@ -452,25 +449,48 @@ export function ClientCompliancePeriodDialog({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {record ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewRecord(client, record)}
-                                className="hover:bg-primary/10"
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                View
-                              </Button>
+                            {status === 'completed' ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleViewRecord(client, record!)}
+                                  className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                  title="View Record"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleAddSpotCheck(client)}
+                                  className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedRecord(record);
+                                    setSelectedClient(client);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </>
                             ) : (
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleAddSpotCheck(client)}
-                                className="hover:bg-primary/10"
+                                className="hover:bg-primary/10 text-primary"
                               >
-                                <Plus className="w-4 h-4 mr-1" />
-                                Add
+                                Add Record
                               </Button>
                             )}
                           </div>
@@ -586,6 +606,47 @@ export function ClientCompliancePeriodDialog({
           initialData={editingSpotCheckData}
           periodIdentifier={periodIdentifier}
           frequency={frequency}
+        />
+
+        <ClientDeleteConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          client={selectedClient}
+          onConfirm={async () => {
+            if (!selectedRecord) return;
+            
+            try {
+              setIsDeleting(true);
+              
+              // Delete the compliance record
+              const { error } = await supabase
+                .from('client_compliance_period_records')
+                .delete()
+                .eq('id', selectedRecord.id);
+              
+              if (error) throw error;
+              
+              toast({
+                title: "Record deleted",
+                description: "Compliance record has been deleted successfully.",
+              });
+              
+              setDeleteDialogOpen(false);
+              setSelectedRecord(null);
+              setSelectedClient(null);
+              refetch();
+            } catch (error) {
+              console.error('Error deleting record:', error);
+              toast({
+                title: "Error",
+                description: "Failed to delete compliance record.",
+                variant: "destructive",
+              });
+            } finally {
+              setIsDeleting(false);
+            }
+          }}
+          isDeleting={isDeleting}
         />
       </DialogContent>
     </Dialog>
