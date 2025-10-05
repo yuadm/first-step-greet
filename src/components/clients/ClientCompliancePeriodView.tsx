@@ -822,6 +822,8 @@ export function ClientCompliancePeriodView({
         return "bg-success/10 text-success border-success/20";
       case 'overdue':
         return "bg-destructive/10 text-destructive border-destructive/20";
+      case 'due':
+        return "bg-warning/10 text-warning border-warning/20";
       case 'pending':
       default:
         return "bg-warning/10 text-warning border-warning/20";
@@ -835,6 +837,8 @@ export function ClientCompliancePeriodView({
         return 'Compliant';
       case 'overdue':
         return 'Overdue';
+      case 'due':
+        return 'Due';
       case 'pending':
       default:
         return 'Due';
@@ -848,6 +852,8 @@ export function ClientCompliancePeriodView({
         return 'bg-success/5 border-success/20';
       case 'overdue':
         return 'bg-destructive/5 border-destructive/20';
+      case 'due':
+        return 'bg-warning/5 border-warning/20';
       case 'pending':
       default:
         return 'bg-warning/5 border-warning/20';
@@ -1143,23 +1149,21 @@ export function ClientCompliancePeriodView({
                         </TableRow>
                        </TableHeader>
                         <TableBody>
-                          {paginatedClients.map((client) => {
-                           const record = getClientRecordForPeriod(client.id, selectedPeriod);
-                           
-                           // Determine status with period-based overdue check
-                           let status: string;
-                           if (record?.status === 'completed' || record?.completion_date) {
-                             status = 'completed';
-                           } else if (record?.status === 'overdue' || record?.is_overdue === true) {
-                             status = 'overdue';
-                           } else {
-                             // Check if period is overdue based on actual dates
-                             const now = new Date();
-                             const isOverdue = isPeriodOverdue(selectedPeriod, frequency, now);
-                             status = isOverdue ? 'overdue' : (record?.status || 'pending');
-                           }
-                           
-                           const isCompleted = status === 'completed' || status === 'compliant';
+                           {paginatedClients.map((client) => {
+                            const record = getClientRecordForPeriod(client.id, selectedPeriod);
+                            
+                            // Determine status - show as compliant or due (not pending)
+                            let status: string;
+                            if (record?.status === 'completed' || record?.completion_date) {
+                              status = 'compliant';
+                            } else {
+                              // Check if period is overdue based on actual dates
+                              const now = new Date();
+                              const isOverdue = isPeriodOverdue(selectedPeriod, frequency, now);
+                              status = isOverdue ? 'overdue' : 'due';
+                            }
+                            
+                            const isCompleted = status === 'compliant';
                       
                             return (
                               <TableRow key={client.id} className={`group hover:bg-gradient-to-r hover:from-muted/20 hover:to-transparent transition-all duration-200 border-b border-border/50 ${getStatusColor(status)}`}>
