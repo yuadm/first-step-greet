@@ -18,6 +18,9 @@ import { ClientSpotCheckViewDialog } from "./ClientSpotCheckViewDialog";
 import { ClientComplianceRecordViewDialog } from "./ClientComplianceRecordViewDialog";
 import { ClientDeleteConfirmDialog } from "./ClientDeleteConfirmDialog";
 import { generateClientSpotCheckPdf } from "@/lib/client-spot-check-pdf";
+import { useTestDate } from "@/contexts/TestModeContext";
+import { TestModeBanner } from "@/components/test-mode/TestModeBanner";
+import { TestModePanel } from "@/components/test-mode/TestModePanel";
 
 import { AddClientComplianceRecordModal } from "./AddClientComplianceRecordModal";
 
@@ -76,8 +79,9 @@ export function ClientCompliancePeriodView({
   frequency,
   selectedFilter
 }: ClientCompliancePeriodViewProps) {
+  const testDate = useTestDate();
   const [periods, setPeriods] = useState<PeriodData[]>([]);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number>(testDate.getFullYear());
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [clients, setClients] = useState<Client[]>([]);
   const [records, setRecords] = useState<any[]>([]);
@@ -158,26 +162,25 @@ export function ClientCompliancePeriodView({
   };
 
   const getCurrentPeriod = () => {
-    const now = new Date();
     switch (frequency.toLowerCase()) {
       case 'quarterly':
-        return `${now.getFullYear()}-Q${Math.ceil((now.getMonth() + 1) / 3)}`;
+        return `${testDate.getFullYear()}-Q${Math.ceil((testDate.getMonth() + 1) / 3)}`;
       case 'annual':
-        return now.getFullYear().toString();
+        return testDate.getFullYear().toString();
       case 'monthly':
-        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        return `${testDate.getFullYear()}-${String(testDate.getMonth() + 1).padStart(2, '0')}`;
       case 'weekly':
         // Calculate week number (ISO week)
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+        const startOfYear = new Date(testDate.getFullYear(), 0, 1);
+        const days = Math.floor((testDate.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
         const weekNum = Math.ceil((days + startOfYear.getDay() + 1) / 7);
-        return `${now.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+        return `${testDate.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
       case 'bi-annual':
       case 'biannual':
-        const half = now.getMonth() < 6 ? 1 : 2;
-        return `${now.getFullYear()}-H${half}`;
+        const half = testDate.getMonth() < 6 ? 1 : 2;
+        return `${testDate.getFullYear()}-H${half}`;
       default:
-        return now.getFullYear().toString();
+        return testDate.getFullYear().toString();
     }
   };
 
@@ -195,7 +198,7 @@ export function ClientCompliancePeriodView({
   };
 
   const generatePeriods = (clientsData: Client[], recordsData: any[]) => {
-    const currentYear = new Date().getFullYear();
+    const currentYear = testDate.getFullYear();
     const periods: PeriodData[] = [];
     
     const startYear = Math.max(2025, currentYear - 5);
@@ -210,10 +213,10 @@ export function ClientCompliancePeriodView({
       switch (frequency.toLowerCase()) {
         case 'quarterly':
           if (year === selectedYear) {
-            const currentQuarter = year === currentYear ? Math.ceil((new Date().getMonth() + 1) / 3) : 4;
+            const currentQuarter = year === currentYear ? Math.ceil((testDate.getMonth() + 1) / 3) : 4;
             for (let quarter = currentQuarter; quarter >= 1; quarter--) {
               const periodId = `${year}-Q${quarter}`;
-              const isCurrentQuarter = year === currentYear && quarter === Math.ceil((new Date().getMonth() + 1) / 3);
+              const isCurrentQuarter = year === currentYear && quarter === Math.ceil((testDate.getMonth() + 1) / 3);
               const quarterStats = calculatePeriodStats(periodId, clientsData, recordsData);
               periods.push({
                 period_identifier: periodId,
@@ -231,10 +234,10 @@ export function ClientCompliancePeriodView({
         
         case 'monthly':
           if (year === selectedYear) {
-            const currentMonth = year === currentYear ? new Date().getMonth() + 1 : 12;
+            const currentMonth = year === currentYear ? testDate.getMonth() + 1 : 12;
             for (let month = currentMonth; month >= 1; month--) {
               const periodId = `${year}-${String(month).padStart(2, '0')}`;
-              const isCurrentMonth = year === currentYear && month === new Date().getMonth() + 1;
+              const isCurrentMonth = year === currentYear && month === testDate.getMonth() + 1;
               const monthStats = calculatePeriodStats(periodId, clientsData, recordsData);
               periods.push({
                 period_identifier: periodId,
@@ -252,10 +255,9 @@ export function ClientCompliancePeriodView({
         
         case 'weekly':
           if (year === selectedYear) {
-            const now = new Date();
             const currentWeek = year === currentYear ? (() => {
               const startOfYear = new Date(year, 0, 1);
-              const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+              const days = Math.floor((testDate.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
               return Math.ceil((days + startOfYear.getDay() + 1) / 7);
             })() : 52;
             
@@ -280,10 +282,10 @@ export function ClientCompliancePeriodView({
         case 'bi-annual':
         case 'biannual':
           if (year === selectedYear) {
-            const currentHalf = year === currentYear ? (new Date().getMonth() < 6 ? 1 : 2) : 2;
+            const currentHalf = year === currentYear ? (testDate.getMonth() < 6 ? 1 : 2) : 2;
             for (let half = currentHalf; half >= 1; half--) {
               const periodId = `${year}-H${half}`;
-              const isCurrentHalf = year === currentYear && ((new Date().getMonth() < 6 && half === 1) || (new Date().getMonth() >= 6 && half === 2));
+              const isCurrentHalf = year === currentYear && ((testDate.getMonth() < 6 && half === 1) || (testDate.getMonth() >= 6 && half === 2));
               const halfStats = calculatePeriodStats(periodId, clientsData, recordsData);
               periods.push({
                 period_identifier: periodId,
@@ -1027,6 +1029,9 @@ export function ClientCompliancePeriodView({
 
   return (
     <div className="space-y-6">
+      <TestModeBanner />
+      <TestModePanel frequency={frequency} />
+      
       {/* Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "status" | "periods")} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-muted/50 to-muted/30 p-1">
