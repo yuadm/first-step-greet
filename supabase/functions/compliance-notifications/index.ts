@@ -30,6 +30,11 @@ serve(async (req) => {
   try {
     console.log('Starting compliance notifications process...');
     
+    // Parse request body for optional test_date and dry_run
+    const body = await req.json().catch(() => ({}));
+    const testDate = body.test_date ? new Date(body.test_date) : null;
+    const dryRun = body.dry_run === true;
+    
     const notificationResults: NotificationResult[] = [];
     let totalNotificationsSent = 0;
 
@@ -45,7 +50,15 @@ serve(async (req) => {
 
     const notificationDaysBefore = automationSettings.notification_days_before || 14;
     const escalationDays = automationSettings.escalation_days || 30;
-    const today = new Date();
+    const today = testDate || new Date();
+    
+    if (testDate) {
+      console.log(`🧪 TEST MODE: Using test date ${testDate.toISOString()}`);
+    }
+    
+    if (dryRun) {
+      console.log('🔍 DRY RUN MODE: No notifications will be sent or database updated');
+    }
 
     // Calculate notification dates
     const upcomingDeadlineDate = new Date();
@@ -88,7 +101,7 @@ serve(async (req) => {
 
         // Send notification email if Brevo is configured
         let emailSent = false;
-        if (brevoApiKey && employee.email) {
+        if (!dryRun && brevoApiKey && employee.email) {
           try {
             const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
               method: 'POST',
@@ -118,13 +131,18 @@ serve(async (req) => {
           } catch (emailError) {
             console.error(`Failed to send email to ${employee.email}:`, emailError);
           }
+        } else if (dryRun) {
+          console.log(`[DRY RUN] Would send email to ${employee.email} for ${complianceType.name}`);
+          emailSent = true; // Mark as sent for dry run
         }
 
         // Update last notification sent timestamp
-        await supabase
-          .from('compliance_period_records')
-          .update({ last_notification_sent: today.toISOString() })
-          .eq('id', record.id);
+        if (!dryRun) {
+          await supabase
+            .from('compliance_period_records')
+            .update({ last_notification_sent: today.toISOString() })
+            .eq('id', record.id);
+        }
 
         notificationResults.push({
           type: 'employee',
@@ -170,10 +188,14 @@ serve(async (req) => {
           'upcoming';
 
         // Update last notification sent timestamp
-        await supabase
-          .from('client_compliance_period_records')
-          .update({ last_notification_sent: today.toISOString() })
-          .eq('id', record.id);
+        if (!dryRun) {
+          await supabase
+            .from('client_compliance_period_records')
+            .update({ last_notification_sent: today.toISOString() })
+            .eq('id', record.id);
+        } else {
+          console.log(`[DRY RUN] Would update notification timestamp for client ${client.name}`);
+        }
 
         notificationResults.push({
           type: 'client',
@@ -189,10 +211,13 @@ serve(async (req) => {
 
     const response = {
       success: true,
+      testMode: testDate !== null,
+      dryRun: dryRun,
+      testDate: testDate?.toISOString(),
       totalNotificationsSent,
       notificationResults,
       processedAt: new Date().toISOString(),
-      message: `Sent ${totalNotificationsSent} compliance notifications`
+      message: `${dryRun ? '[DRY RUN] Would send' : 'Sent'} ${totalNotificationsSent} compliance notifications`
     };
 
     console.log('Compliance notifications completed:', response);

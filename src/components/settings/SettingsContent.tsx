@@ -1,5 +1,5 @@
 
-import { Calendar, FileText, Shield, Building2, Briefcase } from "lucide-react";
+import { Calendar, FileText, Shield, Building2, Briefcase, FlaskConical } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanySettings } from "./CompanySettings";
 import { LeaveSettings } from "./LeaveSettings";
@@ -8,6 +8,7 @@ import { ComplianceSettings } from "./ComplianceSettings";
 import { BranchSettings } from "./BranchSettings";
 import { JobPositionSettings } from "./JobPositionSettings";
 import { ApplicationSettings } from "./ApplicationSettings";
+import { AutomationTestMode } from "./AutomationTestMode";
 
 export function SettingsContent() {
 
@@ -26,7 +27,7 @@ export function SettingsContent() {
       </div>
 
       <Tabs defaultValue="company" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Company
@@ -50,6 +51,10 @@ export function SettingsContent() {
           <TabsTrigger value="leave" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Leave Settings
+          </TabsTrigger>
+          <TabsTrigger value="test-mode" className="flex items-center gap-2">
+            <FlaskConical className="w-4 h-4" />
+            Test Mode
           </TabsTrigger>
         </TabsList>
 
@@ -75,6 +80,10 @@ export function SettingsContent() {
 
         <TabsContent value="applications" className="space-y-6">
           <ApplicationSettings />
+        </TabsContent>
+
+        <TabsContent value="test-mode" className="space-y-6">
+          <AutomationTestMode />
         </TabsContent>
       </Tabs>
     </div>

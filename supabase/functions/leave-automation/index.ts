@@ -13,6 +13,11 @@ Deno.serve(async (req) => {
 
   try {
     console.log('Leave automation function triggered');
+    
+    // Parse request body for optional test_date and dry_run
+    const body = await req.json().catch(() => ({}));
+    const testDate = body.test_date ? new Date(body.test_date) : null;
+    const dryRun = body.dry_run === true;
 
     // Initialize Supabase client with service role key for admin operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -24,6 +29,14 @@ Deno.serve(async (req) => {
         persistSession: false
       }
     });
+    
+    if (testDate) {
+      console.log(`🧪 TEST MODE: Using test date ${testDate.toISOString()}`);
+    }
+    
+    if (dryRun) {
+      console.log('🔍 DRY RUN MODE: No leave balances will be reset');
+    }
 
     console.log('Checking if annual leave reset is needed...');
 
@@ -88,8 +101,11 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        testMode: testDate !== null,
+        dryRun: dryRun,
+        testDate: testDate?.toISOString(),
         result: result,
-        message: message,
+        message: `${dryRun ? '[DRY RUN] ' : ''}${testDate ? '[TEST MODE] ' : ''}${message}`,
         resetPerformed: resetPerformed,
         timestamp: new Date().toISOString()
       }),
