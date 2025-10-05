@@ -438,103 +438,110 @@ Please complete and return this reference as soon as possible.`;
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search by name, email, or position..."
-            value={searchTerm}
-            onChange={(e) => { setPage(1); setSearchTerm(e.target.value); }}
-            className="pl-10"
-          />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search by name, email, or position..."
+              value={searchTerm}
+              onChange={(e) => { setPage(1); setSearchTerm(e.target.value); }}
+              className="pl-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={(val) => { setPage(1); setStatusFilter(val); }}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {statusOptions.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={(val) => { setPage(1); setStatusFilter(val); }}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {statusOptions.map((s) => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <DatePickerWithRange date={dateRange} setDate={(d) => { setPage(1); setDateRange(d); }} />
-        <Popover open={isLanguagePopoverOpen} onOpenChange={(open) => {
-          setIsLanguagePopoverOpen(open);
-          if (!open) setLanguageSearch("");
-        }}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              className="w-[200px] justify-between"
-              onClick={() => setIsLanguagePopoverOpen(true)}
-            >
-              <Languages className="mr-2 h-4 w-4 shrink-0" />
-              <span className="truncate">
-                {selectedLanguages.length > 0
-                  ? `${selectedLanguages.length} selected`
-                  : "Search languages..."}
-              </span>
-              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[250px] p-0" align="start">
-            <Command shouldFilter={false}>
-              <CommandInput 
-                placeholder="Type to search languages..." 
-                value={languageSearch}
-                onValueChange={setLanguageSearch}
-              />
-              <CommandList>
-                {languageSearch.length === 0 ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
-                    Start typing to search languages...
-                  </div>
-                ) : filteredLanguages.length === 0 ? (
-                  <CommandEmpty>No languages found.</CommandEmpty>
-                ) : (
-                  <CommandGroup>
-                    {filteredLanguages.map((language) => {
-                      const count = applications.filter(app => {
-                        const langs = app.personal_info?.otherLanguages || [];
-                        return Array.isArray(langs) && langs.includes(language);
-                      }).length;
-                      const isSelected = selectedLanguages.includes(language);
+        
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <DatePickerWithRange date={dateRange} setDate={(d) => { setPage(1); setDateRange(d); }} />
+          </div>
+          <Popover open={isLanguagePopoverOpen} onOpenChange={(open) => {
+            setIsLanguagePopoverOpen(open);
+            if (!open) setLanguageSearch("");
+          }}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="w-full sm:w-auto sm:min-w-[200px] justify-between"
+                onClick={() => setIsLanguagePopoverOpen(true)}
+              >
+                <Languages className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {selectedLanguages.length > 0
+                    ? `${selectedLanguages.length} selected`
+                    : "Search languages..."}
+                </span>
+                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[250px] p-0" align="start">
+              <Command shouldFilter={false}>
+                <CommandInput 
+                  placeholder="Type to search languages..." 
+                  value={languageSearch}
+                  onValueChange={setLanguageSearch}
+                />
+                <CommandList>
+                  {languageSearch.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      Start typing to search languages...
+                    </div>
+                  ) : filteredLanguages.length === 0 ? (
+                    <CommandEmpty>No languages found.</CommandEmpty>
+                  ) : (
+                    <CommandGroup>
+                      {filteredLanguages.map((language) => {
+                        const count = applications.filter(app => {
+                          const langs = app.personal_info?.otherLanguages || [];
+                          return Array.isArray(langs) && langs.includes(language);
+                        }).length;
+                        const isSelected = selectedLanguages.includes(language);
 
-                      return (
-                        <CommandItem
-                          key={language}
-                          value={language}
-                          onSelect={() => {
-                            setPage(1);
-                            if (isSelected) {
-                              setSelectedLanguages(selectedLanguages.filter(l => l !== language));
-                            } else {
-                              setSelectedLanguages([...selectedLanguages, language]);
-                            }
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              isSelected ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          <span className="flex-1">{language}</span>
-                          <Badge variant="secondary" className="ml-2">
-                            {count}
-                          </Badge>
-                        </CommandItem>
-                      );
-                    })}
-                  </CommandGroup>
-                )}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+                        return (
+                          <CommandItem
+                            key={language}
+                            value={language}
+                            onSelect={() => {
+                              setPage(1);
+                              if (isSelected) {
+                                setSelectedLanguages(selectedLanguages.filter(l => l !== language));
+                              } else {
+                                setSelectedLanguages([...selectedLanguages, language]);
+                              }
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                isSelected ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <span className="flex-1">{language}</span>
+                            <Badge variant="secondary" className="ml-2">
+                              {count}
+                            </Badge>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
       
       {/* Selected Languages Display */}
