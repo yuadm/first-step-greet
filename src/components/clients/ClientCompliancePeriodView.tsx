@@ -77,13 +77,8 @@ export function ClientCompliancePeriodView({
   selectedFilter
 }: ClientCompliancePeriodViewProps) {
   const [periods, setPeriods] = useState<PeriodData[]>([]);
-  // Auto-detect the most recent year with data (including future years from automation)
-  const [selectedYear, setSelectedYear] = useState<number>(() => {
-    const currentYear = new Date().getFullYear();
-    return currentYear;
-  });
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
-  const [autoYearAdjusted, setAutoYearAdjusted] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,24 +197,6 @@ export function ClientCompliancePeriodView({
   const generatePeriods = (clientsData: Client[], recordsData: any[]) => {
     const currentYear = new Date().getFullYear();
     const periods: PeriodData[] = [];
-    
-    // Auto-detect the most recent year with data from records (including future years)
-    if (!autoYearAdjusted && recordsData.length > 0) {
-      const years = recordsData.map(record => {
-        const periodId = record.period_identifier;
-        if (frequency.toLowerCase() === 'annual') {
-          return parseInt(periodId);
-        }
-        return parseInt(periodId.split('-')[0]);
-      });
-      const maxYear = Math.max(...years);
-      if (maxYear > selectedYear) {
-        setSelectedYear(maxYear);
-        setAutoYearAdjusted(true);
-        return; // Will re-run with new year
-      }
-      setAutoYearAdjusted(true);
-    }
     
     const startYear = Math.max(2025, currentYear - 5);
     const endYear = currentYear;

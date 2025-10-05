@@ -30,27 +30,13 @@ serve(async (req) => {
 
   try {
     console.log('Starting compliance automation process...');
-    
-    // Parse request body for optional test_date and dry_run
-    const body = await req.json().catch(() => ({}));
-    const testDate = body.test_date ? new Date(body.test_date) : null;
-    const dryRun = body.dry_run === true;
 
-    // Get current date info (use test date if provided)
-    const now = testDate || new Date();
+    // Get current date info
+    const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
     const currentQuarter = Math.ceil(currentMonth / 3);
     const currentWeek = getWeekNumber(now);
-    
-    if (testDate) {
-      console.log(`🧪 TEST MODE: Using test date ${testDate.toISOString()}`);
-      console.log(`📅 Test date info: Month=${currentMonth}, Year=${currentYear}, Quarter=${currentQuarter}, Week=${currentWeek}`);
-    }
-    
-    if (dryRun) {
-      console.log('🔍 DRY RUN MODE: No records will be created or updated');
-    }
 
     // Fetch all employee compliance types
     const { data: complianceTypes, error: typesError } = await supabase
@@ -113,25 +99,21 @@ serve(async (req) => {
       }
 
       if (shouldGenerate) {
-        console.log(`${dryRun ? '[DRY RUN] Would generate' : 'Generating'} employee records for ${type.name} - ${periodIdentifier}`);
+        console.log(`Generating employee records for ${type.name} - ${periodIdentifier}`);
         
-        if (!dryRun) {
-          // Call the database function to generate records
-          const { data: result, error: generateError } = await supabase
-            .rpc('generate_compliance_records_for_period', {
-              p_compliance_type_id: type.id,
-              p_period_identifier: periodIdentifier
-            });
+        // Call the database function to generate records
+        const { data: result, error: generateError } = await supabase
+          .rpc('generate_compliance_records_for_period', {
+            p_compliance_type_id: type.id,
+            p_period_identifier: periodIdentifier
+          });
 
-          if (generateError) {
-            console.error(`Error generating employee records for ${type.name}:`, generateError);
-          } else {
-            const recordsCreated = result || 0;
-            totalRecordsCreated += recordsCreated;
-            console.log(`Created ${recordsCreated} employee records for ${type.name}`);
-          }
+        if (generateError) {
+          console.error(`Error generating employee records for ${type.name}:`, generateError);
         } else {
-          console.log(`[DRY RUN] Would create employee records for ${type.name} - ${periodIdentifier}`);
+          const recordsCreated = result || 0;
+          totalRecordsCreated += recordsCreated;
+          console.log(`Created ${recordsCreated} employee records for ${type.name}`);
         }
       }
     }
@@ -172,68 +154,57 @@ serve(async (req) => {
       }
 
       if (shouldGenerate) {
-        console.log(`${dryRun ? '[DRY RUN] Would generate' : 'Generating'} client records for ${type.name} - ${periodIdentifier}`);
+        console.log(`Generating client records for ${type.name} - ${periodIdentifier}`);
         
-        if (!dryRun) {
-          // Call the database function to generate client records
-          const { data: result, error: generateError } = await supabase
-            .rpc('generate_client_compliance_records_for_period', {
-              p_compliance_type_id: type.id,
-              p_period_identifier: periodIdentifier
-            });
+        // Call the database function to generate client records
+        const { data: result, error: generateError } = await supabase
+          .rpc('generate_client_compliance_records_for_period', {
+            p_compliance_type_id: type.id,
+            p_period_identifier: periodIdentifier
+          });
 
-          if (generateError) {
-            console.error(`Error generating client records for ${type.name}:`, generateError);
-          } else {
-            const recordsCreated = result || 0;
-            clientRecordsCreated += recordsCreated;
-            console.log(`Created ${recordsCreated} client records for ${type.name}`);
-          }
+        if (generateError) {
+          console.error(`Error generating client records for ${type.name}:`, generateError);
         } else {
-          console.log(`[DRY RUN] Would create client records for ${type.name} - ${periodIdentifier}`);
+          const recordsCreated = result || 0;
+          clientRecordsCreated += recordsCreated;
+          console.log(`Created ${recordsCreated} client records for ${type.name}`);
         }
       }
     }
 
     // Update employee compliance statuses (check for overdue items)
-    if (!dryRun) {
-      console.log('Updating employee compliance statuses...');
-      const { data: updateResult, error: updateError } = await supabase
-        .rpc('update_compliance_statuses');
+    console.log('Updating employee compliance statuses...');
+    const { data: updateResult, error: updateError } = await supabase
+      .rpc('update_compliance_statuses');
 
-      if (updateError) {
-        console.error('Error updating employee compliance statuses:', updateError);
-      } else {
-        statusUpdates = updateResult || 0;
-        console.log(`Updated ${statusUpdates} overdue employee records`);
-      }
-
-      // Update client compliance statuses (check for overdue items)
-      console.log('Updating client compliance statuses...');
-      const { data: clientUpdateResult, error: clientUpdateError } = await supabase
-        .rpc('update_client_compliance_statuses');
-
-      if (clientUpdateError) {
-        console.error('Error updating client compliance statuses:', clientUpdateError);
-      } else {
-        clientStatusUpdates = clientUpdateResult || 0;
-        console.log(`Updated ${clientStatusUpdates} overdue client records`);
-      }
+    if (updateError) {
+      console.error('Error updating employee compliance statuses:', updateError);
     } else {
-      console.log('[DRY RUN] Would update employee and client compliance statuses');
+      statusUpdates = updateResult || 0;
+      console.log(`Updated ${statusUpdates} overdue employee records`);
+    }
+
+    // Update client compliance statuses (check for overdue items)
+    console.log('Updating client compliance statuses...');
+    const { data: clientUpdateResult, error: clientUpdateError } = await supabase
+      .rpc('update_client_compliance_statuses');
+
+    if (clientUpdateError) {
+      console.error('Error updating client compliance statuses:', clientUpdateError);
+    } else {
+      clientStatusUpdates = clientUpdateResult || 0;
+      console.log(`Updated ${clientStatusUpdates} overdue client records`);
     }
 
     const response = {
       success: true,
-      testMode: testDate !== null,
-      dryRun: dryRun,
-      testDate: testDate?.toISOString(),
       employeeRecordsCreated: totalRecordsCreated,
       clientRecordsCreated: clientRecordsCreated,
       employeeStatusUpdates: statusUpdates,
       clientStatusUpdates: clientStatusUpdates,
       processedAt: now.toISOString(),
-      message: `${dryRun ? '[DRY RUN] ' : ''}${testDate ? '[TEST MODE] ' : ''}Processed ${complianceTypes.length} employee compliance types and ${clientComplianceTypes.length} client compliance types. ${dryRun ? 'Would create' : 'Created'} ${totalRecordsCreated} employee records, ${clientRecordsCreated} client records. ${dryRun ? 'Would update' : 'Updated'} ${statusUpdates} employee statuses, ${clientStatusUpdates} client statuses.`
+      message: `Processed ${complianceTypes.length} employee compliance types and ${clientComplianceTypes.length} client compliance types. Created ${totalRecordsCreated} employee records, ${clientRecordsCreated} client records. Updated ${statusUpdates} employee statuses, ${clientStatusUpdates} client statuses.`
     };
 
     console.log('Compliance automation completed:', response);
