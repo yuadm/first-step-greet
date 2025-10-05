@@ -80,7 +80,35 @@ export function JobApplicationsContent() {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
   const [languageSearch, setLanguageSearch] = useState("");
-  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  
+  // Comprehensive list of common languages
+  const allPossibleLanguages = [
+    "Afrikaans", "Albanian", "Amharic", "Arabic", "Armenian", "Assamese", "Azerbaijani",
+    "Basque", "Belarusian", "Bengali", "Bosnian", "Bulgarian", "Burmese",
+    "Catalan", "Cebuano", "Chinese", "Corsican", "Croatian", "Czech",
+    "Danish", "Dutch",
+    "English", "Esperanto", "Estonian",
+    "Filipino", "Finnish", "French", "Frisian",
+    "Galician", "Georgian", "German", "Greek", "Gujarati",
+    "Haitian Creole", "Hausa", "Hawaiian", "Hebrew", "Hindi", "Hmong", "Hungarian",
+    "Icelandic", "Igbo", "Indonesian", "Irish", "Italian",
+    "Japanese", "Javanese",
+    "Kannada", "Kazakh", "Khmer", "Korean", "Kurdish", "Kyrgyz",
+    "Lao", "Latin", "Latvian", "Lithuanian", "Luxembourgish",
+    "Macedonian", "Malagasy", "Malay", "Malayalam", "Maltese", "Mandarin", "Maori", "Marathi", "Mongolian",
+    "Nepali", "Norwegian",
+    "Odia", "Pashto", "Persian", "Polish", "Portuguese", "Punjabi",
+    "Romanian", "Russian",
+    "Samoan", "Scots Gaelic", "Serbian", "Sesotho", "Shona", "Sindhi", "Sinhala", "Slovak", "Slovenian", 
+    "Somali", "Spanish", "Sundanese", "Swahili", "Swedish",
+    "Tagalog", "Tajik", "Tamil", "Tatar", "Telugu", "Thai", "Turkish", "Turkmen",
+    "Ukrainian", "Urdu", "Uyghur", "Uzbek",
+    "Vietnamese",
+    "Welsh",
+    "Xhosa",
+    "Yiddish", "Yoruba",
+    "Zulu"
+  ];
   const { toast } = useToast();
   const { companySettings } = useCompany();
   const { user } = useAuth();
@@ -123,14 +151,17 @@ export function JobApplicationsContent() {
     setAvailableLanguages(Array.from(languagesSet).sort());
   }, [applications]);
 
-  // Filter languages based on search
+  // Filter languages based on search - use all possible languages, not just from applicants
   const filteredLanguages = useMemo(() => {
-    if (!languageSearch) return availableLanguages;
+    if (!languageSearch) return [];
     
-    return availableLanguages.filter(lang =>
-      lang.toLowerCase().includes(languageSearch.toLowerCase())
-    );
-  }, [availableLanguages, languageSearch]);
+    // Combine applicant languages with all possible languages
+    const allLanguages = new Set([...availableLanguages, ...allPossibleLanguages]);
+    
+    return Array.from(allLanguages)
+      .filter(lang => lang.toLowerCase().includes(languageSearch.toLowerCase()))
+      .sort();
+  }, [availableLanguages, languageSearch, allPossibleLanguages]);
 
   // Filter applications locally using useMemo
   const filteredApplications = useMemo(() => {
@@ -428,12 +459,13 @@ Please complete and return this reference as soon as possible.`;
           </SelectContent>
         </Select>
         <DatePickerWithRange date={dateRange} setDate={(d) => { setPage(1); setDateRange(d); }} />
-        <Popover open={isLanguageDropdownOpen} onOpenChange={setIsLanguageDropdownOpen}>
+        <Popover open={languageSearch.length > 0} onOpenChange={(open) => {
+          if (!open) setLanguageSearch("");
+        }}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               role="combobox"
-              aria-expanded={isLanguageDropdownOpen}
               className="w-[200px] justify-between"
             >
               <Languages className="mr-2 h-4 w-4 shrink-0" />
@@ -446,7 +478,7 @@ Please complete and return this reference as soon as possible.`;
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[250px] p-0" align="start">
-            <Command>
+            <Command shouldFilter={false}>
               <CommandInput 
                 placeholder="Search languages..." 
                 value={languageSearch}
