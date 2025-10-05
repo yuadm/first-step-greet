@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Download, AlertTriangle, ChevronDown } from "lucide-react";
@@ -8,9 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CompliancePeriodEmployeeView } from "./CompliancePeriodEmployeeView";
 import { useToast } from "@/hooks/use-toast";
 import { useCompliancePeriodData } from "@/hooks/queries/useCompliancePeriodQueries";
-import { useTestDate } from "@/contexts/TestModeContext";
-import { TestModeBanner } from "@/components/test-mode/TestModeBanner";
-import { TestModePanel } from "@/components/test-mode/TestModePanel";
 
 interface CompliancePeriodViewProps {
   complianceTypeId: string;
@@ -30,8 +28,7 @@ interface PeriodData {
 }
 
 export function CompliancePeriodView({ complianceTypeId, complianceTypeName, frequency }: CompliancePeriodViewProps) {
-  const testDate = useTestDate();
-  const [selectedYear, setSelectedYear] = useState<number>(testDate.getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [currentPeriod, setCurrentPeriod] = useState<string>("");
   const { toast } = useToast();
 
@@ -42,20 +39,21 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
   const records = data?.records || [];
 
   const getCurrentPeriod = () => {
+    const now = new Date();
     switch (frequency.toLowerCase()) {
       case 'annual':
-        return testDate.getFullYear().toString();
+        return now.getFullYear().toString();
       case 'monthly':
-        return `${testDate.getFullYear()}-${String(testDate.getMonth() + 1).padStart(2, '0')}`;
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       case 'quarterly':
-        return `${testDate.getFullYear()}-Q${Math.ceil((testDate.getMonth() + 1) / 3)}`;
+        return `${now.getFullYear()}-Q${Math.ceil((now.getMonth() + 1) / 3)}`;
       case 'bi-annual':
-        return `${testDate.getFullYear()}-H${testDate.getMonth() < 6 ? '1' : '2'}`;
+        return `${now.getFullYear()}-H${now.getMonth() < 6 ? '1' : '2'}`;
       case 'weekly':
-        const weekNumber = getWeekNumber(testDate);
-        return `${testDate.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
+        const weekNumber = getWeekNumber(now);
+        return `${now.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
       default:
-        return testDate.getFullYear().toString();
+        return now.getFullYear().toString();
     }
   };
 
@@ -82,7 +80,7 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
   const periods = useMemo(() => {
     if (!employees || !records) return [];
     
-    const currentYear = testDate.getFullYear();
+    const currentYear = new Date().getFullYear(); // 2025
     const generatedPeriods: PeriodData[] = [];
     
     // Only generate periods for years that make sense (current year going back to 6 years)
@@ -113,10 +111,10 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
         
         case 'monthly':
           if (year === selectedYear) {
-            const monthsToShow = year === currentYear ? testDate.getMonth() + 1 : 12;
+            const monthsToShow = year === currentYear ? new Date().getMonth() + 1 : 12;
             for (let month = monthsToShow; month >= 1; month--) {
               const periodId = `${year}-${String(month).padStart(2, '0')}`;
-              const isCurrentMonth = year === currentYear && month === testDate.getMonth() + 1;
+              const isCurrentMonth = year === currentYear && month === new Date().getMonth() + 1;
               const monthStats = calculatePeriodStats(periodId, employees, records);
               generatedPeriods.push({
                 period_identifier: periodId,
@@ -134,10 +132,10 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
         
         case 'quarterly':
           if (year === selectedYear) {
-            const currentQuarter = year === currentYear ? Math.ceil((testDate.getMonth() + 1) / 3) : 4;
+            const currentQuarter = year === currentYear ? Math.ceil((new Date().getMonth() + 1) / 3) : 4;
             for (let quarter = currentQuarter; quarter >= 1; quarter--) {
               const periodId = `${year}-Q${quarter}`;
-              const isCurrentQuarter = year === currentYear && quarter === Math.ceil((testDate.getMonth() + 1) / 3);
+              const isCurrentQuarter = year === currentYear && quarter === Math.ceil((new Date().getMonth() + 1) / 3);
               const quarterStats = calculatePeriodStats(periodId, employees, records);
               generatedPeriods.push({
                 period_identifier: periodId,
@@ -155,10 +153,10 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
         
         case 'bi-annual':
           if (year === selectedYear) {
-            const currentHalf = year === currentYear ? (testDate.getMonth() < 6 ? 1 : 2) : 2;
+            const currentHalf = year === currentYear ? (new Date().getMonth() < 6 ? 1 : 2) : 2;
             for (let half = currentHalf; half >= 1; half--) {
               const periodId = `${year}-H${half}`;
-              const isCurrentHalf = year === currentYear && half === (testDate.getMonth() < 6 ? 1 : 2);
+              const isCurrentHalf = year === currentYear && half === (new Date().getMonth() < 6 ? 1 : 2);
               const halfStats = calculatePeriodStats(periodId, employees, records);
               generatedPeriods.push({
                 period_identifier: periodId,
@@ -176,11 +174,11 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
         
         case 'weekly':
           if (year === selectedYear) {
-            const currentWeek = year === currentYear ? getWeekNumber(testDate) : 52;
+            const currentWeek = year === currentYear ? getWeekNumber(new Date()) : 52;
             // Show every 4th week for brevity, but only up to current week for current year
             for (let week = Math.floor(currentWeek / 4) * 4; week >= 1; week -= 4) {
               const periodId = `${year}-W${String(week).padStart(2, '0')}`;
-              const isCurrentWeek = year === currentYear && week === getWeekNumber(testDate);
+              const isCurrentWeek = year === currentYear && week === getWeekNumber(new Date());
               const weekStats = calculatePeriodStats(periodId, employees, records);
               generatedPeriods.push({
                 period_identifier: periodId,
@@ -199,7 +197,7 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
     }
     
     return generatedPeriods;
-  }, [employees, records, frequency, selectedYear, testDate]);
+  }, [employees, records, frequency, selectedYear]);
 
   const handleDownload = async (period: PeriodData) => {
     try {
@@ -240,7 +238,7 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
   };
 
   const getAvailableYears = () => {
-    const currentYear = testDate.getFullYear();
+    const currentYear = new Date().getFullYear();
     const startYear = Math.max(2025, currentYear - 5);
     const years = [];
     for (let year = currentYear; year >= startYear; year--) {
@@ -270,9 +268,6 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
 
   return (
     <div className="space-y-6">
-      <TestModeBanner />
-      <TestModePanel frequency={frequency} />
-      
       {/* Period Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h3 className="text-xl font-semibold">Compliance Period Records</h3>
