@@ -397,7 +397,9 @@ const [annualAppraisalTarget, setAnnualAppraisalTarget] = useState<{ recordId: s
   const calculateEmployeeStatus = (employeesData: Employee[], recordsData: ComplianceRecord[]) => {
     if (!complianceType) return;
 
-    const currentPeriod = getCurrentPeriodIdentifier(complianceType.frequency);
+    // Get the latest period from actual records instead of calculating from current date
+    const periods = [...new Set(recordsData.map(r => r.period_identifier))].sort().reverse();
+    const currentPeriod = periods[0] || getCurrentPeriodIdentifier(complianceType.frequency);
     
     const statusList: EmployeeComplianceStatus[] = employeesData.map(employee => {
       // Find the latest record for this employee in the current period
@@ -1129,7 +1131,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h2 className="text-2xl font-bold text-foreground">
-                  All Employees - Current Period: {getCurrentPeriodIdentifier(complianceType?.frequency || '')}
+                  All Employees - Current Period: {employeeStatusList[0]?.currentPeriod || getCurrentPeriodIdentifier(complianceType?.frequency || '')}
                 </h2>
                 {filteredStatus && (
                   <p className="text-sm text-muted-foreground">

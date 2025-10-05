@@ -130,8 +130,6 @@ export default function ClientCompliance() {
   const fetchComplianceStats = async () => {
     try {
       setLoading(true);
-      const period = getCurrentPeriod();
-      setCurrentPeriod(period);
 
       // Get accessible branches for the current user
       const accessibleBranches = getAccessibleBranches();
@@ -159,15 +157,22 @@ export default function ClientCompliance() {
       // Get client IDs for accessible clients only
       const accessibleClientIds = clients?.map(client => client.id) || [];
 
-      // Fetch compliance records for current period - only for accessible clients
-      const { data: records, error: recordsError } = await supabase
+      // Fetch ALL compliance records to find the latest period
+      const { data: allRecords, error: allRecordsError } = await supabase
         .from('client_compliance_period_records')
         .select('*')
         .eq('client_compliance_type_id', clientTypeId as string)
-        .eq('period_identifier', period)
         .in('client_id', accessibleClientIds);
 
-      if (recordsError) throw recordsError;
+      if (allRecordsError) throw allRecordsError;
+
+      // Get the latest period from actual records, or fall back to current period
+      const periods = [...new Set(allRecords?.map(r => r.period_identifier) || [])].sort().reverse();
+      const period = periods[0] || getCurrentPeriod();
+      setCurrentPeriod(period);
+
+      // Filter records for the latest period
+      const records = allRecords?.filter(r => r.period_identifier === period) || [];
 
       // Calculate overall stats - based on accessible clients only
       const totalClients = clients?.length || 0;
