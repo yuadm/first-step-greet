@@ -29,6 +29,7 @@ import { useDocumentData } from "@/hooks/useDocumentData";
 import { useDocumentActions } from "@/hooks/queries/useDocumentQueries";
 import { useActivitySync } from "@/hooks/useActivitySync";
 import { usePrefetching } from "@/hooks/usePrefetching";
+import { determineNationalityStatus } from "@/utils/nationalityStatus";
 
 // Precomputed country list for the Country select
 const COUNTRY_NAMES = countries.map((c) => c.name.common).sort();
@@ -1238,7 +1239,14 @@ export function DocumentsContent() {
                 <Label htmlFor="country">Country</Label>
                 <Select
                   value={newDocument.country}
-                  onValueChange={(val) => setNewDocument({ ...newDocument, country: val })}
+                  onValueChange={(val) => {
+                    const nationalityStatus = determineNationalityStatus(val);
+                    setNewDocument({ 
+                      ...newDocument, 
+                      country: val,
+                      nationality_status: nationalityStatus
+                    });
+                  }}
                 >
                   <SelectTrigger id="country">
                     <SelectValue placeholder="Select country" />
@@ -1258,7 +1266,7 @@ export function DocumentsContent() {
                   id="nationality_status"
                   value={newDocument.nationality_status}
                   onChange={(e) => setNewDocument({...newDocument, nationality_status: e.target.value})}
-                  placeholder="e.g., British Citizen"
+                  placeholder="e.g., British, EU, Non-EU"
                 />
               </div>
             </div>
