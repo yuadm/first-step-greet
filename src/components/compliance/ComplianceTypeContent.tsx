@@ -398,13 +398,11 @@ const [annualAppraisalTarget, setAnnualAppraisalTarget] = useState<{ recordId: s
   const calculateEmployeeStatus = (employeesData: Employee[], recordsData: ComplianceRecord[]) => {
     if (!complianceType) return;
 
-    // Get the latest period from actual records instead of calculating from current date
-    const periods = [...new Set(recordsData.map(r => r.period_identifier))].sort().reverse();
-    const currentPeriod = periods[0] || getCurrentPeriodIdentifier(complianceType.frequency);
+    // Use the actual current period based on today's date
+    const currentPeriod = getCurrentPeriodIdentifier(complianceType.frequency);
     
     // Update the latestPeriod state for UI display
     setLatestPeriod(currentPeriod);
-    console.log('Latest period set to:', currentPeriod);
     
     const statusList: EmployeeComplianceStatus[] = employeesData.map(employee => {
       // Find the latest record for this employee in the current period
