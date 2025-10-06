@@ -626,9 +626,16 @@ Please complete and return this reference as soon as possible.`;
                         {application.personal_info?.fullName || 'Unknown'}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {application.personal_info?.positionAppliedFor || 'Not specified'}
-                    </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <span>{application.personal_info?.positionAppliedFor || 'Not specified'}</span>
+                  {application.personal_info?.personalCareWillingness && (
+                    <Badge variant="secondary" className="capitalize">
+                      {application.personal_info.personalCareWillingness}
+                    </Badge>
+                  )}
+                </div>
+              </TableCell>
                     <TableCell>
                       {new Date(application.created_at).toLocaleDateString()}
                     </TableCell>
