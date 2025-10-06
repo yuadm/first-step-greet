@@ -751,26 +751,52 @@ export function EmployeesContent() {
 
       if (error) throw error;
 
-      // Automatically reset passwords for all imported employees
+      // Automatically reset passwords for all imported employees with progress tracking
+      let successCount = 0;
+      let failedEmployees: Array<{ name: string; email: string | null }> = [];
+      
       if (insertedEmployees && insertedEmployees.length > 0) {
-        const passwordResetPromises = insertedEmployees.map(async (emp) => {
+        const passwordResetPromises = insertedEmployees.map(async (emp, index) => {
           try {
-            await supabase.functions.invoke('admin-reset-employee-password', {
+            const { error: resetError } = await supabase.functions.invoke('admin-reset-employee-password', {
               body: { employeeId: emp.id }
             });
+            
+            if (resetError) throw resetError;
+            
+            successCount++;
+            
+            // Show progress
+            toast({
+              title: "Setting up accounts...",
+              description: `${successCount}/${insertedEmployees.length} employee accounts ready`,
+            });
+            
+            return { success: true, employee: emp };
           } catch (resetError) {
             console.error(`Error auto-resetting password for employee ${emp.id}:`, resetError);
-            // Don't block the success flow, just log the error
+            failedEmployees.push({ name: emp.name, email: emp.email });
+            return { success: false, employee: emp, error: resetError };
           }
         });
         
-        await Promise.all(passwordResetPromises);
+        // Wait for all password resets to complete
+        await Promise.allSettled(passwordResetPromises);
       }
 
-      toast({
-        title: "Import successful", 
-        description: `Successfully imported ${validEmployees.length} employees.`,
-      });
+      // Show detailed results
+      if (failedEmployees.length === 0) {
+        toast({
+          title: "Import successful", 
+          description: `Successfully imported ${validEmployees.length} employees. All can login with password: 123456`,
+        });
+      } else {
+        toast({
+          title: "Import completed with issues",
+          description: `${successCount} employees ready to login. ${failedEmployees.length} need manual password reset: ${failedEmployees.map(e => e.name).join(', ')}`,
+          variant: "destructive",
+        });
+      }
 
       setPreviewDialogOpen(false);
       setImportData([]);
