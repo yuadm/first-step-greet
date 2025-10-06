@@ -253,7 +253,7 @@ export function EmployeesContent() {
         return;
       }
 
-      const { error } = await supabase
+      const { data: insertedEmployee, error } = await supabase
         .from('employees')
         .insert([{
           name: newEmployee.name,
@@ -272,9 +272,23 @@ export function EmployeesContent() {
           must_change_password: true,
           is_active: true,
           failed_login_attempts: 0
-        }]);
+        }])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Automatically reset password to set up Supabase Auth user
+      if (insertedEmployee?.id) {
+        try {
+          await supabase.functions.invoke('admin-reset-employee-password', {
+            body: { employeeId: insertedEmployee.id }
+          });
+        } catch (resetError) {
+          console.error('Error auto-resetting password:', resetError);
+          // Don't block the success flow, just log the error
+        }
+      }
 
       toast({
         title: "Employee added",
@@ -730,11 +744,28 @@ export function EmployeesContent() {
         failed_login_attempts: 0
       }));
 
-      const { error } = await supabase
+      const { data: insertedEmployees, error } = await supabase
         .from('employees')
-        .insert(employeesToInsert);
+        .insert(employeesToInsert)
+        .select();
 
       if (error) throw error;
+
+      // Automatically reset passwords for all imported employees
+      if (insertedEmployees && insertedEmployees.length > 0) {
+        const passwordResetPromises = insertedEmployees.map(async (emp) => {
+          try {
+            await supabase.functions.invoke('admin-reset-employee-password', {
+              body: { employeeId: emp.id }
+            });
+          } catch (resetError) {
+            console.error(`Error auto-resetting password for employee ${emp.id}:`, resetError);
+            // Don't block the success flow, just log the error
+          }
+        });
+        
+        await Promise.all(passwordResetPromises);
+      }
 
       toast({
         title: "Import successful", 
