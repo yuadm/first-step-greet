@@ -33,6 +33,7 @@ interface Employee {
   id: string;
   name: string;
   branch: string;
+  created_at: string;
 }
 
 interface ComplianceRecord {
@@ -116,45 +117,61 @@ export function CompliancePeriodEmployeeView({
     }
   };
 
-  // Helper function to check if a period is overdue (must be defined before useMemo)
-  const isPeriodOverdue = (periodIdentifier: string, frequency: string, currentDate: Date): boolean => {
-    const now = currentDate;
-    
+  // Helper function to get period end date
+  const getPeriodEndDate = (periodIdentifier: string, frequency: string): Date => {
     switch (frequency.toLowerCase()) {
       case 'annual': {
         const year = parseInt(periodIdentifier);
-        const endOfYear = new Date(year, 11, 31); // December 31st
-        return now > endOfYear;
+        return new Date(year, 11, 31); // December 31st
       }
       case 'monthly': {
         const [year, month] = periodIdentifier.split('-').map(Number);
-        const endOfMonth = new Date(year, month, 0); // Last day of the month
-        return now > endOfMonth;
+        return new Date(year, month, 0); // Last day of the month
       }
       case 'quarterly': {
         const [year, quarterStr] = periodIdentifier.split('-');
         const quarter = parseInt(quarterStr.replace('Q', ''));
         const endMonth = quarter * 3; // Q1=3, Q2=6, Q3=9, Q4=12
-        const endOfQuarter = new Date(parseInt(year), endMonth, 0); // Last day of quarter
-        return now > endOfQuarter;
+        return new Date(parseInt(year), endMonth, 0); // Last day of quarter
       }
       case 'bi-annual': {
         const [year, halfStr] = periodIdentifier.split('-');
         const half = parseInt(halfStr.replace('H', ''));
         const endMonth = half === 1 ? 6 : 12;
-        const endOfHalf = new Date(parseInt(year), endMonth, 0);
-        return now > endOfHalf;
+        return new Date(parseInt(year), endMonth, 0);
+      }
+      case 'weekly': {
+        const [year, weekStr] = periodIdentifier.split('-W');
+        const week = parseInt(weekStr);
+        const firstDayOfYear = new Date(parseInt(year), 0, 1);
+        const daysToAdd = (week - 1) * 7 + 6; // Last day of the week
+        return new Date(firstDayOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
       }
       default:
-        return false;
+        return new Date();
     }
+  };
+
+  // Helper function to check if a period is overdue
+  const isPeriodOverdue = (periodIdentifier: string, frequency: string, currentDate: Date): boolean => {
+    const periodEnd = getPeriodEndDate(periodIdentifier, frequency);
+    return currentDate > periodEnd;
   };
 
   // Calculate employee status using useMemo
   const employeeStatusList = useMemo(() => {
     if (!employees || !records) return [];
     
-    return employees.map(employee => {
+    // Get the period end date to filter employees
+    const periodEndDate = getPeriodEndDate(periodIdentifier, frequency);
+    
+    // Only include employees who existed during or before this period
+    const eligibleEmployees = employees.filter(employee => {
+      const employeeCreatedDate = new Date(employee.created_at);
+      return employeeCreatedDate <= periodEndDate;
+    });
+    
+    return eligibleEmployees.map(employee => {
       // Find the record for this employee in this specific period
       const record = records.find(record => record.employee_id === employee.id);
 

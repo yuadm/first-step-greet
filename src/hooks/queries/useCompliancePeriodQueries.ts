@@ -14,10 +14,10 @@ export const compliancePeriodQueryKeys = {
 
 // Data fetching functions
 export const fetchCompliancePeriodData = async (complianceTypeId: string, frequency: string, selectedYear: number) => {
-  // Fetch employees
+  // Fetch employees with created_at date
   const { data: employeesData, error: employeesError } = await supabase
     .from('employees')
-    .select('id, name, branch')
+    .select('id, name, branch, created_at')
     .order('name');
 
   if (employeesError) throw employeesError;
@@ -38,10 +38,10 @@ export const fetchCompliancePeriodData = async (complianceTypeId: string, freque
 };
 
 export const fetchCompliancePeriodEmployeeData = async (complianceTypeId: string, periodIdentifier: string) => {
-  // Fetch all employees
+  // Fetch all employees with created_at date
   const { data: employeesData, error: employeesError } = await supabase
     .from('employees')
-    .select('id, name, branch')
+    .select('id, name, branch, created_at')
     .order('name');
 
   if (employeesError) throw employeesError;
