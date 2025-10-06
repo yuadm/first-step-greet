@@ -97,6 +97,21 @@ const [currentStep, setCurrentStep] = useState(1);
     } catch {}
   }, [formData, currentStep]);
 
+  // Auto-fill Terms & Policy fields when reaching step 8
+  useEffect(() => {
+    if (currentStep === 8) {
+      // Auto-fill signature with full name if not already filled
+      if (formData.personalInfo.fullName && !formData.termsPolicy.signature) {
+        updateTermsPolicy('signature', formData.personalInfo.fullName);
+      }
+      
+      // Auto-fill date with today's date if not already filled
+      if (!formData.termsPolicy.date) {
+        const today = new Date().toISOString().split('T')[0];
+        updateTermsPolicy('date', today);
+      }
+    }
+  }, [currentStep, formData.personalInfo.fullName, formData.termsPolicy.signature, formData.termsPolicy.date]);
 
   const totalSteps = 8;
 
