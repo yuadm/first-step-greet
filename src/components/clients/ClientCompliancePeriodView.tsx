@@ -1194,9 +1194,10 @@ export function ClientCompliancePeriodView({
                                   <div className="flex items-center gap-2">
                                     {isCompleted && (
                                       <>
-                                        <DownloadButton
-                                          onDownload={async () => {
-                                            const record = getClientRecordForPeriod(client.id, selectedPeriod);
+                                        {record?.completion_method === 'spotcheck' && (
+                                          <DownloadButton
+                                            onDownload={async () => {
+                                              const record = getClientRecordForPeriod(client.id, selectedPeriod);
                                               if (!record) {
                                                 toast({
                                                   title: "No record found",
@@ -1287,7 +1288,8 @@ export function ClientCompliancePeriodView({
                                             completedText="Downloaded"
                                             className="h-8 w-8"
                                           />
-                                        <Button
+                                        )}
+                                        <Button 
                                           variant="ghost" 
                                           size="sm" 
                                           className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
