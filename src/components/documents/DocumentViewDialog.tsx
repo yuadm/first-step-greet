@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import countries from "world-countries";
+import { determineNationalityStatus } from "@/utils/nationalityStatus";
 
 // Precomputed country list for the Country select
 const COUNTRY_NAMES = countries.map((c) => c.name.common).sort();
@@ -265,7 +266,14 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
                   <label className="text-sm font-medium text-muted-foreground">Country</label>
                   <Select
                     value={mainEditValues.country}
-                    onValueChange={(val) => setMainEditValues({...mainEditValues, country: val})}
+                    onValueChange={(val) => {
+                      const nationalityStatus = determineNationalityStatus(val);
+                      setMainEditValues({
+                        ...mainEditValues, 
+                        country: val,
+                        nationality_status: nationalityStatus
+                      });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select country" />
@@ -284,7 +292,7 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
                   <Input
                     value={mainEditValues.nationality_status}
                     onChange={(e) => setMainEditValues({...mainEditValues, nationality_status: e.target.value})}
-                    placeholder="e.g., British Citizen"
+                    placeholder="e.g., British, EU, Non-EU"
                   />
                 </div>
               </div>
