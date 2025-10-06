@@ -29,25 +29,10 @@ serve(async (req) => {
   }
 
   try {
-    // Allow date simulation via request body
-    let now = new Date();
-    
-    if (req.method === 'POST') {
-      try {
-        const body = await req.json();
-        if (body.test_date) {
-          now = new Date(body.test_date);
-          console.log('Using simulated date:', now.toISOString());
-        }
-      } catch (e) {
-        // If no body or invalid JSON, use current date
-        console.log('No test_date provided, using current date');
-      }
-    }
-    
-    console.log('Starting compliance automation process for date:', now.toISOString());
+    console.log('Starting compliance automation process...');
 
-    // Get date info (using simulated or actual date)
+    // Get current date info
+    const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
     const currentQuarter = Math.ceil(currentMonth / 3);

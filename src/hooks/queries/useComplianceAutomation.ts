@@ -98,7 +98,7 @@ export function useTriggerAutomation() {
     onSuccess: (data) => {
       toast({
         title: "Automation Triggered",
-        description: `Created ${data.employeeRecordsCreated || 0} employee records, ${data.clientRecordsCreated || 0} client records. Updated ${data.employeeStatusUpdates || 0} employee statuses, ${data.clientStatusUpdates || 0} client statuses.`,
+        description: `Generated ${data.recordsGenerated} records, updated ${data.statusesUpdated} statuses.`,
       });
     },
     onError: (error: any) => {

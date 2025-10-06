@@ -76,9 +76,8 @@ export function ClientCompliancePeriodView({
   frequency,
   selectedFilter
 }: ClientCompliancePeriodViewProps) {
-  const currentYear = new Date().getFullYear();
   const [periods, setPeriods] = useState<PeriodData[]>([]);
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [clients, setClients] = useState<Client[]>([]);
   const [records, setRecords] = useState<any[]>([]);
@@ -144,6 +143,7 @@ export function ClientCompliancePeriodView({
 
       setClients(clientsData || []);
       setRecords(recordsData || []);
+      
       generatePeriods(clientsData || [], recordsData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -195,10 +195,10 @@ export function ClientCompliancePeriodView({
   };
 
   const generatePeriods = (clientsData: Client[], recordsData: any[]) => {
+    const currentYear = new Date().getFullYear();
     const periods: PeriodData[] = [];
     
-    // Use current year and past years only
-    const startYear = Math.max(2022, currentYear - 3);
+    const startYear = Math.max(2025, currentYear - 5);
     const endYear = currentYear;
     
     for (let year = endYear; year >= startYear; year--) {
@@ -750,8 +750,8 @@ export function ClientCompliancePeriodView({
   };
 
   const getAvailableYears = () => {
-    // Show years from 3 years ago to current year
-    const startYear = Math.max(2022, currentYear - 3);
+    const currentYear = new Date().getFullYear();
+    const startYear = Math.max(2025, currentYear - 5);
     const years = [];
     for (let year = currentYear; year >= startYear; year--) {
       years.push(year);

@@ -28,8 +28,7 @@ interface PeriodData {
 }
 
 export function CompliancePeriodView({ complianceTypeId, complianceTypeName, frequency }: CompliancePeriodViewProps) {
-  const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [currentPeriod, setCurrentPeriod] = useState<string>("");
   const { toast } = useToast();
 
@@ -81,10 +80,12 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
   const periods = useMemo(() => {
     if (!employees || !records) return [];
     
+    const currentYear = new Date().getFullYear(); // 2025
     const generatedPeriods: PeriodData[] = [];
     
-    // Use current year and past years only
-    const startYear = Math.max(2022, currentYear - 3);
+    // Only generate periods for years that make sense (current year going back to 6 years)
+    // But start from 2025 and only show years that have passed or are current
+    const startYear = Math.max(2025, currentYear - 5); // Start from 2025 or 6 years ago, whichever is later
     const endYear = currentYear;
     
     for (let year = endYear; year >= startYear; year--) {
@@ -196,7 +197,7 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
     }
     
     return generatedPeriods;
-  }, [employees, records, frequency, selectedYear, currentYear]);
+  }, [employees, records, frequency, selectedYear]);
 
   const handleDownload = async (period: PeriodData) => {
     try {
@@ -237,8 +238,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
   };
 
   const getAvailableYears = () => {
-    // Show years from 3 years ago to current year
-    const startYear = Math.max(2022, currentYear - 3);
+    const currentYear = new Date().getFullYear();
+    const startYear = Math.max(2025, currentYear - 5);
     const years = [];
     for (let year = currentYear; year >= startYear; year--) {
       years.push(year);
