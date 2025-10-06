@@ -168,11 +168,12 @@ export default function ClientCompliance() {
 
       // Get the latest period from actual records, or fall back to current period
       const periods = [...new Set(allRecords?.map(r => r.period_identifier) || [])].sort().reverse();
-      const period = periods[0] || getCurrentPeriod();
-      setCurrentPeriod(period);
+      const latestPeriod = periods[0] || getCurrentPeriod();
+      setCurrentPeriod(latestPeriod);
+      console.log('Client compliance latest period set to:', latestPeriod);
 
       // Filter records for the latest period
-      const records = allRecords?.filter(r => r.period_identifier === period) || [];
+      const records = allRecords?.filter(r => r.period_identifier === latestPeriod) || [];
 
       // Calculate overall stats - based on accessible clients only
       const totalClients = clients?.length || 0;

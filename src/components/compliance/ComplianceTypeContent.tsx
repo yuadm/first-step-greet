@@ -123,6 +123,7 @@ export function ComplianceTypeContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [completedByUsers, setCompletedByUsers] = useState<{ [key: string]: { name: string; created_at: string } }>({});
+  const [latestPeriod, setLatestPeriod] = useState<string>('');
 
 // Spot check edit state
 const [spotcheckEditOpen, setSpotcheckEditOpen] = useState(false);
@@ -400,6 +401,10 @@ const [annualAppraisalTarget, setAnnualAppraisalTarget] = useState<{ recordId: s
     // Get the latest period from actual records instead of calculating from current date
     const periods = [...new Set(recordsData.map(r => r.period_identifier))].sort().reverse();
     const currentPeriod = periods[0] || getCurrentPeriodIdentifier(complianceType.frequency);
+    
+    // Update the latestPeriod state for UI display
+    setLatestPeriod(currentPeriod);
+    console.log('Latest period set to:', currentPeriod);
     
     const statusList: EmployeeComplianceStatus[] = employeesData.map(employee => {
       // Find the latest record for this employee in the current period
@@ -1009,7 +1014,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
               <div>
                 <h3 className="font-semibold text-foreground mb-2">Current Period</h3>
                 <Badge variant="secondary">
-                  {getCurrentPeriodIdentifier(complianceType.frequency)}
+                  {latestPeriod || getCurrentPeriodIdentifier(complianceType.frequency)}
                 </Badge>
               </div>
             </div>
@@ -1131,7 +1136,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h2 className="text-2xl font-bold text-foreground">
-                  All Employees - Current Period: {employeeStatusList[0]?.currentPeriod || getCurrentPeriodIdentifier(complianceType?.frequency || '')}
+                  All Employees - Current Period: {latestPeriod || employeeStatusList[0]?.currentPeriod || getCurrentPeriodIdentifier(complianceType?.frequency || '')}
                 </h2>
                 {filteredStatus && (
                   <p className="text-sm text-muted-foreground">
