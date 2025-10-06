@@ -166,8 +166,8 @@ export function DocumentsContent() {
       setNewDocument(prev => ({
         ...prev,
         document_number: existingDocument.document_number || "",
-        issue_date: existingDocument.issue_date && isValidDate(existingDocument.issue_date) ? new Date(existingDocument.issue_date) : existingDocument.issue_date,
-        expiry_date: existingDocument.expiry_date && isValidDate(existingDocument.expiry_date) ? new Date(existingDocument.expiry_date) : existingDocument.expiry_date,
+        issue_date: existingDocument.issue_date || null,
+        expiry_date: existingDocument.expiry_date || null,
         notes: existingDocument.notes || ""
         // Keep country and nationality_status from employee selection
       }));
