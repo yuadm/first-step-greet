@@ -274,6 +274,18 @@ export function ClientCompliancePeriodDialog({
 
       if (spotCheckError) throw spotCheckError;
 
+      // Get the correct period end date from the database function
+      const { data: periodEndData, error: periodEndError } = await supabase
+        .rpc('get_period_end_date', {
+          p_frequency: frequency,
+          p_period_identifier: periodIdentifier
+        });
+
+      if (periodEndError) {
+        console.error('Error calculating period end date:', periodEndError);
+        throw periodEndError;
+      }
+
       const complianceRecordData = {
         client_compliance_type_id: complianceTypeId,
         client_id: selectedClient.id,
@@ -282,6 +294,7 @@ export function ClientCompliancePeriodDialog({
         status: 'completed',
         completion_method: 'spotcheck',
         notes: formData.notes || null,
+        grace_period_end: periodEndData, // Use the calculated period end date
       };
 
       const { error: complianceError } = await supabase
