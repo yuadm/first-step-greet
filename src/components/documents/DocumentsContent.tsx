@@ -168,42 +168,48 @@ export function DocumentsContent() {
         document_number: existingDocument.document_number || "",
         issue_date: existingDocument.issue_date && isValidDate(existingDocument.issue_date) ? new Date(existingDocument.issue_date) : existingDocument.issue_date,
         expiry_date: existingDocument.expiry_date && isValidDate(existingDocument.expiry_date) ? new Date(existingDocument.expiry_date) : existingDocument.expiry_date,
-        country: existingDocument.country || "",
-        nationality_status: existingDocument.nationality_status || "",
         notes: existingDocument.notes || ""
+        // Keep country and nationality_status from employee selection
       }));
     } else {
-      // Clear fields if no existing document found for this combination
+      // Only clear document-specific fields if no existing document found
       setNewDocument(prev => ({
         ...prev,
         document_number: "",
         issue_date: null,
         expiry_date: null,
-        country: "",
-        nationality_status: "",
         notes: ""
+        // Keep country, nationality_status from employee selection
       }));
     }
   };
 
-  // Handle employee selection and auto-populate branch
+  // Handle employee selection and auto-populate branch and employee-level fields
   const handleEmployeeChange = (employeeId: string) => {
     const selectedEmployee = employees.find(emp => emp.id === employeeId);
     console.log('Selected employee:', selectedEmployee);
+    
+    // Find ANY existing document for this employee to get country/nationality
+    const anyExistingDocument = documents.find(doc => doc.employee_id === employeeId);
     
     setNewDocument(prev => ({
       ...prev,
       employee_id: employeeId,
       branch_id: selectedEmployee?.branch_id || "",
-      // Reset document type and fields when employee changes
+      // Reset document type and document-specific fields when employee changes
       document_type_id: "",
       document_number: "",
       issue_date: null,
       expiry_date: null,
-      country: "",
-      nationality_status: "",
-      notes: ""
+      notes: "",
+      // Auto-populate country and nationality from any existing document
+      country: anyExistingDocument?.country || "",
+      nationality_status: anyExistingDocument?.nationality_status || ""
     }));
+    
+    // Auto-populate employee status fields from employee record
+    setSponsored(selectedEmployee?.sponsored || false);
+    setTwentyHours(selectedEmployee?.twenty_hours || false);
   };
 
   // Handle document type selection
