@@ -28,15 +28,35 @@ interface PeriodData {
 }
 
 export function CompliancePeriodView({ complianceTypeId, complianceTypeName, frequency }: CompliancePeriodViewProps) {
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  // Get the latest year from records instead of current year
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [currentPeriod, setCurrentPeriod] = useState<string>("");
   const { toast } = useToast();
 
-  // Fetch data using React Query
-  const { data, isLoading, error } = useCompliancePeriodData(complianceTypeId, frequency, selectedYear);
+  // Fetch data using React Query - use a wide year range to get all records initially
+  const { data, isLoading, error } = useCompliancePeriodData(complianceTypeId, frequency, selectedYear || new Date().getFullYear());
   
   const employees = data?.employees || [];
   const records = data?.records || [];
+
+  // Determine the latest year from actual records
+  const latestYear = useMemo(() => {
+    if (!records || records.length === 0) return new Date().getFullYear();
+    
+    const years = records.map(record => {
+      const periodId = record.period_identifier;
+      // Extract year from period identifier (e.g., "2026-Q4" -> 2026, "2026" -> 2026)
+      const yearMatch = periodId.match(/^(\d{4})/);
+      return yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+    });
+    
+    return Math.max(...years, new Date().getFullYear());
+  }, [records]);
+
+  // Set initial selected year to latest year from records
+  if (selectedYear === null && latestYear) {
+    setSelectedYear(latestYear);
+  }
 
   const getCurrentPeriod = () => {
     const now = new Date();
@@ -80,13 +100,13 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
   const periods = useMemo(() => {
     if (!employees || !records) return [];
     
-    const currentYear = new Date().getFullYear(); // 2025
+    const currentYear = new Date().getFullYear();
     const generatedPeriods: PeriodData[] = [];
     
-    // Only generate periods for years that make sense (current year going back to 6 years)
-    // But start from 2025 and only show years that have passed or are current
-    const startYear = Math.max(2025, currentYear - 5); // Start from 2025 or 6 years ago, whichever is later
-    const endYear = currentYear;
+    // Use the latest year from records (which could be future years like 2026)
+    const maxYear = Math.max(latestYear, currentYear);
+    const startYear = Math.max(2025, maxYear - 5);
+    const endYear = maxYear;
     
     for (let year = endYear; year >= startYear; year--) {
       const isCurrentYear = year === currentYear;
@@ -197,7 +217,7 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
     }
     
     return generatedPeriods;
-  }, [employees, records, frequency, selectedYear]);
+  }, [employees, records, frequency, selectedYear, latestYear]);
 
   const handleDownload = async (period: PeriodData) => {
     try {
@@ -239,9 +259,11 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
 
   const getAvailableYears = () => {
     const currentYear = new Date().getFullYear();
-    const startYear = Math.max(2025, currentYear - 5);
+    // Use the latest year from records (which could be future years)
+    const maxYear = Math.max(latestYear, currentYear);
+    const startYear = Math.max(2025, maxYear - 5);
     const years = [];
-    for (let year = currentYear; year >= startYear; year--) {
+    for (let year = maxYear; year >= startYear; year--) {
       years.push(year);
     }
     return years;
