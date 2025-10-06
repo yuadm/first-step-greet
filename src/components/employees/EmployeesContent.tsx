@@ -279,21 +279,32 @@ export function EmployeesContent() {
       if (error) throw error;
 
       // Automatically reset password to set up Supabase Auth user
+      let passwordResetSuccess = false;
       if (insertedEmployee?.id) {
         try {
-          await supabase.functions.invoke('admin-reset-employee-password', {
+          const { error: resetError } = await supabase.functions.invoke('admin-reset-employee-password', {
             body: { employeeId: insertedEmployee.id }
           });
+          
+          if (resetError) throw resetError;
+          passwordResetSuccess = true;
         } catch (resetError) {
           console.error('Error auto-resetting password:', resetError);
-          // Don't block the success flow, just log the error
         }
       }
 
-      toast({
-        title: "Employee added",
-        description: "The employee has been added successfully.",
-      });
+      if (passwordResetSuccess) {
+        toast({
+          title: "Employee added",
+          description: `${newEmployee.name} can now login with password: 123456`,
+        });
+      } else {
+        toast({
+          title: "Employee added with issues",
+          description: `${newEmployee.name} was created but needs manual password reset to login.`,
+          variant: "destructive",
+        });
+      }
 
       setDialogOpen(false);
       setNewEmployee({
