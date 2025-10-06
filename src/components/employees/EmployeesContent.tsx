@@ -1,6 +1,6 @@
 
 import { useState, useRef } from "react";
-import { Plus, Search, Filter, Mail, Phone, MapPin, Calendar, Users, Building, Clock, User, Upload, Download, X, FileSpreadsheet, AlertCircle, Eye, Edit3, Trash2, Check, Square, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, Filter, Mail, Phone, MapPin, Calendar, Users, Building, Clock, User, Upload, Download, X, FileSpreadsheet, AlertCircle, Eye, Edit3, Trash2, Check, Square, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -348,6 +348,80 @@ export function EmployeesContent() {
     });
     setEditMode(false);
     setViewDialogOpen(true);
+  };
+
+  const handleBulkPasswordReset = async () => {
+    try {
+      setImporting(true);
+      
+      // Get all employees
+      const { data: employeesNeedingReset, error: fetchError } = await supabase
+        .from('employees')
+        .select('id, name, email')
+        .eq('is_active', true);
+      
+      if (fetchError) throw fetchError;
+      
+      if (!employeesNeedingReset || employeesNeedingReset.length === 0) {
+        toast({
+          title: "No employees found",
+          description: "All employees are already set up.",
+        });
+        setImporting(false);
+        return;
+      }
+
+      let successCount = 0;
+      let failedEmployees: Array<{ name: string; email: string | null }> = [];
+      
+      const resetPromises = employeesNeedingReset.map(async (emp) => {
+        try {
+          const { error: resetError } = await supabase.functions.invoke('admin-reset-employee-password', {
+            body: { employeeId: emp.id }
+          });
+          
+          if (resetError) throw resetError;
+          successCount++;
+          
+          toast({
+            title: "Resetting passwords...",
+            description: `${successCount}/${employeesNeedingReset.length} employees ready`,
+          });
+          
+          return { success: true };
+        } catch (resetError) {
+          console.error(`Error resetting password for employee ${emp.id}:`, resetError);
+          failedEmployees.push({ name: emp.name, email: emp.email });
+          return { success: false };
+        }
+      });
+      
+      await Promise.allSettled(resetPromises);
+      
+      if (failedEmployees.length === 0) {
+        toast({
+          title: "All passwords reset",
+          description: `${successCount} employees can now login with password: 123456`,
+        });
+      } else {
+        toast({
+          title: "Password reset completed",
+          description: `${successCount} employees ready. ${failedEmployees.length} failed: ${failedEmployees.map(e => e.name).join(', ')}`,
+          variant: failedEmployees.length > successCount ? "destructive" : "default",
+        });
+      }
+      
+      refetchData();
+    } catch (error) {
+      console.error('Error in bulk password reset:', error);
+      toast({
+        title: "Reset failed",
+        description: "Failed to reset passwords. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+    }
   };
 
   const updateEmployee = async () => {
@@ -981,6 +1055,16 @@ export function EmployeesContent() {
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete Selected ({selectedEmployees.length})
+            </Button>
+          )}
+          {canCreateEmployees() && (
+            <Button 
+              variant="outline"
+              onClick={handleBulkPasswordReset}
+              disabled={importing}
+            >
+              <Key className="w-4 h-4 mr-2" />
+              Reset All Passwords
             </Button>
           )}
           {canCreateEmployees() && (
