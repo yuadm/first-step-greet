@@ -77,11 +77,12 @@ export function ClientCompliancePeriodView({
   selectedFilter
 }: ClientCompliancePeriodViewProps) {
   const [periods, setPeriods] = useState<PeriodData[]>([]);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [clients, setClients] = useState<Client[]>([]);
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [latestYear, setLatestYear] = useState<number>(new Date().getFullYear());
   const [spotCheckDialogOpen, setSpotCheckDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<string>("all");
@@ -144,6 +145,22 @@ export function ClientCompliancePeriodView({
       setClients(clientsData || []);
       setRecords(recordsData || []);
       
+      // Determine the latest year from actual records
+      if (recordsData && recordsData.length > 0) {
+        const years = recordsData.map(record => {
+          const periodId = record.period_identifier;
+          const yearMatch = periodId.match(/^(\d{4})/);
+          return yearMatch ? parseInt(yearMatch[1]) : new Date().getFullYear();
+        });
+        const maxYear = Math.max(...years, new Date().getFullYear());
+        setLatestYear(maxYear);
+        
+        // Set initial selected year if not set
+        if (selectedYear === null) {
+          setSelectedYear(maxYear);
+        }
+      }
+      
       generatePeriods(clientsData || [], recordsData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -198,8 +215,10 @@ export function ClientCompliancePeriodView({
     const currentYear = new Date().getFullYear();
     const periods: PeriodData[] = [];
     
-    const startYear = Math.max(2025, currentYear - 5);
-    const endYear = currentYear;
+    // Use the latest year from records (which could be future years like 2026)
+    const maxYear = Math.max(latestYear, currentYear);
+    const startYear = Math.max(2025, maxYear - 5);
+    const endYear = maxYear;
     
     for (let year = endYear; year >= startYear; year--) {
       const isCurrentYear = year === currentYear;
@@ -751,9 +770,11 @@ export function ClientCompliancePeriodView({
 
   const getAvailableYears = () => {
     const currentYear = new Date().getFullYear();
-    const startYear = Math.max(2025, currentYear - 5);
+    // Use the latest year from records (which could be future years)
+    const maxYear = Math.max(latestYear, currentYear);
+    const startYear = Math.max(2025, maxYear - 5);
     const years = [];
-    for (let year = currentYear; year >= startYear; year--) {
+    for (let year = maxYear; year >= startYear; year--) {
       years.push(year);
     }
     return years;
@@ -1455,7 +1476,7 @@ export function ClientCompliancePeriodView({
             <h3 className="text-xl font-semibold">Client Compliance Records</h3>
             
             {frequency.toLowerCase() !== 'annual' && (
-              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+              <Select value={selectedYear?.toString() || latestYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
                 <SelectTrigger className="w-40 bg-background border border-input">
                   <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
