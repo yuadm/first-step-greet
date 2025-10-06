@@ -1194,102 +1194,100 @@ export function ClientCompliancePeriodView({
                                   <div className="flex items-center gap-2">
                                     {isCompleted && (
                                       <>
-                                        {record?.completion_method === 'spotcheck' && (
-                                          <DownloadButton
-                                            onDownload={async () => {
-                                              const record = getClientRecordForPeriod(client.id, selectedPeriod);
-                                              if (!record) {
-                                                toast({
-                                                  title: "No record found",
-                                                  description: "No compliance record found for this client.",
-                                                  variant: "destructive",
-                                                });
-                                                return;
-                                              }
-
-                                              // Get spot check data for this client and period
-                                              const { data: spotCheckData, error: spotCheckError } = await supabase
-                                                .from('client_spot_check_records')
-                                                .select('*')
-                                                .eq('compliance_record_id', record.id)
-                                                .maybeSingle();
-
-                                              if (spotCheckError) {
-                                                console.error('Error fetching spot check data:', spotCheckError);
-                                              }
-
-                                              // If no direct link, try to find by client_id and date range
-                                              let finalSpotCheckData = spotCheckData;
-                                              if (!spotCheckData) {
-                                                // Parse period to get date range
-                                                const periodDate = parseFloat(selectedPeriod);
-                                                if (!isNaN(periodDate)) {
-                                                  const startDate = new Date(periodDate, 0, 1).toISOString().split('T')[0];
-                                                  const endDate = new Date(periodDate, 11, 31).toISOString().split('T')[0];
-                                                  
-                                                  const { data: fallbackData, error: fallbackError } = await supabase
-                                                    .from('client_spot_check_records')
-                                                    .select('*')
-                                                    .eq('client_id', client.id)
-                                                    .gte('date', startDate)
-                                                    .lte('date', endDate)
-                                                    .order('created_at', { ascending: false })
-                                                    .limit(1)
-                                                    .maybeSingle();
-
-                                                  if (!fallbackError && fallbackData) {
-                                                    finalSpotCheckData = fallbackData;
-                                                  }
-                                                }
-                                              }
-
-                                              // Generate client compliance PDF
-                                              const { generateClientSpotCheckPdf } = await import('@/lib/client-spot-check-pdf');
-                                              
-                                              let observations = [];
-                                              if (finalSpotCheckData?.observations) {
-                                                try {
-                                                  // Handle different data formats
-                                                  if (Array.isArray(finalSpotCheckData.observations)) {
-                                                    observations = finalSpotCheckData.observations;
-                                                  } else if (typeof finalSpotCheckData.observations === 'string') {
-                                                    observations = JSON.parse(finalSpotCheckData.observations);
-                                                  } else if (typeof finalSpotCheckData.observations === 'object') {
-                                                    // Convert object keys to array format
-                                                    observations = Object.entries(finalSpotCheckData.observations).map(([key, value]: [string, any]) => ({
-                                                      id: key,
-                                                      label: value.label || key,
-                                                      value: value.value || value,
-                                                      comments: value.comments || ''
-                                                    }));
-                                                  }
-                                                } catch (e) {
-                                                  console.error('Error parsing observations:', e);
-                                                  observations = [];
-                                                }
-                                              }
-
-                                              await generateClientSpotCheckPdf({
-                                                serviceUserName: finalSpotCheckData?.service_user_name || client.name,
-                                                date: finalSpotCheckData?.date || '',
-                                                completedBy: finalSpotCheckData?.performed_by || '',
-                                                observations: observations
-                                              }, {
-                                                name: companySettings?.name,
-                                                logo: companySettings?.logo
-                                              });
-                                              
+                                        <DownloadButton
+                                          onDownload={async () => {
+                                            const record = getClientRecordForPeriod(client.id, selectedPeriod);
+                                            if (!record) {
                                               toast({
-                                                title: "PDF Downloaded",
-                                                description: `Compliance record for ${client.name} has been downloaded.`,
+                                                title: "No record found",
+                                                description: "No compliance record found for this client.",
+                                                variant: "destructive",
                                               });
-                                            }}
-                                            downloadingText="Generating PDF..."
-                                            completedText="Downloaded"
-                                            className="h-8 w-8"
-                                          />
-                                        )}
-                                        <Button 
+                                              return;
+                                            }
+
+                                            // Get spot check data for this client and period
+                                            const { data: spotCheckData, error: spotCheckError } = await supabase
+                                              .from('client_spot_check_records')
+                                              .select('*')
+                                              .eq('compliance_record_id', record.id)
+                                              .maybeSingle();
+
+                                            if (spotCheckError) {
+                                              console.error('Error fetching spot check data:', spotCheckError);
+                                            }
+
+                                            // If no direct link, try to find by client_id and date range
+                                            let finalSpotCheckData = spotCheckData;
+                                            if (!spotCheckData) {
+                                              // Parse period to get date range
+                                              const periodDate = parseFloat(selectedPeriod);
+                                              if (!isNaN(periodDate)) {
+                                                const startDate = new Date(periodDate, 0, 1).toISOString().split('T')[0];
+                                                const endDate = new Date(periodDate, 11, 31).toISOString().split('T')[0];
+                                                
+                                                const { data: fallbackData, error: fallbackError } = await supabase
+                                                  .from('client_spot_check_records')
+                                                  .select('*')
+                                                  .eq('client_id', client.id)
+                                                  .gte('date', startDate)
+                                                  .lte('date', endDate)
+                                                  .order('created_at', { ascending: false })
+                                                  .limit(1)
+                                                  .maybeSingle();
+
+                                                if (!fallbackError && fallbackData) {
+                                                  finalSpotCheckData = fallbackData;
+                                                }
+                                              }
+                                            }
+
+                                            // Generate client compliance PDF
+                                            const { generateClientSpotCheckPdf } = await import('@/lib/client-spot-check-pdf');
+                                            
+                                            let observations = [];
+                                            if (finalSpotCheckData?.observations) {
+                                              try {
+                                                // Handle different data formats
+                                                if (Array.isArray(finalSpotCheckData.observations)) {
+                                                  observations = finalSpotCheckData.observations;
+                                                } else if (typeof finalSpotCheckData.observations === 'string') {
+                                                  observations = JSON.parse(finalSpotCheckData.observations);
+                                                } else if (typeof finalSpotCheckData.observations === 'object') {
+                                                  // Convert object keys to array format
+                                                  observations = Object.entries(finalSpotCheckData.observations).map(([key, value]: [string, any]) => ({
+                                                    id: key,
+                                                    label: value.label || key,
+                                                    value: value.value || value,
+                                                    comments: value.comments || ''
+                                                  }));
+                                                }
+                                              } catch (e) {
+                                                console.error('Error parsing observations:', e);
+                                                observations = [];
+                                              }
+                                            }
+
+                                            await generateClientSpotCheckPdf({
+                                              serviceUserName: finalSpotCheckData?.service_user_name || client.name,
+                                              date: finalSpotCheckData?.date || '',
+                                              completedBy: finalSpotCheckData?.performed_by || '',
+                                              observations: observations
+                                            }, {
+                                              name: companySettings?.name,
+                                              logo: companySettings?.logo
+                                            });
+                                            
+                                            toast({
+                                              title: "PDF Downloaded",
+                                              description: `Compliance record for ${client.name} has been downloaded.`,
+                                            });
+                                          }}
+                                          downloadingText="Generating PDF..."
+                                          completedText="Downloaded"
+                                          className="h-8 w-8"
+                                        />
+                                        <Button
                                           variant="ghost" 
                                           size="sm" 
                                           className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
