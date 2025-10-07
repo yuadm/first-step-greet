@@ -94,7 +94,10 @@ export function EmployeesContent() {
     employee_type: "regular",
     working_hours: "N/A",
     leave_allowance: 28,
-    hours_restriction: ""
+    leave_taken: 0,
+    remaining_leave_days: 28,
+    hours_restriction: "",
+    created_at: new Date().toISOString()
   });
   const [editedEmployee, setEditedEmployee] = useState({
     name: "",
@@ -271,7 +274,8 @@ export function EmployeesContent() {
           password_hash: await hashDefaultPassword(),
           must_change_password: true,
           is_active: true,
-          failed_login_attempts: 0
+          failed_login_attempts: 0,
+          created_at: newEmployee.created_at
         }])
         .select()
         .single();
@@ -317,7 +321,10 @@ export function EmployeesContent() {
         employee_type: "regular",
         working_hours: "N/A",
         leave_allowance: 28,
-        hours_restriction: ""
+        leave_taken: 0,
+        remaining_leave_days: 28,
+        hours_restriction: "",
+        created_at: new Date().toISOString()
       });
       refetchData();
     } catch (error) {
@@ -1557,6 +1564,19 @@ export function EmployeesContent() {
                   placeholder="e.g., 20 hours max"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="created_at">Creation Date (for compliance periods)</Label>
+              <Input
+                id="created_at"
+                type="date"
+                value={newEmployee.created_at ? new Date(newEmployee.created_at).toISOString().split('T')[0] : ''}
+                onChange={(e) => setNewEmployee({...newEmployee, created_at: new Date(e.target.value).toISOString()})}
+              />
+              <p className="text-xs text-muted-foreground">
+                This determines which compliance periods the employee will appear in
+              </p>
             </div>
           </div>
           <DialogFooter>
