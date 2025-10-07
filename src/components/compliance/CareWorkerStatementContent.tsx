@@ -390,15 +390,6 @@ export function CareWorkerStatementContent() {
                   <Button 
                     variant="ghost" 
                     className="p-0 h-auto font-medium hover:bg-transparent"
-                    onClick={() => handleSort('branch')}
-                  >
-                    Branch {getSortIcon('branch')}
-                  </Button>
-                </TableHead>
-                <TableHead>
-                  <Button 
-                    variant="ghost" 
-                    className="p-0 h-auto font-medium hover:bg-transparent"
                     onClick={() => handleSort('report_date')}
                   >
                     Report Date {getSortIcon('report_date')}
@@ -429,11 +420,15 @@ export function CareWorkerStatementContent() {
               {filteredStatements.map((statement) => (
                 <TableRow key={statement.id}>
                   <TableCell className="font-medium">
-                    {statement.care_worker_name}
+                    <div className="flex items-center gap-2">
+                      <span>{statement.care_worker_name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {statement.branches?.name || 'No branch'}
+                      </Badge>
+                    </div>
                   </TableCell>
                   <TableCell>{statement.client_name}</TableCell>
                   <TableCell>{statement.client_address}</TableCell>
-                  <TableCell>{statement.branches?.name || 'No branch'}</TableCell>
                   <TableCell>{new Date(statement.report_date).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(statement.status)}>
@@ -514,7 +509,7 @@ export function CareWorkerStatementContent() {
               ))}
               {filteredStatements.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     <div className="flex flex-col items-center gap-2">
                       <FileText className="h-8 w-8 text-muted-foreground" />
                       <p className="text-muted-foreground">No statements found</p>
