@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { useClientData } from "@/hooks/useClientData";
@@ -70,7 +71,7 @@ export function ClientsContent() {
   const [newClient, setNewClient] = useState({
     name: "",
     branch_id: "",
-    created_at: new Date().toISOString()
+    created_at: new Date()
   });
 
   const [editedClient, setEditedClient] = useState({
@@ -103,14 +104,14 @@ export function ClientsContent() {
       name: newClient.name,
       branch_id: newClient.branch_id,
       is_active: true,
-      created_at: newClient.created_at
+      created_at: newClient.created_at.toISOString()
     }, {
       onSuccess: () => {
         setDialogOpen(false);
         setNewClient({
           name: "",
           branch_id: "",
-          created_at: new Date().toISOString()
+          created_at: new Date()
         });
       }
     });
@@ -836,13 +837,12 @@ export function ClientsContent() {
             </div>
             <div>
               <Label htmlFor="created_at">Creation Date (for compliance periods)</Label>
-              <Input
-                id="created_at"
-                type="date"
-                value={newClient.created_at ? new Date(newClient.created_at).toISOString().split('T')[0] : ''}
-                onChange={(e) => setNewClient({ ...newClient, created_at: new Date(e.target.value).toISOString() })}
+              <DatePicker
+                selected={newClient.created_at}
+                onChange={(date) => setNewClient({ ...newClient, created_at: date || new Date() })}
+                placeholder="Select creation date"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 This determines which compliance periods the client will appear in
               </p>
             </div>
