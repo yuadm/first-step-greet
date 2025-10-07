@@ -110,81 +110,33 @@ export function MaterialDatePicker({
           {selected ? format(selected, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-auto p-0", className)} align="start">
+      <PopoverContent className={cn("w-auto p-0 max-w-[260px]", className)} align="start">
         <div className="bg-background rounded-lg shadow-lg border">
-          {/* Header */}
-          <div className="px-6 pt-4 pb-2">
-            <p className="text-sm text-muted-foreground mb-2">Select date</p>
-            <div className="flex items-center justify-between">
-              <div className="text-3xl font-normal">
-                {tempDate ? format(tempDate, "EEE, MMM d") : "Select"}
-              </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Month selector with navigation */}
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between border-t">
-            <Select value={currentMonthValue} onValueChange={handleMonthChange}>
-              <SelectTrigger className="w-[140px] border-none shadow-none focus:ring-0">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                {monthOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handlePrevMonth}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleNextMonth}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Calendar */}
-          <div className="p-3">
+          {/* Calendar - Ultra Compact, remove extra header and duplicate month selector */}
+          <div className="p-1">
             <Calendar
               mode="single"
               selected={tempDate}
               onSelect={handleSelect}
               month={month}
               onMonthChange={setMonth}
-              className="pointer-events-auto"
+              className="pointer-events-auto scale-[0.8]"
             />
           </div>
 
-          {/* Footer with Cancel and OK buttons */}
-          <div className="flex items-center justify-end gap-2 px-4 pb-4 pt-2">
+          {/* Footer - Compact */}
+          <div className="flex items-center justify-end gap-1 px-2 pb-1 pt-1 border-t">
             <Button
               variant="ghost"
               onClick={handleCancel}
-              className="text-primary hover:text-primary"
+              className="text-primary hover:text-primary text-[11px] h-7 px-2"
             >
               Cancel
             </Button>
             <Button
               variant="ghost"
               onClick={handleOk}
-              className="text-primary hover:text-primary font-medium"
+              className="text-primary hover:text-primary font-medium text-[11px] h-7 px-2"
             >
               OK
             </Button>
