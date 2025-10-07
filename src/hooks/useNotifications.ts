@@ -94,8 +94,8 @@ export function useNotifications() {
 
       if (error) throw error;
 
-      setNotifications(data || []);
-      updateUnreadCount(data || []);
+      setNotifications((data as Notification[]) || []);
+      updateUnreadCount((data as Notification[]) || []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
