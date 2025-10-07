@@ -57,7 +57,7 @@ export function EnhancedPDFViewer({
   const [thumbnailsVisible, setThumbnailsVisible] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [fileSource, setFileSource] = useState<any>(pdfUrl);
+  const [fileSource, setFileSource] = useState<string | Uint8Array>(pdfUrl);
   const [fallbackTried, setFallbackTried] = useState(false);
 
   // Keyboard navigation handler

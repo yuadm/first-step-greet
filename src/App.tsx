@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
@@ -172,22 +171,20 @@ function AppContent() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <AuthProvider>
-        <PermissionsProvider>
-          <CompanyProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppContent />
-              </BrowserRouter>
-              <ReactQueryDevtools initialIsOpen={false} />
-            </TooltipProvider>
-          </CompanyProvider>
-        </PermissionsProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <PermissionsProvider>
+        <CompanyProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+            <ReactQueryDevtools initialIsOpen={false} />
+          </TooltipProvider>
+        </CompanyProvider>
+      </PermissionsProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
