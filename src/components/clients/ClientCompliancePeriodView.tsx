@@ -43,6 +43,7 @@ interface Client {
   id: string;
   name: string;
   branch_id: string;
+  created_at: string;
   branches?: {
     name: string;
   };
@@ -862,7 +863,49 @@ export function ClientCompliancePeriodView({
 
   // Filtered and sorted clients
   const filteredAndSortedClients = useMemo(() => {
-    let filtered = clients;
+    // Calculate period end date to filter out clients created after this period
+    const getPeriodEndDate = (periodId: string, freq: string): Date => {
+      switch (freq.toLowerCase()) {
+        case 'annual': {
+          const year = parseInt(periodId);
+          return new Date(year, 11, 31); // December 31st
+        }
+        case 'monthly': {
+          const [year, month] = periodId.split('-').map(Number);
+          return new Date(year, month, 0); // Last day of the month
+        }
+        case 'quarterly': {
+          const [year, quarterStr] = periodId.split('-');
+          const quarter = parseInt(quarterStr.replace('Q', ''));
+          const endMonth = quarter * 3; // Q1=3, Q2=6, Q3=9, Q4=12
+          return new Date(parseInt(year), endMonth, 0); // Last day of quarter
+        }
+        case 'bi-annual':
+        case 'biannual': {
+          const [year, halfStr] = periodId.split('-');
+          const half = parseInt(halfStr.replace('H', ''));
+          const endMonth = half === 1 ? 6 : 12;
+          return new Date(parseInt(year), endMonth, 0);
+        }
+        case 'weekly': {
+          const [year, weekStr] = periodId.split('-W');
+          const week = parseInt(weekStr);
+          const firstDayOfYear = new Date(parseInt(year), 0, 1);
+          const daysToAdd = (week - 1) * 7 + 6; // Last day of the week
+          return new Date(firstDayOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+        }
+        default:
+          return new Date();
+      }
+    };
+
+    const periodEndDate = getPeriodEndDate(selectedPeriod, frequency);
+    
+    // Filter out clients created after the period end date
+    let filtered = clients.filter(client => {
+      const clientCreatedDate = new Date(client.created_at);
+      return clientCreatedDate <= periodEndDate;
+    });
 
     // Apply search filter
     if (searchTerm.trim()) {
