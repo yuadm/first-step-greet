@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,7 +116,8 @@ export function EmployeesContent() {
     leave_allowance: 28,
     leave_taken: 0,
     remaining_leave_days: 28,
-    hours_restriction: ""
+    hours_restriction: "",
+    created_at: new Date()
   });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -355,7 +357,8 @@ export function EmployeesContent() {
       leave_allowance: employee.leave_allowance || 28,
       leave_taken: employee.leave_taken || 0,
       remaining_leave_days: employee.remaining_leave_days || 28,
-      hours_restriction: employee.hours_restriction || ""
+      hours_restriction: employee.hours_restriction || "",
+      created_at: employee.created_at ? new Date(employee.created_at) : new Date()
     });
     setEditMode(false);
     setViewDialogOpen(true);
@@ -467,7 +470,8 @@ export function EmployeesContent() {
           leave_allowance: editedEmployee.leave_allowance,
           leave_taken: editedEmployee.leave_taken,
           remaining_leave_days: editedEmployee.remaining_leave_days,
-          hours_restriction: editedEmployee.hours_restriction || null
+          hours_restriction: editedEmployee.hours_restriction || null,
+          created_at: editedEmployee.created_at.toISOString()
         })
         .eq('id', selectedEmployee.id);
 
@@ -2012,6 +2016,30 @@ export function EmployeesContent() {
                   )}
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label htmlFor="view_created_at">Creation Date (for compliance periods)</Label>
+                {editMode ? (
+                  <>
+                    <DatePicker
+                      selected={editedEmployee.created_at}
+                      onChange={(date) => setEditedEmployee({...editedEmployee, created_at: date || new Date()})}
+                      placeholder="Select creation date"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This determines which compliance periods the employee will appear in
+                    </p>
+                  </>
+                ) : (
+                  <div className="p-2 bg-muted rounded text-sm">
+                    {selectedEmployee.created_at ? new Date(selectedEmployee.created_at).toLocaleDateString('en-GB', { 
+                      day: '2-digit', 
+                      month: 'long', 
+                      year: 'numeric' 
+                    }) : 'N/A'}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
