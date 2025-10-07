@@ -1543,7 +1543,7 @@ export function EmployeesContent() {
                 selected={newEmployee.created_at ? new Date(newEmployee.created_at) : undefined}
                 onSelect={(date) => setNewEmployee({...newEmployee, created_at: date ? date.toISOString() : new Date().toISOString()})}
                 placeholder="Select date"
-                buttonClassName="h-8 text-xs w-full sm:w-[200px]"
+                buttonClassName="h-9 text-sm"
                 className="w-full sm:w-auto"
               />
               <p className="text-xs text-muted-foreground">
