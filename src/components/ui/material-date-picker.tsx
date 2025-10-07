@@ -110,13 +110,13 @@ export function MaterialDatePicker({
           {selected ? format(selected, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-auto p-0 max-w-[95vw]", className)} align="start">
+      <PopoverContent className={cn("w-auto p-0 max-w-[320px]", className)} align="start">
         <div className="bg-background rounded-lg shadow-lg border">
           {/* Header */}
           <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-2">
             <p className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2">Select date</p>
             <div className="flex items-center justify-between">
-              <div className="text-xl sm:text-2xl md:text-3xl font-normal">
+              <div className="text-lg sm:text-xl md:text-2xl font-normal">
                 {tempDate ? format(tempDate, "EEE, MMM d") : "Select"}
               </div>
               <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
@@ -168,7 +168,7 @@ export function MaterialDatePicker({
               onSelect={handleSelect}
               month={month}
               onMonthChange={setMonth}
-              className="pointer-events-auto scale-90 sm:scale-100"
+              className="pointer-events-auto scale-75 sm:scale-90"
             />
           </div>
 
