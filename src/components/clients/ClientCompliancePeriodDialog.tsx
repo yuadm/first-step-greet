@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Plus, Edit, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DownloadButton } from "@/components/ui/download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -464,6 +465,41 @@ export function ClientCompliancePeriodDialog({
                           <div className="flex items-center gap-2">
                             {status === 'completed' ? (
                               <>
+                                {/* Download Button */}
+                                {record?.completion_method === 'spotcheck' && (
+                                  <DownloadButton
+                                    onDownload={async () => {
+                                      try {
+                                        const { data, error } = await supabase
+                                          .from('client_spot_check_records')
+                                          .select('*')
+                                          .eq('client_id', client.id)
+                                          .eq('compliance_record_id', record.id)
+                                          .maybeSingle();
+                                        
+                                        if (error) throw error;
+                                        if (!data) throw new Error('No spot check record found');
+                                        
+                                        const { generateClientSpotCheckPdf } = await import('@/lib/client-spot-check-pdf');
+                                        await generateClientSpotCheckPdf({
+                                          serviceUserName: data.service_user_name,
+                                          date: data.date,
+                                          completedBy: data.performed_by,
+                                          observations: data.observations as any
+                                        }, {
+                                          name: companySettings?.name || 'Company',
+                                          logo: companySettings?.logo
+                                        });
+                                      } catch (err) {
+                                        console.error('Error generating client spot check PDF:', err);
+                                      }
+                                    }}
+                                    downloadingText="Generating PDF..."
+                                    completedText="Downloaded"
+                                  />
+                                )}
+                                
+                                {/* View Button */}
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -473,6 +509,8 @@ export function ClientCompliancePeriodDialog({
                                 >
                                   <Eye className="w-4 h-4" />
                                 </Button>
+                                
+                                {/* Edit Button */}
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -482,6 +520,8 @@ export function ClientCompliancePeriodDialog({
                                 >
                                   <Edit className="w-4 h-4" />
                                 </Button>
+                                
+                                {/* Delete Button */}
                                 <Button
                                   variant="ghost"
                                   size="sm"
