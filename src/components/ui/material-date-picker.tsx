@@ -110,81 +110,76 @@ export function MaterialDatePicker({
           {selected ? format(selected, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-auto p-0 max-w-[95vw]", className)} align="start">
+      <PopoverContent className={cn("w-auto p-0 max-w-[280px]", className)} align="start">
         <div className="bg-background rounded-lg shadow-lg border">
-          {/* Header */}
-          <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-2">
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2">Select date</p>
-            <div className="flex items-center justify-between">
-              <div className="text-xl sm:text-2xl md:text-3xl font-normal">
-                {tempDate ? format(tempDate, "EEE, MMM d") : "Select"}
-              </div>
-              <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
-                <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
-              </Button>
+          {/* Header - Compact */}
+          <div className="px-3 pt-2 pb-1.5">
+            <p className="text-[10px] text-muted-foreground mb-0.5">Select date</p>
+            <div className="text-sm font-normal">
+              {tempDate ? format(tempDate, "EEE, MMM d") : "Select"}
             </div>
           </div>
 
-          {/* Month selector with navigation */}
-          <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2 flex items-center justify-between border-t gap-2">
+          {/* Month selector with navigation - Compact */}
+          <div className="px-2 py-1.5 flex items-center justify-between border-t gap-1">
             <Select value={currentMonthValue} onValueChange={handleMonthChange}>
-              <SelectTrigger className="w-[110px] sm:w-[140px] border-none shadow-none focus:ring-0 text-xs sm:text-sm">
+              <SelectTrigger className="w-[100px] h-7 border-none shadow-none focus:ring-0 text-[11px]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="max-h-[250px] sm:max-h-[300px]">
+              <SelectContent className="max-h-[200px]">
                 {monthOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem key={option.value} value={option.value} className="text-xs">
                     {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             
-            <div className="flex items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center gap-0.5">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 sm:h-8 sm:w-8"
+                className="h-6 w-6"
                 onClick={handlePrevMonth}
               >
-                <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <ChevronLeft className="h-3 w-3" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 sm:h-8 sm:w-8"
+                className="h-6 w-6"
                 onClick={handleNextMonth}
               >
-                <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <ChevronRight className="h-3 w-3" />
               </Button>
             </div>
           </div>
 
-          {/* Calendar */}
-          <div className="p-2 sm:p-3">
+          {/* Calendar - Compact */}
+          <div className="p-1">
             <Calendar
               mode="single"
               selected={tempDate}
               onSelect={handleSelect}
               month={month}
               onMonthChange={setMonth}
-              className="pointer-events-auto scale-90 sm:scale-100"
+              className="pointer-events-auto scale-[0.85]"
             />
           </div>
 
-          {/* Footer with Cancel and OK buttons */}
-          <div className="flex items-center justify-end gap-2 px-3 sm:px-4 pb-3 sm:pb-4 pt-2">
+          {/* Footer with Cancel and OK buttons - Compact */}
+          <div className="flex items-center justify-end gap-1.5 px-2 pb-2 pt-1">
             <Button
               variant="ghost"
               onClick={handleCancel}
-              className="text-primary hover:text-primary text-xs sm:text-sm h-8 sm:h-9"
+              className="text-primary hover:text-primary text-[11px] h-7 px-3"
             >
               Cancel
             </Button>
             <Button
               variant="ghost"
               onClick={handleOk}
-              className="text-primary hover:text-primary font-medium text-xs sm:text-sm h-8 sm:h-9"
+              className="text-primary hover:text-primary font-medium text-[11px] h-7 px-3"
             >
               OK
             </Button>
