@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { ProfileDropdown } from "./ProfileDropdown";
 import { NotificationPopover } from "./NotificationPopover";
+import { ThemeToggle } from "./ThemeToggle";
 import { useNotifications } from "@/hooks/useNotifications";
 
 interface MainLayoutProps {
@@ -33,6 +34,9 @@ export function MainLayout({ children }: MainLayoutProps) {
               <div className="flex items-center gap-2">
                 {/* Notifications */}
                 <NotificationPopover />
+
+                {/* Theme Toggle */}
+                <ThemeToggle />
 
                 {/* Profile */}
                 <ProfileDropdown />
