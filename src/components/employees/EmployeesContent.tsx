@@ -1453,25 +1453,14 @@ export function EmployeesContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="employee_code">Employee Code *</Label>
-                <Input
-                  id="employee_code"
-                  value={newEmployee.employee_code}
-                  onChange={(e) => setNewEmployee({...newEmployee, employee_code: e.target.value})}
-                  placeholder="e.g., EMP001"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={newEmployee.phone}
-                  onChange={(e) => setNewEmployee({...newEmployee, phone: e.target.value})}
-                  placeholder="Enter phone number"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="employee_code">Employee Code *</Label>
+              <Input
+                id="employee_code"
+                value={newEmployee.employee_code}
+                onChange={(e) => setNewEmployee({...newEmployee, employee_code: e.target.value})}
+                placeholder="e.g., EMP001"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1515,33 +1504,14 @@ export function EmployeesContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="employee_type">Employee Type</Label>
-                <Select
-                  value={newEmployee.employee_type}
-                  onValueChange={(value) => setNewEmployee({...newEmployee, employee_type: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="regular">Regular</SelectItem>
-                    <SelectItem value="part-time">Part-time</SelectItem>
-                    <SelectItem value="contract">Contract</SelectItem>
-                    <SelectItem value="intern">Intern</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="working_hours">Working Hours/Week</Label>
-                <Input
-                  id="working_hours"
-                  value={newEmployee.working_hours}
-                  onChange={(e) => setNewEmployee({...newEmployee, working_hours: e.target.value})}
-                  placeholder="N/A"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="working_hours">Working Hours/Week</Label>
+              <Input
+                id="working_hours"
+                value={newEmployee.working_hours}
+                onChange={(e) => setNewEmployee({...newEmployee, working_hours: e.target.value})}
+                placeholder="N/A"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1570,8 +1540,8 @@ export function EmployeesContent() {
               <Label htmlFor="created_at">Creation Date (for compliance periods)</Label>
               <Input
                 id="created_at"
-                type="date"
-                value={newEmployee.created_at ? new Date(newEmployee.created_at).toISOString().split('T')[0] : ''}
+                type="datetime-local"
+                value={newEmployee.created_at ? new Date(newEmployee.created_at).toISOString().slice(0, 16) : ''}
                 onChange={(e) => setNewEmployee({...newEmployee, created_at: new Date(e.target.value).toISOString()})}
               />
               <p className="text-xs text-muted-foreground">
