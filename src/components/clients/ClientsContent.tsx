@@ -76,7 +76,8 @@ export function ClientsContent() {
 
   const [editedClient, setEditedClient] = useState({
     name: "",
-    branch_id: ""
+    branch_id: "",
+    created_at: new Date()
   });
 
   const { createClient, updateClient, deleteClient } = useClientActions();
@@ -121,7 +122,8 @@ export function ClientsContent() {
     setSelectedClient(client);
     setEditedClient({
       name: client.name || "",
-      branch_id: client.branch_id || ""
+      branch_id: client.branch_id || "",
+      created_at: client.created_at ? new Date(client.created_at) : new Date()
     });
     setEditMode(false);
     setViewDialogOpen(true);
@@ -142,7 +144,8 @@ export function ClientsContent() {
     updateClient.mutate({
       id: selectedClient.id,
       name: editedClient.name,
-      branch_id: editedClient.branch_id
+      branch_id: editedClient.branch_id,
+      created_at: editedClient.created_at.toISOString()
     }, {
       onSuccess: () => {
         setEditMode(false);
@@ -892,6 +895,29 @@ export function ClientsContent() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-created-at">Creation Date (for compliance periods)</Label>
+              {editMode ? (
+                <>
+                  <DatePicker
+                    selected={editedClient.created_at}
+                    onChange={(date) => setEditedClient({ ...editedClient, created_at: date || new Date() })}
+                    placeholder="Select creation date"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This determines which compliance periods the client will appear in
+                  </p>
+                </>
+              ) : (
+                <div className="p-2 bg-muted rounded text-sm">
+                  {selectedClient?.created_at ? new Date(selectedClient.created_at).toLocaleDateString('en-GB', { 
+                    day: '2-digit', 
+                    month: 'long', 
+                    year: 'numeric' 
+                  }) : 'N/A'}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
