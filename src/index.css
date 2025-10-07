@@ -178,12 +178,12 @@ All colors MUST be HSL. This creates a sophisticated, modern design with subtle 
     --background: 0 0% 0%;
     --foreground: 0 0% 95%;
     
-    --card: 0 0% 3%;
+    --card: 0 0% 0%;
     --card-foreground: 0 0% 95%;
     --card-shadow: 0 0% 100% / 0.05;
-    --card-border: 0 0% 10%;
+    --card-border: 0 0% 8%;
     
-    --popover: 0 0% 3%;
+    --popover: 0 0% 0%;
     --popover-foreground: 0 0% 95%;
     
     --primary: 211 100% 55%;
@@ -191,12 +191,12 @@ All colors MUST be HSL. This creates a sophisticated, modern design with subtle 
     --primary-foreground: 0 0% 0%;
     --primary-soft: 211 100% 8%;
     
-    --secondary: 0 0% 8%;
-    --secondary-hover: 0 0% 12%;
+    --secondary: 0 0% 5%;
+    --secondary-hover: 0 0% 8%;
     --secondary-foreground: 0 0% 85%;
     
-    --muted: 0 0% 6%;
-    --muted-hover: 0 0% 10%;
+    --muted: 0 0% 3%;
+    --muted-hover: 0 0% 6%;
     --muted-foreground: 0 0% 60%;
     
     --accent: 34 100% 8%;
@@ -211,19 +211,19 @@ All colors MUST be HSL. This creates a sophisticated, modern design with subtle 
     --destructive-soft: 0 84% 8%;
     --destructive-foreground: 0 0% 95%;
     
-    --border: 0 0% 12%;
-    --border-hover: 0 0% 18%;
-    --input: 0 0% 6%;
-    --input-border: 0 0% 15%;
+    --border: 0 0% 10%;
+    --border-hover: 0 0% 15%;
+    --input: 0 0% 3%;
+    --input-border: 0 0% 12%;
     --ring: 211 100% 55%;
     
     --sidebar-background: 0 0% 0%;
     --sidebar-foreground: 0 0% 85%;
     --sidebar-primary: 211 100% 55%;
     --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 6%;
+    --sidebar-accent: 0 0% 3%;
     --sidebar-accent-foreground: 0 0% 85%;
-    --sidebar-border: 0 0% 10%;
+    --sidebar-border: 0 0% 8%;
     --sidebar-ring: 211 100% 55%;
   }
 }
