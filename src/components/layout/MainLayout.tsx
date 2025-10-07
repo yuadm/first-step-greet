@@ -2,8 +2,7 @@ import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { ProfileDropdown } from "./ProfileDropdown";
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { NotificationsPanel } from "./NotificationsPanel";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -26,10 +25,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
               <div className="flex items-center gap-2">
                 {/* Notifications */}
-                <Button variant="ghost" size="sm" className="relative">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
-                </Button>
+                <NotificationsPanel />
 
                 {/* Profile */}
                 <ProfileDropdown />
