@@ -1,15 +1,22 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { ProfileDropdown } from "./ProfileDropdown";
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { NotificationPopover } from "./NotificationPopover";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
+  const { requestNotificationPermission } = useNotifications();
+
+  useEffect(() => {
+    // Request notification permission on mount
+    requestNotificationPermission();
+  }, []);
+
   return (
     <SidebarProvider defaultOpen>
       <div className="min-h-screen flex w-full bg-gradient-subtle">
@@ -21,15 +28,11 @@ export function MainLayout({ children }: MainLayoutProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="lg:hidden" />
-                
               </div>
 
               <div className="flex items-center gap-2">
                 {/* Notifications */}
-                <Button variant="ghost" size="sm" className="relative">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
-                </Button>
+                <NotificationPopover />
 
                 {/* Profile */}
                 <ProfileDropdown />

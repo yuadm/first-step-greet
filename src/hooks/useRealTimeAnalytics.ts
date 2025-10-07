@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { formatDistanceToNow } from 'date-fns';
 
 interface RealTimeMetrics {
   activeUsers: number;
@@ -22,6 +23,13 @@ export function useRealTimeAnalytics() {
     expiringDocuments: 0,
     recentActivity: []
   });
+  const [connectionStatus, setConnectionStatus] = useState({
+    leave: false,
+    compliance: false,
+    employee: false,
+    document: false,
+    presence: false
+  });
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
@@ -39,7 +47,7 @@ export function useRealTimeAnalytics() {
         }
       )
       .subscribe((status) => {
-        setIsConnected(status === 'SUBSCRIBED');
+        setConnectionStatus(prev => ({ ...prev, leave: status === 'SUBSCRIBED' }));
       });
 
     const complianceChannel = supabase
@@ -51,7 +59,9 @@ export function useRealTimeAnalytics() {
           handleComplianceChange(payload);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        setConnectionStatus(prev => ({ ...prev, compliance: status === 'SUBSCRIBED' }));
+      });
 
     const employeeChannel = supabase
       .channel('employee-changes')
@@ -62,7 +72,37 @@ export function useRealTimeAnalytics() {
           handleEmployeeChange(payload);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        setConnectionStatus(prev => ({ ...prev, employee: status === 'SUBSCRIBED' }));
+      });
+
+    const documentChannel = supabase
+      .channel('document-changes')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'document_tracker' },
+        (payload) => {
+          console.log('Document change:', payload);
+          handleDocumentChange(payload);
+        }
+      )
+      .subscribe((status) => {
+        setConnectionStatus(prev => ({ ...prev, document: status === 'SUBSCRIBED' }));
+      });
+
+    // Track active users using presence
+    const presenceChannel = supabase
+      .channel('online-users')
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const userCount = Object.keys(state).length;
+        setMetrics(prev => ({ ...prev, activeUsers: userCount }));
+      })
+      .subscribe(async (status) => {
+        setConnectionStatus(prev => ({ ...prev, presence: status === 'SUBSCRIBED' }));
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({ online_at: new Date().toISOString() });
+        }
+      });
 
     // Refresh metrics every 30 seconds
     const interval = setInterval(fetchRealTimeMetrics, 30000);
@@ -72,8 +112,16 @@ export function useRealTimeAnalytics() {
       supabase.removeChannel(leaveChannel);
       supabase.removeChannel(complianceChannel);
       supabase.removeChannel(employeeChannel);
+      supabase.removeChannel(documentChannel);
+      supabase.removeChannel(presenceChannel);
     };
   }, []);
+
+  // Update connection status whenever individual statuses change
+  useEffect(() => {
+    const allConnected = Object.values(connectionStatus).every(status => status);
+    setIsConnected(allConnected);
+  }, [connectionStatus]);
 
   const fetchRealTimeMetrics = async () => {
     try {
@@ -115,19 +163,26 @@ export function useRealTimeAnalytics() {
 
   const fetchRecentActivity = async () => {
     try {
-      // Get recent leaves
+      // Get recent leaves with employee names
       const { data: recentLeaves } = await supabase
         .from('leave_requests')
         .select('id, status, created_at, employees(name)')
         .order('created_at', { ascending: false })
         .limit(3);
 
-      // Get recent compliance updates
+      // Get recent compliance updates with employee names
       const { data: recentCompliance } = await supabase
         .from('compliance_period_records')
-        .select('id, status, updated_at, employees(name)')
+        .select('id, status, updated_at, employees(name), compliance_types(name)')
         .order('updated_at', { ascending: false })
-        .limit(3);
+        .limit(2);
+
+      // Get recent document updates
+      const { data: recentDocuments } = await supabase
+        .from('document_tracker')
+        .select('id, status, updated_at, employees(name), document_types(name)')
+        .order('updated_at', { ascending: false })
+        .limit(2);
 
       const activity: Array<{
         id: string;
@@ -138,21 +193,39 @@ export function useRealTimeAnalytics() {
 
       // Process leave activities
       (recentLeaves || []).forEach(leave => {
+        const employeeName = (leave.employees as any)?.name || 'Unknown';
+        const timeAgo = formatDistanceToNow(new Date(leave.created_at), { addSuffix: true });
         activity.push({
           id: `leave-${leave.id}`,
           type: 'leave' as const,
-          message: `Leave request ${leave.status}`,
+          message: `${employeeName} ${leave.status === 'pending' ? 'submitted' : leave.status} leave request ${timeAgo}`,
           timestamp: leave.created_at
         });
       });
 
       // Process compliance activities
       (recentCompliance || []).forEach(compliance => {
+        const employeeName = (compliance.employees as any)?.name || 'Unknown';
+        const complianceType = (compliance.compliance_types as any)?.name || 'task';
+        const timeAgo = formatDistanceToNow(new Date(compliance.updated_at), { addSuffix: true });
         activity.push({
           id: `compliance-${compliance.id}`,
           type: 'compliance' as const,
-          message: `Compliance task ${compliance.status}`,
+          message: `${employeeName} ${compliance.status} ${complianceType} ${timeAgo}`,
           timestamp: compliance.updated_at
+        });
+      });
+
+      // Process document activities
+      (recentDocuments || []).forEach(doc => {
+        const employeeName = (doc.employees as any)?.name || 'Unknown';
+        const docType = (doc.document_types as any)?.name || 'document';
+        const timeAgo = formatDistanceToNow(new Date(doc.updated_at), { addSuffix: true });
+        activity.push({
+          id: `document-${doc.id}`,
+          type: 'document' as const,
+          message: `${employeeName}'s ${docType} ${doc.status === 'expiring' ? 'expiring soon' : doc.status} ${timeAgo}`,
+          timestamp: doc.updated_at
         });
       });
 
@@ -171,19 +244,20 @@ export function useRealTimeAnalytics() {
     
     setMetrics(prev => {
       const newActivity = [...prev.recentActivity];
+      const timeAgo = formatDistanceToNow(new Date(), { addSuffix: true });
       
       if (eventType === 'INSERT') {
         newActivity.unshift({
           id: `leave-${newRecord.id}`,
           type: 'leave' as const,
-          message: `New leave request submitted`,
+          message: `New leave request submitted ${timeAgo}`,
           timestamp: newRecord.created_at
         });
       } else if (eventType === 'UPDATE' && oldRecord.status !== newRecord.status) {
         newActivity.unshift({
           id: `leave-${newRecord.id}`,
           type: 'leave' as const,
-          message: `Leave request ${newRecord.status}`,
+          message: `Leave request ${newRecord.status} ${timeAgo}`,
           timestamp: new Date().toISOString()
         });
       }
@@ -196,6 +270,9 @@ export function useRealTimeAnalytics() {
                          prev.pendingApprovals
       };
     });
+    
+    // Refresh full data to get employee names
+    fetchRealTimeMetrics();
   };
 
   const handleComplianceChange = (payload: any) => {
@@ -203,12 +280,13 @@ export function useRealTimeAnalytics() {
     
     setMetrics(prev => {
       const newActivity = [...prev.recentActivity];
+      const timeAgo = formatDistanceToNow(new Date(), { addSuffix: true });
       
       if (eventType === 'UPDATE' && oldRecord.status !== newRecord.status) {
         newActivity.unshift({
           id: `compliance-${newRecord.id}`,
           type: 'compliance' as const,
-          message: `Compliance task ${newRecord.status}`,
+          message: `Compliance task ${newRecord.status} ${timeAgo}`,
           timestamp: new Date().toISOString()
         });
       }
@@ -221,10 +299,14 @@ export function useRealTimeAnalytics() {
                           prev.overdueCompliance
       };
     });
+    
+    // Refresh full data to get employee names
+    fetchRealTimeMetrics();
   };
 
   const handleEmployeeChange = (payload: any) => {
     const { eventType, new: newRecord } = payload;
+    const timeAgo = formatDistanceToNow(new Date(), { addSuffix: true });
     
     if (eventType === 'INSERT') {
       setMetrics(prev => ({
@@ -232,10 +314,38 @@ export function useRealTimeAnalytics() {
         recentActivity: [{
           id: `employee-${newRecord.id}`,
           type: 'employee' as const,
-          message: `${newRecord.name} joined the team`,
+          message: `${newRecord.name} joined the team ${timeAgo}`,
           timestamp: newRecord.created_at
         }, ...prev.recentActivity].slice(0, 5)
       }));
+    }
+  };
+
+  const handleDocumentChange = (payload: any) => {
+    const { eventType, new: newRecord, old: oldRecord } = payload;
+    
+    if (eventType === 'UPDATE' && oldRecord.status !== newRecord.status) {
+      const timeAgo = formatDistanceToNow(new Date(), { addSuffix: true });
+      setMetrics(prev => {
+        const newActivity = [...prev.recentActivity];
+        newActivity.unshift({
+          id: `document-${newRecord.id}`,
+          type: 'document' as const,
+          message: `Document ${newRecord.status === 'expiring' ? 'expiring soon' : newRecord.status} ${timeAgo}`,
+          timestamp: new Date().toISOString()
+        });
+
+        return {
+          ...prev,
+          recentActivity: newActivity.slice(0, 5),
+          expiringDocuments: newRecord.status === 'expiring' ? prev.expiringDocuments + 1 :
+                            oldRecord.status === 'expiring' && newRecord.status !== 'expiring' ? prev.expiringDocuments - 1 :
+                            prev.expiringDocuments
+        };
+      });
+      
+      // Refresh full data to get employee names
+      fetchRealTimeMetrics();
     }
   };
 

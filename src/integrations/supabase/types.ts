@@ -1616,6 +1616,45 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          read: boolean | null
+          reference_id: string | null
+          reference_table: string | null
+          title: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          read?: boolean | null
+          reference_id?: string | null
+          reference_table?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          reference_id?: string | null
+          reference_table?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       reference_requests: {
         Row: {
           applicant_address: string
@@ -2321,6 +2360,27 @@ export type Database = {
       migrate_application_settings_data: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      notify_admins: {
+        Args: {
+          p_message: string
+          p_reference_id?: string
+          p_reference_table?: string
+          p_title: string
+          p_type: string
+        }
+        Returns: undefined
+      }
+      notify_user: {
+        Args: {
+          p_message: string
+          p_reference_id?: string
+          p_reference_table?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
       reset_all_leave_balances: {
         Args: Record<PropertyKey, never>
