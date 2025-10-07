@@ -390,9 +390,9 @@ export function CareWorkerStatementContent() {
                   <Button 
                     variant="ghost" 
                     className="p-0 h-auto font-medium hover:bg-transparent"
-                    onClick={() => handleSort('report_date')}
+                    onClick={() => handleSort('created_at')}
                   >
-                    Report Date {getSortIcon('report_date')}
+                    Created {getSortIcon('created_at')}
                   </Button>
                 </TableHead>
                 <TableHead>
@@ -408,9 +408,9 @@ export function CareWorkerStatementContent() {
                   <Button 
                     variant="ghost" 
                     className="p-0 h-auto font-medium hover:bg-transparent"
-                    onClick={() => handleSort('created_at')}
+                    onClick={() => handleSort('report_date')}
                   >
-                    Created {getSortIcon('created_at')}
+                    Report Date {getSortIcon('report_date')}
                   </Button>
                 </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -429,13 +429,13 @@ export function CareWorkerStatementContent() {
                   </TableCell>
                   <TableCell>{statement.client_name}</TableCell>
                   <TableCell>{statement.client_address}</TableCell>
-                  <TableCell>{new Date(statement.report_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(statement.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(statement.status)}>
                       {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
                     </Badge>
                   </TableCell>
-                  <TableCell>{new Date(statement.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(statement.report_date).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
