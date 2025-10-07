@@ -255,7 +255,7 @@ export default function ClientCompliance() {
     );
   }
 
-  if (loading) {
+  if (loading || !clientTypeId) {
     return (
       <MainLayout>
         <div className="space-y-6 animate-pulse">
@@ -422,12 +422,14 @@ export default function ClientCompliance() {
         </div>
 
         {/* Period View */}
-        <ClientCompliancePeriodView 
-          complianceTypeId={clientTypeId || ''}
-          complianceTypeName={complianceType.name}
-          frequency={complianceType.frequency}
-          selectedFilter={selectedFilter}
-        />
+        {clientTypeId && (
+          <ClientCompliancePeriodView 
+            complianceTypeId={clientTypeId}
+            complianceTypeName={complianceType.name}
+            frequency={complianceType.frequency}
+            selectedFilter={selectedFilter}
+          />
+        )}
       </div>
     </MainLayout>
   );
