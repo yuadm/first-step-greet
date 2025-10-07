@@ -13,7 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Filter, Download, Eye, Edit, Check, X, FileText, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Filter, Download, Eye, Edit, Check, X, FileText, ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CareWorkerStatementModal } from "./CareWorkerStatementModal";
 import { CareWorkerStatementForm } from "./CareWorkerStatementForm";
@@ -22,6 +32,7 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { generateCareWorkerStatementPDF } from "@/lib/care-worker-statement-pdf";
 import { useCareWorkerStatements, useStatementBranches, useCompliancePeriodActions } from "@/hooks/queries/useCompliancePeriodQueries";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CareWorkerStatement {
   id: string;
@@ -68,6 +79,9 @@ export function CareWorkerStatementContent() {
   const [branchFilter, setBranchFilter] = useState<string>("all");
   const [sortField, setSortField] = useState<StatementSortField>('created_at');
   const [sortDirection, setSortDirection] = useState<StatementSortDirection>('desc');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [statementToDelete, setStatementToDelete] = useState<CareWorkerStatement | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -120,6 +134,43 @@ export function CareWorkerStatementContent() {
 
   const handleStatusUpdate = (statementId: string, status: string, rejectionReason?: string) => {
     updateStatementStatus.mutate({ statementId, status, rejectionReason });
+  };
+
+  const handleDeleteClick = (statement: CareWorkerStatement) => {
+    setStatementToDelete(statement);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!statementToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      const { error } = await supabase
+        .from('care_worker_statements')
+        .delete()
+        .eq('id', statementToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Care worker statement deleted successfully",
+      });
+
+      refetchStatements();
+      setDeleteDialogOpen(false);
+      setStatementToDelete(null);
+    } catch (error) {
+      console.error('Error deleting statement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete statement",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const exportToPDF = async (statement: CareWorkerStatement) => {
@@ -447,6 +498,16 @@ export function CareWorkerStatementContent() {
                       >
                         <Download className="h-4 w-4" />
                       </Button>
+
+                      {canDeleteCompliance() && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(statement)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -487,6 +548,28 @@ export function CareWorkerStatementContent() {
         }}
         readOnly={!canEditCompliance() && selectedStatement?.status !== 'draft' && selectedStatement?.status !== 'rejected'}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Care Worker Statement</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the statement for{' '}
+              <strong>{statementToDelete?.care_worker_name}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
