@@ -1,6 +1,6 @@
 
 import { useState, useRef } from "react";
-import { Plus, Search, Filter, Mail, Phone, MapPin, Calendar, Users, Building, Clock, User, Upload, Download, X, FileSpreadsheet, AlertCircle, Eye, Edit3, Trash2, Check, Square, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown, Key, CalendarIcon } from "lucide-react";
+import { Plus, Search, Filter, Mail, Phone, MapPin, Calendar, Users, Building, Clock, User, Upload, Download, X, FileSpreadsheet, AlertCircle, Eye, Edit3, Trash2, Check, Square, RotateCcw, ArrowUpDown, ArrowUp, ArrowDown, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,10 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { MaterialDatePicker } from "@/components/ui/material-date-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -1542,29 +1539,11 @@ export function EmployeesContent() {
 
             <div className="space-y-2">
               <Label htmlFor="created_at">Creation Date (for compliance periods)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !newEmployee.created_at && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {newEmployee.created_at ? format(new Date(newEmployee.created_at), "PPP") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={newEmployee.created_at ? new Date(newEmployee.created_at) : undefined}
-                    onSelect={(date) => setNewEmployee({...newEmployee, created_at: date ? date.toISOString() : new Date().toISOString()})}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
+              <MaterialDatePicker
+                selected={newEmployee.created_at ? new Date(newEmployee.created_at) : undefined}
+                onSelect={(date) => setNewEmployee({...newEmployee, created_at: date ? date.toISOString() : new Date().toISOString()})}
+                placeholder="Select date"
+              />
               <p className="text-xs text-muted-foreground">
                 This determines which compliance periods the employee will appear in
               </p>
