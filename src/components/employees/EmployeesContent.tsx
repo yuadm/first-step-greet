@@ -1543,6 +1543,8 @@ export function EmployeesContent() {
                 selected={newEmployee.created_at ? new Date(newEmployee.created_at) : undefined}
                 onSelect={(date) => setNewEmployee({...newEmployee, created_at: date ? date.toISOString() : new Date().toISOString()})}
                 placeholder="Select date"
+                buttonClassName="h-9 text-sm"
+                className="w-full sm:w-auto"
               />
               <p className="text-xs text-muted-foreground">
                 This determines which compliance periods the employee will appear in

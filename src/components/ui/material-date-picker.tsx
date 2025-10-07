@@ -110,28 +110,28 @@ export function MaterialDatePicker({
           {selected ? format(selected, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-auto p-0", className)} align="start">
+      <PopoverContent className={cn("w-auto p-0 max-w-[95vw]", className)} align="start">
         <div className="bg-background rounded-lg shadow-lg border">
           {/* Header */}
-          <div className="px-6 pt-4 pb-2">
-            <p className="text-sm text-muted-foreground mb-2">Select date</p>
+          <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-2">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-1 sm:mb-2">Select date</p>
             <div className="flex items-center justify-between">
-              <div className="text-3xl font-normal">
+              <div className="text-xl sm:text-2xl md:text-3xl font-normal">
                 {tempDate ? format(tempDate, "EEE, MMM d") : "Select"}
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Pencil className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+                <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>
 
           {/* Month selector with navigation */}
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between border-t">
+          <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2 flex items-center justify-between border-t gap-2">
             <Select value={currentMonthValue} onValueChange={handleMonthChange}>
-              <SelectTrigger className="w-[140px] border-none shadow-none focus:ring-0">
+              <SelectTrigger className="w-[110px] sm:w-[140px] border-none shadow-none focus:ring-0 text-xs sm:text-sm">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
+              <SelectContent className="max-h-[250px] sm:max-h-[300px]">
                 {monthOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -140,51 +140,51 @@ export function MaterialDatePicker({
               </SelectContent>
             </Select>
             
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 sm:gap-1">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={handlePrevMonth}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={handleNextMonth}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>
 
           {/* Calendar */}
-          <div className="p-3">
+          <div className="p-2 sm:p-3">
             <Calendar
               mode="single"
               selected={tempDate}
               onSelect={handleSelect}
               month={month}
               onMonthChange={setMonth}
-              className="pointer-events-auto"
+              className="pointer-events-auto scale-90 sm:scale-100"
             />
           </div>
 
           {/* Footer with Cancel and OK buttons */}
-          <div className="flex items-center justify-end gap-2 px-4 pb-4 pt-2">
+          <div className="flex items-center justify-end gap-2 px-3 sm:px-4 pb-3 sm:pb-4 pt-2">
             <Button
               variant="ghost"
               onClick={handleCancel}
-              className="text-primary hover:text-primary"
+              className="text-primary hover:text-primary text-xs sm:text-sm h-8 sm:h-9"
             >
               Cancel
             </Button>
             <Button
               variant="ghost"
               onClick={handleOk}
-              className="text-primary hover:text-primary font-medium"
+              className="text-primary hover:text-primary font-medium text-xs sm:text-sm h-8 sm:h-9"
             >
               OK
             </Button>
