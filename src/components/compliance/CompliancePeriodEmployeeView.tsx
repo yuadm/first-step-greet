@@ -526,6 +526,65 @@ export function CompliancePeriodEmployeeView({
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             )}
+                            {/* Spot Check Download */}
+                            {item.record?.completion_method === 'spotcheck' && (
+                              <DownloadButton
+                                onDownload={async () => {
+                                  try {
+                                    const { data, error } = await supabase
+                                      .from('spot_check_records')
+                                      .select('service_user_name, care_worker1, care_worker2, check_date, time_from, time_to, carried_by, observations')
+                                      .eq('employee_id', item.employee.id)
+                                      .eq('compliance_type_id', complianceTypeId)
+                                      .eq('period_identifier', item.record.period_identifier)
+                                      .single();
+                                    
+                                    if (error) throw error;
+                                    
+                                    const formData = {
+                                      serviceUserName: data.service_user_name,
+                                      careWorker1: data.care_worker1,
+                                      careWorker2: data.care_worker2,
+                                      date: data.check_date,
+                                      timeFrom: data.time_from,
+                                      timeTo: data.time_to,
+                                      carriedBy: data.carried_by,
+                                      observations: data.observations
+                                    } as any;
+                                    
+                                    const { generateSpotCheckPdf } = await import('@/lib/spot-check-pdf');
+                                    await generateSpotCheckPdf(formData, {
+                                      name: companySettings?.name || 'Company',
+                                      logo: companySettings?.logo
+                                    });
+                                  } catch (err) {
+                                    console.error('Error generating spot check PDF:', err);
+                                  }
+                                }}
+                                downloadingText="Generating PDF..."
+                                completedText="Downloaded"
+                              />
+                            )}
+                            
+                            {/* Supervision Download */}
+                            {item.record?.completion_method === 'supervision' && (
+                              <DownloadButton
+                                onDownload={async () => {
+                                  if (item.record?.notes) {
+                                    const parsedData = JSON.parse(item.record.notes);
+                                    const { generateSupervisionPdf } = await import('@/lib/supervision-pdf');
+                                    await generateSupervisionPdf(parsedData, {
+                                      name: companySettings?.name || 'Company',
+                                      logo: companySettings?.logo
+                                    });
+                                  }
+                                }}
+                                downloadingText="Generating PDF..."
+                                completedText="Downloaded"
+                              />
+                            )}
+                            
+                            {/* Annual Appraisal Download */}
                             {item.record?.completion_method === 'annual_appraisal' && item.record?.status === 'completed' && (
                               <DownloadButton
                                 onDownload={async () => {
@@ -542,6 +601,8 @@ export function CompliancePeriodEmployeeView({
                                 completedText="Downloaded"
                               />
                             )}
+                            
+                            {/* Medication Competency Download */}
                             {(item.record?.status === 'completed' && ((item.record?.completion_method === 'medication_competency') || (item.record?.completion_method === 'questionnaire' && item.record?.form_data && (item.record.form_data as any)?.competencyItems))) && ((item.record?.form_data) || item.record?.notes) && (
                               <DownloadButton
                                 onDownload={async () => {
