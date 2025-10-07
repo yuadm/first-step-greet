@@ -69,8 +69,7 @@ export function ClientsContent() {
 
   const [newClient, setNewClient] = useState({
     name: "",
-    branch_id: "",
-    created_at: new Date().toISOString()
+    branch_id: ""
   });
 
   const [editedClient, setEditedClient] = useState({
@@ -102,15 +101,13 @@ export function ClientsContent() {
     createClient.mutate({
       name: newClient.name,
       branch_id: newClient.branch_id,
-      is_active: true,
-      created_at: newClient.created_at
+      is_active: true
     }, {
       onSuccess: () => {
         setDialogOpen(false);
         setNewClient({
           name: "",
-          branch_id: "",
-          created_at: new Date().toISOString()
+          branch_id: ""
         });
       }
     });
@@ -414,10 +411,7 @@ export function ClientsContent() {
 
       // Use the bulk import mutation from useClientActions
       const promises = clientsToInsert.map(client => 
-        createClient.mutateAsync({
-          ...client,
-          created_at: new Date().toISOString()
-        })
+        createClient.mutateAsync(client)
       );
 
       await Promise.all(promises);
@@ -833,18 +827,6 @@ export function ClientsContent() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label htmlFor="created_at">Creation Date (for compliance periods)</Label>
-              <Input
-                id="created_at"
-                type="date"
-                value={newClient.created_at ? new Date(newClient.created_at).toISOString().split('T')[0] : ''}
-                onChange={(e) => setNewClient({ ...newClient, created_at: new Date(e.target.value).toISOString() })}
-              />
-              <p className="text-xs text-muted-foreground">
-                This determines which compliance periods the client will appear in
-              </p>
             </div>
           </div>
           <DialogFooter>

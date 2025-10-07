@@ -81,7 +81,7 @@ export function useClientActions() {
   const { toast } = useToast();
 
   const createClient = useMutation({
-    mutationFn: async (clientData: Omit<Client, 'id' | 'updated_at'>) => {
+    mutationFn: async (clientData: Omit<Client, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('clients')
         .insert([clientData])

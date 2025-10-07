@@ -59,51 +59,6 @@ export default function ClientCompliance() {
 
   useEffect(() => {
     const resolveClientComplianceTypeId = async () => {
-      // If no compliance type in state, try to fetch from database using the ID
-      if (!complianceType && id) {
-        console.log('No complianceType in state, fetching from database...');
-        try {
-          const { data: typeData, error: typeError } = await supabase
-            .from('compliance_types')
-            .select('*')
-            .eq('id', id)
-            .eq('target_table', 'clients')
-            .maybeSingle();
-          
-          if (typeError) throw typeError;
-          
-          if (!typeData) {
-            console.error('Compliance type not found');
-            toast({
-              title: 'Error',
-              description: 'Compliance type not found.',
-              variant: 'destructive',
-            });
-            navigate('/compliance');
-            return;
-          }
-          
-          // Update the location state with the fetched data
-          navigate(`/client-compliance/${id}`, { 
-            state: { complianceType: typeData },
-            replace: true 
-          });
-          return;
-        } catch (e) {
-          console.error('Failed to fetch compliance type:', e);
-          toast({
-            title: 'Error',
-            description: 'Failed to load compliance type.',
-            variant: 'destructive',
-          });
-          navigate('/compliance');
-          return;
-        }
-      }
-      
-      if (!complianceType) {
-        return;
-      }
       try {
         console.log('Resolving client compliance type for:', complianceType.name);
         
@@ -149,10 +104,8 @@ export default function ClientCompliance() {
 
     if (id && complianceType) {
       resolveClientComplianceTypeId();
-    } else if (id && !complianceType) {
-      resolveClientComplianceTypeId();
     }
-  }, [id, complianceType, toast, navigate]);
+  }, [id, complianceType, toast]);
 
   useEffect(() => {
     if (clientTypeId) {
@@ -302,7 +255,7 @@ export default function ClientCompliance() {
     );
   }
 
-  if (loading || !clientTypeId) {
+  if (loading) {
     return (
       <MainLayout>
         <div className="space-y-6 animate-pulse">
@@ -469,14 +422,12 @@ export default function ClientCompliance() {
         </div>
 
         {/* Period View */}
-        {clientTypeId && (
-          <ClientCompliancePeriodView 
-            complianceTypeId={clientTypeId}
-            complianceTypeName={complianceType.name}
-            frequency={complianceType.frequency}
-            selectedFilter={selectedFilter}
-          />
-        )}
+        <ClientCompliancePeriodView 
+          complianceTypeId={clientTypeId || ''}
+          complianceTypeName={complianceType.name}
+          frequency={complianceType.frequency}
+          selectedFilter={selectedFilter}
+        />
       </div>
     </MainLayout>
   );
