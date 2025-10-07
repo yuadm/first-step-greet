@@ -172,6 +172,60 @@ All colors MUST be HSL. This creates a sophisticated, modern design with subtle 
     --sidebar-border: 215 28% 15%;
     --sidebar-ring: 211 100% 55%;
   }
+
+  /* True Black AMOLED/OLED Dark Mode */
+  .amoled {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
+    
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 95%;
+    --card-shadow: 0 0% 100% / 0.05;
+    --card-border: 0 0% 10%;
+    
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 95%;
+    
+    --primary: 211 100% 55%;
+    --primary-hover: 211 100% 60%;
+    --primary-foreground: 0 0% 0%;
+    --primary-soft: 211 100% 8%;
+    
+    --secondary: 0 0% 8%;
+    --secondary-hover: 0 0% 12%;
+    --secondary-foreground: 0 0% 85%;
+    
+    --muted: 0 0% 6%;
+    --muted-hover: 0 0% 10%;
+    --muted-foreground: 0 0% 60%;
+    
+    --accent: 34 100% 8%;
+    --accent-hover: 34 100% 12%;
+    --accent-foreground: 34 100% 75%;
+    
+    --success: 142 76% 45%;
+    --success-soft: 142 76% 8%;
+    --warning: 43 96% 65%;
+    --warning-soft: 43 96% 8%;
+    --destructive: 0 84% 65%;
+    --destructive-soft: 0 84% 8%;
+    --destructive-foreground: 0 0% 95%;
+    
+    --border: 0 0% 12%;
+    --border-hover: 0 0% 18%;
+    --input: 0 0% 6%;
+    --input-border: 0 0% 15%;
+    --ring: 211 100% 55%;
+    
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-primary: 211 100% 55%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 6%;
+    --sidebar-accent-foreground: 0 0% 85%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-ring: 211 100% 55%;
+  }
 }
 
 /* Premium component styles */

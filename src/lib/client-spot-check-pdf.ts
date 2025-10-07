@@ -352,7 +352,7 @@ export async function generateClientSpotCheckPdf(data: ClientSpotCheckFormData, 
   })
 
   const bytes = await doc.save()
-  const blob = new Blob([bytes], { type: 'application/pdf' })
+  const blob = new Blob([bytes as Uint8Array], { type: 'application/pdf' })
   const url = URL.createObjectURL(blob)
   const checkDate = data.date ? new Date(data.date) : new Date()
   const quarter = Math.floor(checkDate.getMonth() / 3) + 1
