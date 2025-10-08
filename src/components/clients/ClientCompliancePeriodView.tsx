@@ -77,7 +77,6 @@ export function ClientCompliancePeriodView({
   frequency,
   selectedFilter
 }: ClientCompliancePeriodViewProps) {
-  const safeFrequency = (frequency || 'annual').toLowerCase();
   const [periods, setPeriods] = useState<PeriodData[]>([]);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
@@ -161,7 +160,7 @@ export function ClientCompliancePeriodView({
 
   const getCurrentPeriod = () => {
     const now = new Date();
-    switch (safeFrequency) {
+    switch (frequency.toLowerCase()) {
       case 'quarterly':
         return `${now.getFullYear()}-Q${Math.ceil((now.getMonth() + 1) / 3)}`;
       case 'annual':
@@ -209,7 +208,7 @@ export function ClientCompliancePeriodView({
       const shouldShowDownload = yearsOld >= 1; // Changed from >= 5 to >= 1 for easier testing
       const archiveDueYear = year + 6;
       
-      switch (safeFrequency) {
+      switch (frequency.toLowerCase()) {
         case 'quarterly':
           if (year === selectedYear) {
             const currentQuarter = year === currentYear ? Math.ceil((new Date().getMonth() + 1) / 3) : 4;
@@ -729,7 +728,7 @@ export function ClientCompliancePeriodView({
   };
 
   const getPeriodLabel = (periodId: string) => {
-    switch (safeFrequency) {
+    switch (frequency.toLowerCase()) {
       case 'quarterly':
         return periodId.replace('-', ' ');
       case 'monthly':
@@ -1498,7 +1497,7 @@ export function ClientCompliancePeriodView({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h3 className="text-xl font-semibold">Client Compliance Records</h3>
             
-            {safeFrequency !== 'annual' && (
+            {frequency.toLowerCase() !== 'annual' && (
               <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
                 <SelectTrigger className="w-40 bg-background border border-input">
                   <SelectValue placeholder="Select Year" />

@@ -54,11 +54,52 @@ export default function ClientCompliance() {
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [clientTypeId, setClientTypeId] = useState<string | null>(null);
-  
-  const complianceType = location.state?.complianceType as ComplianceType;
+  const [complianceType, setComplianceType] = useState<ComplianceType | null>(
+    location.state?.complianceType as ComplianceType || null
+  );
+
+  // Fetch compliance type if not in location.state
+  useEffect(() => {
+    const fetchComplianceType = async () => {
+      if (complianceType || !id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('compliance_types')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        
+        if (error) throw error;
+        if (!data) {
+          toast({
+            title: 'Not found',
+            description: 'Compliance type not found.',
+            variant: 'destructive',
+          });
+          navigate('/compliance');
+          return;
+        }
+        
+        setComplianceType(data as ComplianceType);
+      } catch (error) {
+        console.error('Error fetching compliance type:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load compliance type.',
+          variant: 'destructive',
+        });
+        navigate('/compliance');
+      }
+    };
+    
+    fetchComplianceType();
+  }, [id, complianceType, toast, navigate]);
 
   useEffect(() => {
     const resolveClientComplianceTypeId = async () => {
+      if (!complianceType) return;
+      
       try {
         console.log('Resolving client compliance type for:', complianceType.name);
         
@@ -102,16 +143,16 @@ export default function ClientCompliance() {
       }
     };
 
-    if (id && complianceType) {
+    if (complianceType) {
       resolveClientComplianceTypeId();
     }
-  }, [id, complianceType, toast]);
+  }, [complianceType, toast]);
 
   useEffect(() => {
-    if (clientTypeId && complianceType) {
+    if (clientTypeId) {
       fetchComplianceStats();
     }
-  }, [clientTypeId, complianceType]);
+  }, [clientTypeId]);
 
   const getCurrentPeriod = () => {
     if (!complianceType) return '';
@@ -426,7 +467,7 @@ export default function ClientCompliance() {
         <ClientCompliancePeriodView 
           complianceTypeId={clientTypeId || ''}
           complianceTypeName={complianceType.name}
-          frequency={(complianceType.frequency || 'annual')}
+          frequency={complianceType.frequency}
           selectedFilter={selectedFilter}
         />
       </div>
