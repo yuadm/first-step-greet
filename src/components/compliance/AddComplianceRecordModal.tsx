@@ -641,6 +641,7 @@ const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurr
         open={annualOpen}
         onOpenChange={setAnnualOpen}
         initialData={annualData || undefined}
+        employeeName={selectedEmployeeName}
         onSubmit={(data) => {
           setAnnualData(data);
           setAnnualOpen(false);

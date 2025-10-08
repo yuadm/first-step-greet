@@ -44,9 +44,10 @@ interface AnnualAppraisalFormDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: AnnualAppraisalFormData) => void;
   initialData?: Partial<AnnualAppraisalFormData> | null;
+  employeeName?: string;
 }
 
-export default function AnnualAppraisalFormDialog({ open, onOpenChange, onSubmit, initialData }: AnnualAppraisalFormDialogProps) {
+export default function AnnualAppraisalFormDialog({ open, onOpenChange, onSubmit, initialData, employeeName }: AnnualAppraisalFormDialogProps) {
   const [errors, setErrors] = useState<Partial<Record<keyof AnnualAppraisalFormData, string>>>({});
   const [form, setForm] = useState<AnnualAppraisalFormData>({
     job_title: "Support Worker/Carer",
@@ -64,7 +65,7 @@ export default function AnnualAppraisalFormDialog({ open, onOpenChange, onSubmit
     comments_manager: "",
     comments_employee: "",
     signature_manager: "",
-    signature_employee: "",
+    signature_employee: employeeName || "",
     action_training: "",
     action_career: "",
     action_plan: "",

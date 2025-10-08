@@ -487,6 +487,7 @@ export function EditComplianceRecordModal({
           open={annualOpen}
           onOpenChange={setAnnualOpen}
           initialData={annualData || undefined}
+          employeeName={employeeName}
           onSubmit={(data) => {
             setAnnualData(data);
             setAnnualOpen(false);

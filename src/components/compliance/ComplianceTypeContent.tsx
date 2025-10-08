@@ -1758,6 +1758,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
   open={annualAppraisalEditOpen}
   onOpenChange={setAnnualAppraisalEditOpen}
   initialData={annualAppraisalInitialData || undefined}
+  employeeName={annualAppraisalTarget?.employeeName}
   onSubmit={handleSaveAnnualAppraisalEdit}
 />
     </div>
