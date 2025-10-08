@@ -247,47 +247,104 @@ export function ClientCompliancePeriodDialog({
     setViewDialogOpen(true);
   };
 
+  const handleEditSpotCheck = async (client: Client, record: ClientComplianceRecord) => {
+    try {
+      setSelectedClient(client);
+      // Try direct link via compliance_record_id
+      let spotCheckRecord: any = null;
+      if (record?.id) {
+        const { data: scByCompliance, error } = await supabase
+          .from('client_spot_check_records')
+          .select('*')
+          .eq('compliance_record_id', record.id)
+          .maybeSingle();
+        if (!error) spotCheckRecord = scByCompliance;
+      }
+
+      // Fallback by date range within the period
+      if (!spotCheckRecord) {
+        const toISO = (d: Date) => d.toISOString().slice(0,10);
+        let start: string; let end: string;
+        const freq = (frequency || '').toLowerCase();
+        if (freq === 'quarterly' && /\d{4}-Q[1-4]/.test(periodIdentifier)) {
+          const [y, qStr] = periodIdentifier.split('-Q');
+          const year = parseInt(y, 10); const q = parseInt(qStr, 10);
+          const mStart = (q - 1) * 3;
+          start = toISO(new Date(year, mStart, 1));
+          end = toISO(new Date(year, mStart + 3, 0));
+        } else if (freq === 'monthly' && /\d{4}-\d{2}/.test(periodIdentifier)) {
+          const [y, m] = periodIdentifier.split('-');
+          const year = parseInt(y, 10); const month = parseInt(m, 10) - 1;
+          start = toISO(new Date(year, month, 1));
+          end = toISO(new Date(year, month + 1, 0));
+        } else if (freq === 'annual') {
+          const year = parseInt(periodIdentifier.slice(0,4), 10);
+          start = toISO(new Date(year, 0, 1));
+          end = toISO(new Date(year, 11, 31));
+        } else {
+          start = '1900-01-01';
+          end = '2999-12-31';
+        }
+
+        const { data: fb, error: fbErr } = await supabase
+          .from('client_spot_check_records')
+          .select('*')
+          .eq('client_id', client.id)
+          .gte('date', start)
+          .lte('date', end)
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!fbErr) spotCheckRecord = fb;
+      }
+
+      // Build initial form data
+      let observations: any[] = [];
+      if (spotCheckRecord?.observations) {
+        try {
+          const raw = spotCheckRecord.observations;
+          if (Array.isArray(raw)) observations = raw;
+          else if (typeof raw === 'string') observations = JSON.parse(raw);
+          else if (raw && typeof raw === 'object') observations = Object.values(raw as any);
+        } catch {}
+      }
+
+      const formData = {
+        serviceUserName: spotCheckRecord?.service_user_name || client.name,
+        date: spotCheckRecord?.date || record?.completion_date || '',
+        completedBy: spotCheckRecord?.performed_by || '',
+        observations
+      };
+
+      setEditingSpotCheckData(formData);
+      setSpotCheckDialogOpen(true);
+    } catch (e) {
+      console.error('Error preparing edit form:', e);
+      toast({ title: 'Error', description: 'Could not load existing data for edit.', variant: 'destructive' });
+    }
+  };
+
   const handleSpotCheckSubmit = async (formData: any) => {
     if (!selectedClient) return;
 
     try {
       const transformedObservations = formData.observations.map((obs: any) => ({
+        id: obs.id,
         label: obs.label,
         value: obs.value,
         comments: obs.comments || ''
       }));
 
-      const spotCheckData = {
-        client_id: selectedClient.id,
-        service_user_name: formData.serviceUserName,
-        care_workers: formData.careWorkers || '',
-        date: formData.date,
-        time: formData.time || '00:00',
-        performed_by: formData.completedBy,
-        observations: transformedObservations,
-      };
-
-      const { data: spotCheckRecord, error: spotCheckError } = await supabase
-        .from('client_spot_check_records')
-        .insert(spotCheckData)
-        .select()
-        .single();
-
-      if (spotCheckError) throw spotCheckError;
-
-      // Get the correct period end date from the database function
+      // Calculate period end date via RPC
       const { data: periodEndData, error: periodEndError } = await supabase
         .rpc('get_period_end_date', {
           p_frequency: frequency,
           p_period_identifier: periodIdentifier
         });
+      if (periodEndError) throw periodEndError;
 
-      if (periodEndError) {
-        console.error('Error calculating period end date:', periodEndError);
-        throw periodEndError;
-      }
-
-      const complianceRecordData = {
+      // Upsert compliance record and retrieve its id
+      const complianceRecordPayload = {
         client_compliance_type_id: complianceTypeId,
         client_id: selectedClient.id,
         period_identifier: periodIdentifier,
@@ -295,39 +352,82 @@ export function ClientCompliancePeriodDialog({
         status: 'completed',
         completion_method: 'spotcheck',
         notes: formData.notes || null,
-        grace_period_end: periodEndData, // Use the calculated period end date
+        grace_period_end: periodEndData as any
       };
 
-      const { error: complianceError } = await supabase
+      const { data: upserted, error: upsertErr } = await supabase
         .from('client_compliance_period_records')
-        .upsert(complianceRecordData, {
-          onConflict: 'client_compliance_type_id,client_id,period_identifier'
-        });
+        .upsert(complianceRecordPayload, { onConflict: 'client_compliance_type_id,client_id,period_identifier' })
+        .select('id')
+        .maybeSingle();
+      if (upsertErr) throw upsertErr;
 
-      if (complianceError) throw complianceError;
+      let complianceRecordId = upserted?.id as string | undefined;
+      if (!complianceRecordId) {
+        const { data: rec, error: recErr } = await supabase
+          .from('client_compliance_period_records')
+          .select('id')
+          .eq('client_compliance_type_id', complianceTypeId)
+          .eq('client_id', selectedClient.id)
+          .eq('period_identifier', periodIdentifier)
+          .maybeSingle();
+        if (recErr) throw recErr;
+        complianceRecordId = rec?.id as string;
+      }
+      if (!complianceRecordId) throw new Error('Unable to resolve compliance record id');
 
-      await supabase
-        .from('client_spot_check_records')
-        .update({ compliance_record_id: spotCheckRecord.id })
-        .eq('id', spotCheckRecord.id);
+      // Create payload for spot check
+      const baseSpotCheck = {
+        client_id: selectedClient.id,
+        compliance_record_id: complianceRecordId,
+        service_user_name: formData.serviceUserName,
+        care_workers: formData.careWorkers || '',
+        date: formData.date,
+        time: formData.time || '00:00',
+        performed_by: formData.completedBy,
+        observations: transformedObservations as any
+      };
 
-      toast({
-        title: "Success",
-        description: "Spot check record saved successfully",
-      });
+      if (editingSpotCheckData) {
+        const { data: existing } = await supabase
+          .from('client_spot_check_records')
+          .select('id')
+          .eq('compliance_record_id', complianceRecordId)
+          .maybeSingle();
+
+        if (existing) {
+          const { error: updErr } = await supabase
+            .from('client_spot_check_records')
+            .update({
+              service_user_name: baseSpotCheck.service_user_name,
+              date: baseSpotCheck.date,
+              performed_by: baseSpotCheck.performed_by,
+              observations: baseSpotCheck.observations
+            })
+            .eq('id', existing.id);
+          if (updErr) throw updErr;
+        } else {
+          const { error: insErr } = await supabase
+            .from('client_spot_check_records')
+            .insert(baseSpotCheck);
+          if (insErr) throw insErr;
+        }
+      } else {
+        const { error: insErr } = await supabase
+          .from('client_spot_check_records')
+          .insert(baseSpotCheck);
+        if (insErr) throw insErr;
+      }
+
+      toast({ title: 'Success', description: 'Spot check record saved successfully' });
 
       setSpotCheckDialogOpen(false);
       setSelectedClient(null);
       setEditingSpotCheckData(null);
       refetch();
-
     } catch (error) {
       console.error('Error saving spot check:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save spot check record",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Failed to save spot check record', variant: 'destructive' });
     }
   };
 
@@ -514,7 +614,7 @@ export function ClientCompliancePeriodDialog({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleAddSpotCheck(client)}
+                                  onClick={() => handleEditSpotCheck(client, record!)}
                                   className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
                                   title="Edit"
                                 >

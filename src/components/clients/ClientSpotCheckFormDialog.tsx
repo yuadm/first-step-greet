@@ -211,10 +211,10 @@ export default function ClientSpotCheckFormDialog({
       console.log('📝 Initial observations:', initialData.observations);
       
       const mergedObservations = baseObservations.map((base) => {
-        const existing = initialData.observations.find((o) => o.id === base.id);
-        const merged = existing ? { ...base, value: existing.value, comments: existing.comments } : base;
+        const existing = initialData.observations.find((o) => o.id === base.id || o.label === base.label);
+        const merged = existing ? { ...base, value: (existing as any).value, comments: (existing as any).comments } : base;
         if (existing) {
-          console.log(`🔗 Merged observation ${base.id}:`, merged);
+          console.log(`🔗 Merged observation ${base.id} (via ${existing.id ? 'id' : 'label'}):`, merged);
         }
         return merged;
       });
