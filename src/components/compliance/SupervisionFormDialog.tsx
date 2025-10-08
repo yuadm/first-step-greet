@@ -12,12 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, startOfQuarter, endOfQuarter, isWithinInterval } from "date-fns";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X } from "lucide-react";
+import { Check, X, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import BodyDiagramModal from "./BodyDiagramModal";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -163,6 +163,7 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
   const [step, setStep] = useState<number>(1); // 1: personal, 2: service users list, 3..n: per user, last: office
   const [showPersonalErrors, setShowPersonalErrors] = useState(false);
   const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
+  const [serviceUserPopovers, setServiceUserPopovers] = useState<Record<number, boolean>>({});
   const [bodyDiagramModal, setBodyDiagramModal] = useState<{
     open: boolean;
     type: "bruises" | "pressureSores";
@@ -284,6 +285,7 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
     const per = [...form.perServiceUser];
     per[index] = { ...(per[index] || {}), serviceUserName: name } as SupervisionServiceUserQA;
     setForm((prev) => ({ ...prev, serviceUserNames: names, perServiceUser: per }));
+    setServiceUserPopovers((prev) => ({ ...prev, [index]: false }));
   };
 
   const updatePerUser = (index: number, changes: Partial<SupervisionServiceUserQA>) => {
@@ -521,21 +523,46 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {Array.from({ length: form.serviceUsersCount }).map((_, i) => (
               <div key={i} className="space-y-1">
-                <Select
-                  value={form.serviceUserNames[i] || ""}
-                  onValueChange={(value) => updateServiceUserName(i, value)}
-                >
-                  <SelectTrigger className="w-full h-10 touch-manipulation">
-                    <SelectValue placeholder={`Select service user ${i + 1}`} />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.name} className="cursor-pointer">
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={serviceUserPopovers[i] || false} onOpenChange={(open) => setServiceUserPopovers((prev) => ({ ...prev, [i]: open }))}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={serviceUserPopovers[i] || false}
+                      className="w-full justify-between"
+                    >
+                      {form.serviceUserNames[i] || `Select service user ${i + 1}...`}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-popover" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search clients..." />
+                      <CommandList>
+                        <CommandEmpty>No client found.</CommandEmpty>
+                        <CommandGroup>
+                          {clients.map((client) => (
+                            <CommandItem
+                              key={client.id}
+                              value={client.name}
+                              onSelect={(currentValue) => {
+                                updateServiceUserName(i, currentValue === form.serviceUserNames[i] ? "" : currentValue);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  form.serviceUserNames[i] === client.name ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {client.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             ))}
           </div>
