@@ -88,11 +88,75 @@ interface SupervisionFormDialogProps {
   onSubmit: (data: SupervisionFormData) => void;
   initialData?: SupervisionFormData | null;
   employeeName?: string; // for signature default
+  periodIdentifier?: string;
+  frequency?: string;
 }
 
-export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, initialData, employeeName }: SupervisionFormDialogProps) {
+export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, initialData, employeeName, periodIdentifier, frequency }: SupervisionFormDialogProps) {
   const { companySettings } = useCompany();
   const { toast } = useToast();
+
+  // Calculate period date range based on periodIdentifier and frequency
+  const getPeriodDateRange = () => {
+    const now = new Date();
+    
+    if (!periodIdentifier || !frequency) {
+      // Fallback to current quarter
+      return {
+        start: startOfQuarter(now),
+        end: endOfQuarter(now)
+      };
+    }
+
+    try {
+      if (frequency.toLowerCase() === 'annual') {
+        const year = parseInt(periodIdentifier);
+        return {
+          start: new Date(year, 0, 1),
+          end: new Date(year, 11, 31)
+        };
+      } else if (frequency.toLowerCase() === 'monthly') {
+        const [year, month] = periodIdentifier.split('-');
+        const yearNum = parseInt(year);
+        const monthNum = parseInt(month);
+        const monthIndex = monthNum - 1;
+        return {
+          start: new Date(yearNum, monthIndex, 1),
+          end: new Date(yearNum, monthIndex + 1, 0)
+        };
+      } else if (frequency.toLowerCase() === 'quarterly') {
+        const [year, quarterStr] = periodIdentifier.split('-Q');
+        const yearNum = parseInt(year);
+        const quarter = parseInt(quarterStr);
+        const startMonth = (quarter - 1) * 3;
+        const endMonth = startMonth + 2;
+        return {
+          start: new Date(yearNum, startMonth, 1),
+          end: new Date(yearNum, endMonth + 1, 0)
+        };
+      } else if (frequency.toLowerCase() === 'bi-annual') {
+        const [year, halfStr] = periodIdentifier.split('-H');
+        const yearNum = parseInt(year);
+        const half = parseInt(halfStr);
+        const startMonth = half === 1 ? 0 : 6;
+        const endMonth = half === 1 ? 5 : 11;
+        return {
+          start: new Date(yearNum, startMonth, 1),
+          end: new Date(yearNum, endMonth + 1, 0)
+        };
+      }
+    } catch (error) {
+      console.error('Error parsing period:', error);
+    }
+
+    // Fallback to current quarter
+    return {
+      start: startOfQuarter(now),
+      end: endOfQuarter(now)
+    };
+  };
+
+  const periodDateRange = getPeriodDateRange();
 
   const [step, setStep] = useState<number>(1); // 1: personal, 2: service users list, 3..n: per user, last: office
   const [showPersonalErrors, setShowPersonalErrors] = useState(false);
@@ -219,10 +283,7 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
     if (!form.keyAreasOfResponsibility?.trim()) missing.push("keyAreasOfResponsibility")
     if (!form.otherIssues?.trim()) missing.push("otherIssues")
 
-    const now = new Date()
-    const qs = startOfQuarter(now)
-    const qe = endOfQuarter(now)
-    const dateValid = !!form.dateOfSupervision && isWithinInterval(new Date(form.dateOfSupervision), { start: qs, end: qe })
+    const dateValid = !!form.dateOfSupervision && isWithinInterval(new Date(form.dateOfSupervision), { start: periodDateRange.start, end: periodDateRange.end })
     if (!dateValid) missing.push("dateOfSupervision")
 
     return missing
@@ -249,7 +310,7 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
       const missing = validatePersonal();
       if (missing.length) {
         setShowPersonalErrors(true);
-        toast({ title: "Please complete required fields (within current quarter)", variant: "destructive" });
+        toast({ title: "Please complete required fields (within selected period)", variant: "destructive" });
         return;
       }
       setShowPersonalErrors(false);
@@ -339,10 +400,7 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {(() => {
-          const now = new Date();
-          const qs = startOfQuarter(now);
-          const qe = endOfQuarter(now);
-          const dateInvalid = !form.dateOfSupervision || !isWithinInterval(new Date(form.dateOfSupervision), { start: qs, end: qe });
+          const dateInvalid = !form.dateOfSupervision || !isWithinInterval(new Date(form.dateOfSupervision), { start: periodDateRange.start, end: periodDateRange.end });
           
           return (
             <>
@@ -403,13 +461,13 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
                       mode="single"
                       selected={form.dateOfSupervision ? new Date(form.dateOfSupervision) : undefined}
                       onSelect={(date) => date && updateForm("dateOfSupervision", format(date, "yyyy-MM-dd"))}
-                      disabled={(date) => date < qs || date > qe}
+                      disabled={(date) => date < periodDateRange.start || date > periodDateRange.end}
                       initialFocus
                       className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
-                {showPersonalErrors && dateInvalid && (<p className="text-destructive text-xs">Select a date within the current quarter</p>)}
+                {showPersonalErrors && dateInvalid && (<p className="text-destructive text-xs">Select a date within the selected period</p>)}
               </div>
             </>
           )

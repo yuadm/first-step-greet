@@ -630,6 +630,8 @@ const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurr
         onOpenChange={setSupervisionOpen}
         initialData={supervisionData || undefined}
         employeeName={selectedEmployeeName}
+        periodIdentifier={selectedPeriod}
+        frequency={frequency}
         onSubmit={(data) => {
           setSupervisionData(data);
           setSupervisionOpen(false);
