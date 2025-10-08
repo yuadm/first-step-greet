@@ -134,18 +134,22 @@ export function LeaveAnalyticsChart() {
       </TabsList>
 
       <TabsContent value="trends">
-        <ChartContainer config={chartConfig} className="h-80">
+        <ChartContainer config={chartConfig} className="h-64 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="month" 
                 stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                fontSize={11}
+                angle={-45}
+                textAnchor="end"
+                height={60}
               />
               <YAxis 
                 stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                fontSize={11}
+                width={40}
               />
               <ChartTooltip content={<ChartTooltipContent />} />
               <ChartLegend content={<ChartLegendContent />} />
@@ -158,7 +162,7 @@ export function LeaveAnalyticsChart() {
       </TabsContent>
 
       <TabsContent value="types">
-        <ChartContainer config={{}} className="h-80">
+        <ChartContainer config={{}} className="h-64 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -167,7 +171,7 @@ export function LeaveAnalyticsChart() {
                 cy="50%"
                 labelLine={false}
                 label={(entry) => `${entry.name}: ${entry.value}`}
-                outerRadius={100}
+                outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >

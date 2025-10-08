@@ -105,24 +105,13 @@ export function Dashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-4 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Dashboard
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Advanced HR & Compliance Analytics
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge variant={isConnected ? "default" : "secondary"} className="flex items-center gap-2">
-              <Activity className="w-3 h-3" />
-              {isConnected ? "Live" : "Offline"}
-            </Badge>
-            <div className="text-sm text-muted-foreground">
-              {metrics.activeUsers} active users
-            </div>
-          </div>
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Advanced HR & Compliance Analytics
+          </p>
         </div>
       </div>
 
