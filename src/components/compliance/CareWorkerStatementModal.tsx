@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +62,7 @@ export function CareWorkerStatementModal({
 }: CareWorkerStatementModalProps) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
+  const [clientOpen, setClientOpen] = useState(false);
   const [formData, setFormData] = useState({
     care_worker_name: "",
     client_id: "",
@@ -218,23 +220,58 @@ export function CareWorkerStatementModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="client_name">Client Name</Label>
-            <Select
-              value={formData.client_id}
-              onValueChange={handleClientChange}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name} {client.branches?.name && `(${client.branches.name})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="client_name">Service User's Name</Label>
+            <Popover open={clientOpen} onOpenChange={setClientOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={clientOpen}
+                  className={cn(
+                    "w-full justify-between",
+                    formData.client_id && "border-green-500"
+                  )}
+                >
+                  {formData.client_id
+                    ? clients.find((client) => client.id === formData.client_id)?.name
+                    : "Select service user..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search service users..." />
+                  <CommandList>
+                    <CommandEmpty>No service user found.</CommandEmpty>
+                    <CommandGroup>
+                      {clients.map((client) => (
+                        <CommandItem
+                          key={client.id}
+                          value={client.name}
+                          onSelect={() => {
+                            handleClientChange(client.id);
+                            setClientOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.client_id === client.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {client.name}
+                          {client.branches?.name && (
+                            <span className="ml-2 text-muted-foreground">
+                              ({client.branches.name})
+                            </span>
+                          )}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>
