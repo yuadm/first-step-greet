@@ -863,6 +863,11 @@ export function ClientCompliancePeriodView({
 
   // Filtered and sorted clients
   const filteredAndSortedClients = useMemo(() => {
+    // Early return if required data is not yet available
+    if (!selectedPeriod || !frequency) {
+      return [];
+    }
+
     // Calculate period end date to filter out clients created after this period
     const getPeriodEndDate = (periodId: string, freq: string): Date => {
       switch (freq.toLowerCase()) {
