@@ -72,7 +72,6 @@ export default function ClientSpotCheckFormDialog({
   });
 
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
-  const [isInitializing, setIsInitializing] = useState(false);
 
   const observationItems = useMemo<ClientSpotCheckObservation[]>(
     () => [
@@ -182,9 +181,10 @@ export default function ClientSpotCheckFormDialog({
     setErrors(newErrors);
   };
 
-  // Reset form when dialog closes
-  useEffect(() => {
+  // Initialize form on open and reset on close
+  React.useEffect(() => {
     if (!open) {
+      // Reset form when dialog closes
       setForm({
         serviceUserName: "",
         date: "",
@@ -193,15 +193,9 @@ export default function ClientSpotCheckFormDialog({
       });
       setErrors({});
       setTouchedFields(new Set());
-      setIsInitializing(false);
+      return;
     }
-  }, [open]);
 
-  // Initialize form when opening with data
-  useEffect(() => {
-    if (!open) return;
-
-    setIsInitializing(true);
     console.log('🎯 Dialog initializing with data:', initialData);
 
     const baseObservations = observationItems.map((item) => ({ 
@@ -212,41 +206,37 @@ export default function ClientSpotCheckFormDialog({
 
     console.log('📋 Base observations template:', baseObservations);
 
-    // Use requestAnimationFrame to ensure state updates have processed
-    requestAnimationFrame(() => {
-      if (initialData) {
-        console.log('✅ Using initial data for form population');
-        console.log('📝 Initial observations:', initialData.observations);
-        
-        const mergedObservations = baseObservations.map((base) => {
-          const existing = initialData.observations.find((o) => o.id === base.id);
-          const merged = existing ? { ...base, value: existing.value, comments: existing.comments } : base;
-          if (existing) {
-            console.log(`🔗 Merged observation ${base.id}:`, merged);
-          }
-          return merged;
-        });
+    if (initialData) {
+      console.log('✅ Using initial data for form population');
+      console.log('📝 Initial observations:', initialData.observations);
+      
+      const mergedObservations = baseObservations.map((base) => {
+        const existing = initialData.observations.find((o) => o.id === base.id);
+        const merged = existing ? { ...base, value: existing.value, comments: existing.comments } : base;
+        if (existing) {
+          console.log(`🔗 Merged observation ${base.id}:`, merged);
+        }
+        return merged;
+      });
 
-        const formData = {
-          serviceUserName: initialData.serviceUserName || "",
-          date: initialData.date || "",
-          completedBy: initialData.completedBy || "",
-          observations: mergedObservations,
-        };
+      const formData = {
+        serviceUserName: initialData.serviceUserName || "",
+        date: initialData.date || "",
+        completedBy: initialData.completedBy || "",
+        observations: mergedObservations,
+      };
 
-        console.log('🚀 Setting form with merged data:', formData);
-        setForm(formData);
-      } else {
-        console.log('❌ No initial data, using empty form');
-        setForm({
-          serviceUserName: "",
-          date: "",
-          completedBy: "",
-          observations: baseObservations,
-        });
-      }
-      setIsInitializing(false);
-    });
+      console.log('🚀 Setting form with merged data:', formData);
+      setForm(formData);
+    } else {
+      console.log('❌ No initial data, using empty form');
+      setForm({
+        serviceUserName: "",
+        date: "",
+        completedBy: "",
+        observations: baseObservations,
+      });
+    }
   }, [open, initialData, observationItems]);
 
   const updateField = (key: keyof ClientSpotCheckFormData, value: string) => {
@@ -326,25 +316,6 @@ export default function ClientSpotCheckFormDialog({
 
     return baseOptions;
   };
-
-  // Show loading state while initializing
-  if (isInitializing) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Loading Spot Check Data...</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Preparing form...</p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
