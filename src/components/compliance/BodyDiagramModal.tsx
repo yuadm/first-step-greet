@@ -64,47 +64,51 @@ export default function BodyDiagramModal({
     // Load the body diagram image
     const loadBodyDiagram = async () => {
       try {
-        const imgElement = document.createElement('img');
-        imgElement.crossOrigin = 'anonymous';
-        imgElement.src = '/body-diagram.png';
-        
-        imgElement.onload = () => {
-          FabricImage.fromURL('/body-diagram.png').then((img) => {
-            // Scale the image to fit the canvas while maintaining aspect ratio
-            const scaleX = canvas.width! / img.width!;
-            const scaleY = canvas.height! / img.height!;
-            const scale = Math.min(scaleX, scaleY);
-            
-            img.set({
-              scaleX: scale,
-              scaleY: scale,
-              left: (canvas.width! - img.width! * scale) / 2,
-              top: (canvas.height! - img.height! * scale) / 2,
-              selectable: false,
-              evented: false,
-            });
-            
-            canvas.add(img);
-            canvas.sendObjectToBack(img);
-            canvas.renderAll();
-            
-            // Add initial markers after the image is loaded
+        // Try to load the image first with better error handling
+        FabricImage.fromURL('/body-diagram.png', {
+          crossOrigin: 'anonymous'
+        }).then((img) => {
+          if (!img || !img.width || !img.height) {
+            console.log('Invalid image, using fallback');
+            drawFallbackBodyOutline(canvas);
             initialMarkers.forEach(marker => {
               addMarkerToCanvas(canvas, marker.x, marker.y, marker.bodyPart);
             });
+            return;
+          }
+
+          // Scale the image to fit the canvas while maintaining aspect ratio
+          const scaleX = canvas.width! / img.width!;
+          const scaleY = canvas.height! / img.height!;
+          const scale = Math.min(scaleX, scaleY);
+          
+          img.set({
+            scaleX: scale,
+            scaleY: scale,
+            left: (canvas.width! - img.width! * scale) / 2,
+            top: (canvas.height! - img.height! * scale) / 2,
+            selectable: false,
+            evented: false,
           });
-        };
-        
-        imgElement.onerror = () => {
-          console.log('Failed to load body diagram, using fallback shapes');
-          // Fallback to basic shapes if image fails to load
+          
+          canvas.add(img);
+          canvas.sendObjectToBack(img);
+          canvas.renderAll();
+          
+          // Add initial markers after the image is loaded
+          initialMarkers.forEach(marker => {
+            addMarkerToCanvas(canvas, marker.x, marker.y, marker.bodyPart);
+          });
+        }).catch((error) => {
+          console.error('Error loading image from URL:', error);
+          console.log('Using fallback body outline');
           drawFallbackBodyOutline(canvas);
           
           // Add initial markers
           initialMarkers.forEach(marker => {
             addMarkerToCanvas(canvas, marker.x, marker.y, marker.bodyPart);
           });
-        };
+        });
       } catch (error) {
         console.error('Error loading body diagram:', error);
         drawFallbackBodyOutline(canvas);
@@ -117,17 +121,58 @@ export default function BodyDiagramModal({
     };
 
     const drawFallbackBodyOutline = (canvas: FabricCanvas) => {
-      // Fallback basic body outline
+      console.log('Drawing fallback body outline');
+      // Fallback basic body outline with better visibility
       // Head (circle)
-      canvas.add(new Circle({ left: 185, top: 45, radius: 25, fill: "transparent", stroke: "#333", strokeWidth: 2, selectable: false }));
-      // Body (rectangle)
-      canvas.add(new Rect({ left: 175, top: 100, width: 50, height: 100, fill: "transparent", stroke: "#333", strokeWidth: 2, selectable: false }));
-      // Arms
-      canvas.add(new Rect({ left: 130, top: 120, width: 40, height: 15, fill: "transparent", stroke: "#333", strokeWidth: 2, selectable: false }));
-      canvas.add(new Rect({ left: 230, top: 120, width: 40, height: 15, fill: "transparent", stroke: "#333", strokeWidth: 2, selectable: false }));
-      // Legs
-      canvas.add(new Rect({ left: 180, top: 210, width: 15, height: 80, fill: "transparent", stroke: "#333", strokeWidth: 2, selectable: false }));
-      canvas.add(new Rect({ left: 205, top: 210, width: 15, height: 80, fill: "transparent", stroke: "#333", strokeWidth: 2, selectable: false }));
+      canvas.add(new Circle({ 
+        left: 185, top: 45, radius: 25, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
+        selectable: false, evented: false 
+      }));
+      
+      // Neck
+      canvas.add(new Rect({ 
+        left: 192, top: 75, width: 16, height: 20, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
+        selectable: false, evented: false 
+      }));
+      
+      // Torso (rectangle)
+      canvas.add(new Rect({ 
+        left: 170, top: 100, width: 60, height: 120, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
+        selectable: false, evented: false 
+      }));
+      
+      // Left Arm
+      canvas.add(new Rect({ 
+        left: 120, top: 110, width: 50, height: 12, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
+        selectable: false, evented: false 
+      }));
+      
+      // Right Arm
+      canvas.add(new Rect({ 
+        left: 230, top: 110, width: 50, height: 12, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
+        selectable: false, evented: false 
+      }));
+      
+      // Left Leg
+      canvas.add(new Rect({ 
+        left: 175, top: 220, width: 18, height: 120, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
+        selectable: false, evented: false 
+      }));
+      
+      // Right Leg
+      canvas.add(new Rect({ 
+        left: 207, top: 220, width: 18, height: 120, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
+        selectable: false, evented: false 
+      }));
+      
+      canvas.renderAll();
     };
 
     canvas.on('mouse:down', (e) => {
