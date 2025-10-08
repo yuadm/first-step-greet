@@ -513,7 +513,7 @@ addKeyValue(ctx, 'Consent to Terms', data.termsPolicy?.consentToTerms ? 'Yes' : 
 
 
   const bytes = await doc.save()
-  const blob = new Blob([bytes as any], { type: 'application/pdf' })
+  const blob = new Blob([bytes], { type: 'application/pdf' })
   const url = URL.createObjectURL(blob)
 
   const name = (data.personalInfo?.fullName || 'Applicant').replace(/\s+/g, '_')
