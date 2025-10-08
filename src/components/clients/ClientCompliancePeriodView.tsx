@@ -906,10 +906,22 @@ export function ClientCompliancePeriodView({
 
     const periodEndDate = getPeriodEndDate(selectedPeriod, frequency);
     
+    // Normalize dates to midnight UTC for accurate comparison
+    const normalizeDateToMidnight = (date: Date): Date => {
+      const normalized = new Date(date);
+      normalized.setUTCHours(0, 0, 0, 0);
+      return normalized;
+    };
+    
+    const normalizedPeriodEnd = normalizeDateToMidnight(periodEndDate);
+    
     // Filter out clients created after the period end date
     let filtered = clients.filter(client => {
       const clientCreatedDate = new Date(client.created_at);
-      return clientCreatedDate <= periodEndDate;
+      const normalizedClientDate = normalizeDateToMidnight(clientCreatedDate);
+      
+      // Client should only appear if they were created on or before the period end date
+      return normalizedClientDate <= normalizedPeriodEnd;
     });
 
     // Apply search filter
