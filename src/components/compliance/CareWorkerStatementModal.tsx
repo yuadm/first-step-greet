@@ -63,6 +63,7 @@ export function CareWorkerStatementModal({
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [clientOpen, setClientOpen] = useState(false);
+  const [employeeOpen, setEmployeeOpen] = useState(false);
   const [formData, setFormData] = useState({
     care_worker_name: "",
     client_id: "",
@@ -313,22 +314,52 @@ export function CareWorkerStatementModal({
 
             <div>
               <Label htmlFor="assigned_employee">Assign to Employee</Label>
-              <Select
-                value={formData.assigned_employee_id}
-                onValueChange={handleEmployeeChange}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select employee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={employeeOpen} onOpenChange={setEmployeeOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={employeeOpen}
+                    className={cn(
+                      "w-full justify-between",
+                      formData.assigned_employee_id && "border-green-500"
+                    )}
+                  >
+                    {formData.assigned_employee_id
+                      ? employees.find((employee) => employee.id === formData.assigned_employee_id)?.name
+                      : "Select employee..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search employees..." />
+                    <CommandList>
+                      <CommandEmpty>No employee found.</CommandEmpty>
+                      <CommandGroup>
+                        {employees.map((employee) => (
+                          <CommandItem
+                            key={employee.id}
+                            value={employee.name}
+                            onSelect={() => {
+                              handleEmployeeChange(employee.id);
+                              setEmployeeOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.assigned_employee_id === employee.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {employee.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
