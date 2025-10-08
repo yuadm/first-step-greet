@@ -219,7 +219,7 @@ function EmployeeDocumentSigningContent() {
 
       // Generate the final PDF
       const finalPdfBytes = await pdfDoc.save();
-      const finalPdfBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+      const finalPdfBlob = new Blob([finalPdfBytes as any], { type: 'application/pdf' });
 
       // Upload the final PDF to storage
       const fileName = `${Date.now()}_${signingData.title}_signed.pdf`;
