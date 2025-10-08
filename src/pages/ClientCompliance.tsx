@@ -426,7 +426,7 @@ export default function ClientCompliance() {
         <ClientCompliancePeriodView 
           complianceTypeId={clientTypeId || ''}
           complianceTypeName={complianceType.name}
-          frequency={complianceType.frequency}
+          frequency={(complianceType.frequency || 'annual')}
           selectedFilter={selectedFilter}
         />
       </div>
