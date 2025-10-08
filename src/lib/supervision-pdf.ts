@@ -474,7 +474,7 @@ export async function generateSupervisionPdf(data: SupervisionFormData, company?
 
   // Save & download
   const bytes = await doc.save()
-  const blob = new Blob([bytes], { type: 'application/pdf' })
+  const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' })
   const url = URL.createObjectURL(blob)
   const supervisionDate = data.dateOfSupervision ? new Date(data.dateOfSupervision) : new Date()
   const quarter = Math.floor(supervisionDate.getMonth() / 3) + 1
