@@ -906,22 +906,10 @@ export function ClientCompliancePeriodView({
 
     const periodEndDate = getPeriodEndDate(selectedPeriod, frequency);
     
-    // Normalize dates to midnight UTC for accurate comparison
-    const normalizeDateToMidnight = (date: Date): Date => {
-      const normalized = new Date(date);
-      normalized.setUTCHours(0, 0, 0, 0);
-      return normalized;
-    };
-    
-    const normalizedPeriodEnd = normalizeDateToMidnight(periodEndDate);
-    
     // Filter out clients created after the period end date
     let filtered = clients.filter(client => {
       const clientCreatedDate = new Date(client.created_at);
-      const normalizedClientDate = normalizeDateToMidnight(clientCreatedDate);
-      
-      // Client should only appear if they were created on or before the period end date
-      return normalizedClientDate <= normalizedPeriodEnd;
+      return clientCreatedDate <= periodEndDate;
     });
 
     // Apply search filter
@@ -1012,7 +1000,7 @@ export function ClientCompliancePeriodView({
         return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
       }
     });
-  }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, sortField, sortDirection]);
+  }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, frequency, sortField, sortDirection]);
 
   // Pagination calculations
   const totalItems = filteredAndSortedClients.length;
