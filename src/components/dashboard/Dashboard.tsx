@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { Users, Calendar, FileX, Shield, TrendingUp, Clock, BarChart3, Activity, Brain, Zap, AlertTriangle } from "lucide-react";
-import { StatCard } from "./StatCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DocumentCountryMap } from "./DocumentCountryMap";
-import { AnalyticsCard } from "./analytics/AnalyticsCard";
 import { EmployeeGrowthChart } from "./analytics/EmployeeGrowthChart";
 import { LeaveAnalyticsChart } from "./analytics/LeaveAnalyticsChart";
 import { ComplianceHeatMap } from "./analytics/ComplianceHeatMap";
 import { SmartInsightsPanel } from "./analytics/SmartInsightsPanel";
 import { useRealTimeAnalytics } from "@/hooks/useRealTimeAnalytics";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { DashboardHero } from "./DashboardHero";
+import { EnhancedStatCard } from "./EnhancedStatCard";
+import { LiveActivityFeed } from "./LiveActivityFeed";
+import { QuickMetrics } from "./QuickMetrics";
 
 interface DashboardStats {
   totalEmployees: number;
@@ -88,64 +90,76 @@ export function Dashboard() {
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="space-y-2">
-          <div className="h-8 bg-muted rounded-lg w-64"></div>
-          <div className="h-5 bg-muted rounded w-96"></div>
-        </div>
+        <div className="h-48 bg-gradient-to-r from-muted to-muted/50 rounded-2xl"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-muted rounded-xl"></div>
+            <div key={i} className="h-40 bg-muted rounded-xl"></div>
           ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 h-96 bg-muted rounded-xl"></div>
+          <div className="h-96 bg-muted rounded-xl"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="space-y-4 animate-fade-in">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Advanced HR & Compliance Analytics
-          </p>
-        </div>
-      </div>
+    <div className="space-y-8 animate-fade-in">
+      {/* Hero Section */}
+      <DashboardHero />
 
-      {/* Enhanced Stats Grid */}
+      {/* Enhanced Stats Grid with Sparklines */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <AnalyticsCard
+        <EnhancedStatCard
           title="Total Employees"
           value={stats.totalEmployees}
-          change={{ value: 12, trend: 'up', period: 'vs last month' }}
           icon={Users}
+          trend={{
+            value: 12,
+            direction: "up",
+            label: "vs last month"
+          }}
+          sparklineData={[stats.totalEmployees - 50, stats.totalEmployees - 40, stats.totalEmployees - 30, stats.totalEmployees - 20, stats.totalEmployees - 10, stats.totalEmployees - 5, stats.totalEmployees]}
           variant="default"
         />
         
-        <AnalyticsCard
+        <EnhancedStatCard
           title="Pending Approvals"
           value={metrics.pendingApprovals}
-          change={{ value: 5, trend: 'down', period: 'vs last week' }}
           icon={Clock}
+          trend={{
+            value: 5,
+            direction: "down",
+            label: "vs last week"
+          }}
+          sparklineData={[metrics.pendingApprovals + 10, metrics.pendingApprovals + 8, metrics.pendingApprovals + 5, metrics.pendingApprovals + 7, metrics.pendingApprovals + 3, metrics.pendingApprovals + 2, metrics.pendingApprovals]}
           variant="warning"
         />
         
-        <AnalyticsCard
+        <EnhancedStatCard
           title="Overdue Compliance"
           value={metrics.overdueCompliance}
-          change={{ value: 15, trend: 'down', period: 'vs last month' }}
           icon={AlertTriangle}
+          trend={{
+            value: 15,
+            direction: "down",
+            label: "vs last month"
+          }}
+          sparklineData={[metrics.overdueCompliance + 20, metrics.overdueCompliance + 15, metrics.overdueCompliance + 12, metrics.overdueCompliance + 10, metrics.overdueCompliance + 5, metrics.overdueCompliance + 2, metrics.overdueCompliance]}
           variant="danger"
         />
         
-        <AnalyticsCard
+        <EnhancedStatCard
           title="Expiring Soon"
           value={metrics.expiringDocuments}
-          change={{ value: 8, trend: 'up', period: 'next 7 days' }}
           icon={FileX}
+          trend={{
+            value: 8,
+            direction: "up",
+            label: "next 7 days"
+          }}
+          sparklineData={[metrics.expiringDocuments - 5, metrics.expiringDocuments - 3, metrics.expiringDocuments - 2, metrics.expiringDocuments - 1, metrics.expiringDocuments, metrics.expiringDocuments + 1, metrics.expiringDocuments + 2]}
           variant="warning"
         />
       </div>
@@ -230,107 +244,19 @@ export function Dashboard() {
               </div>
             </div>
             
-            <div className="space-y-6">
-              <div className="card-premium p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-warning to-warning/80 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Critical Alerts</h3>
-                    <p className="text-sm text-muted-foreground">Immediate attention needed</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  {metrics.overdueCompliance > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-destructive-soft border border-destructive/20">
-                      <div>
-                        <p className="text-sm font-medium text-destructive">Overdue Compliance</p>
-                        <p className="text-xs text-muted-foreground">{metrics.overdueCompliance} tasks</p>
-                      </div>
-                      <Badge variant="destructive">High</Badge>
-                    </div>
-                  )}
-                  
-                  {metrics.expiringDocuments > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-warning-soft border border-warning/20">
-                      <div>
-                        <p className="text-sm font-medium text-warning">Expiring Documents</p>
-                        <p className="text-xs text-muted-foreground">Next 7 days</p>
-                      </div>
-                      <Badge variant="secondary">{metrics.expiringDocuments}</Badge>
-                    </div>
-                  )}
-                  
-                  {metrics.pendingApprovals > 0 && (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary-soft border border-primary/20">
-                      <div>
-                        <p className="text-sm font-medium text-primary">Pending Approvals</p>
-                        <p className="text-xs text-muted-foreground">Waiting for review</p>
-                      </div>
-                      <Badge variant="secondary">{metrics.pendingApprovals}</Badge>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="card-premium p-6">
+              <QuickMetrics metrics={metrics} />
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="realtime" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="card-premium p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Live Activity Feed</h3>
-                    <p className="text-sm text-muted-foreground">Real-time system updates</p>
-                  </div>
-                </div>
-                <Badge variant={isConnected ? "default" : "secondary"}>
-                  {isConnected ? "Live" : "Offline"}
-                </Badge>
-              </div>
-              
-              <div className="space-y-3">
-                {metrics.recentActivity.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No recent activity</p>
-                  </div>
-                ) : (
-                  metrics.recentActivity.map((activity) => {
-                    const getActivityIcon = (type: string) => {
-                      switch (type) {
-                        case 'leave': return Calendar;
-                        case 'compliance': return Shield;
-                        case 'employee': return Users;
-                        default: return Activity;
-                      }
-                    };
-                    
-                    const Icon = getActivityIcon(activity.type);
-                    
-                    return (
-                      <div key={activity.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Icon className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{activity.message}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(activity.timestamp).toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 card-premium p-6">
+              <LiveActivityFeed 
+                activities={metrics.recentActivity} 
+                isConnected={isConnected}
+              />
             </div>
 
             <div className="card-premium p-6 space-y-4">
