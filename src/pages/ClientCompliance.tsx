@@ -54,11 +54,47 @@ export default function ClientCompliance() {
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [clientTypeId, setClientTypeId] = useState<string | null>(null);
-  
-  const complianceType = location.state?.complianceType as ComplianceType;
+  const [complianceType, setComplianceType] = useState<ComplianceType | null>(
+    location.state?.complianceType || null
+  );
+
+  // Fetch compliance type from database if not in location state
+  useEffect(() => {
+    const fetchComplianceType = async () => {
+      if (!id || complianceType) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('compliance_types')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        
+        if (error) throw error;
+        
+        if (data) {
+          setComplianceType(data as ComplianceType);
+        } else {
+          navigate('/compliance');
+        }
+      } catch (error) {
+        console.error('Error fetching compliance type:', error);
+        toast({
+          title: "Error",
+          description: "Could not load compliance type.",
+          variant: "destructive",
+        });
+        navigate('/compliance');
+      }
+    };
+
+    fetchComplianceType();
+  }, [id, complianceType, navigate, toast]);
 
   useEffect(() => {
     const resolveClientComplianceTypeId = async () => {
+      if (!complianceType) return;
+      
       try {
         console.log('Resolving client compliance type for:', complianceType.name);
         
@@ -102,10 +138,8 @@ export default function ClientCompliance() {
       }
     };
 
-    if (id && complianceType) {
-      resolveClientComplianceTypeId();
-    }
-  }, [id, complianceType, toast]);
+    resolveClientComplianceTypeId();
+  }, [complianceType, toast]);
 
   useEffect(() => {
     if (clientTypeId) {
@@ -114,6 +148,8 @@ export default function ClientCompliance() {
   }, [clientTypeId]);
 
   const getCurrentPeriod = () => {
+    if (!complianceType) return '';
+    
     const now = new Date();
     switch (complianceType.frequency.toLowerCase()) {
       case 'quarterly':
