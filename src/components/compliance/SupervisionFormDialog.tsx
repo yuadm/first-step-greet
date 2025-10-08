@@ -12,12 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, startOfQuarter, endOfQuarter, isWithinInterval } from "date-fns";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import BodyDiagramModal from "./BodyDiagramModal";
+import { supabase } from "@/integrations/supabase/client";
 
 export type YesNo = "yes" | "no";
 
@@ -160,6 +162,7 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
 
   const [step, setStep] = useState<number>(1); // 1: personal, 2: service users list, 3..n: per user, last: office
   const [showPersonalErrors, setShowPersonalErrors] = useState(false);
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
   const [bodyDiagramModal, setBodyDiagramModal] = useState<{
     open: boolean;
     type: "bruises" | "pressureSores";
@@ -191,6 +194,28 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
     },
     officeComplete: false,
   });
+
+  // Fetch clients
+  useEffect(() => {
+    const fetchClients = async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching clients:', error);
+        toast({ title: "Error loading clients", variant: "destructive" });
+      } else {
+        setClients(data || []);
+      }
+    };
+
+    if (open) {
+      fetchClients();
+    }
+  }, [open, toast]);
 
   useEffect(() => {
     if (!open) return;
@@ -495,7 +520,23 @@ export default function SupervisionFormDialog({ open, onOpenChange, onSubmit, in
           <Label>Service Users Names</Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {Array.from({ length: form.serviceUsersCount }).map((_, i) => (
-              <Input key={i} placeholder={`Name ${i + 1}`} value={form.serviceUserNames[i] || ""} onChange={(e) => updateServiceUserName(i, e.target.value)} />
+              <div key={i} className="space-y-1">
+                <Select
+                  value={form.serviceUserNames[i] || ""}
+                  onValueChange={(value) => updateServiceUserName(i, value)}
+                >
+                  <SelectTrigger className="w-full h-10 touch-manipulation">
+                    <SelectValue placeholder={`Select service user ${i + 1}`} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.name} className="cursor-pointer">
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             ))}
           </div>
         </div>
