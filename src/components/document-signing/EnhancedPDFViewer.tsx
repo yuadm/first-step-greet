@@ -394,7 +394,7 @@ export function EnhancedPDFViewer({
                   }`}
                   onClick={() => goToPage(pageNum)}
                 >
-                  <Document file={fileSource}>
+                  <Document file={fileSource as any}>
                     <Page
                       pageNumber={pageNum}
                       width={150}
@@ -427,7 +427,7 @@ export function EnhancedPDFViewer({
           {(continuousMode || isMobile) ? (
             <div className="space-y-4">
               <Document
-                file={fileSource}
+                file={fileSource as any}
                 onLoadSuccess={handleDocumentLoadSuccess}
                 onLoadError={handleDocumentLoadError}
                 loading=""
@@ -473,7 +473,7 @@ export function EnhancedPDFViewer({
               onClick={onPageClick}
             >
               <Document
-                file={fileSource}
+                file={fileSource as any}
                 onLoadSuccess={handleDocumentLoadSuccess}
                 onLoadError={handleDocumentLoadError}
                 loading=""
