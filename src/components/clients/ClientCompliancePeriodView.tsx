@@ -164,25 +164,28 @@ export function ClientCompliancePeriodView({
 
     switch (freq.toLowerCase()) {
       case 'annual':
-        return new Date(year, 11, 31); // Dec 31
+        return new Date(year, 11, 31, 23, 59, 59); // Dec 31
       case 'quarterly':
         const quarter = parseInt(parts[1].replace('Q', ''));
-        return new Date(year, quarter * 3, 0); // Last day of quarter
+        const endMonth = quarter * 3; // Q1=3(Mar), Q2=6(Jun), Q3=9(Sep), Q4=12(Dec)
+        return new Date(year, endMonth, 0, 23, 59, 59); // Last day of quarter
       case 'monthly':
         const month = parseInt(parts[1]);
-        return new Date(year, month, 0); // Last day of month
+        // month is 1-indexed (01-12), we need last day of that month
+        return new Date(year, month, 0, 23, 59, 59); // Day 0 = last day of previous month
       case 'bi-annual':
       case 'biannual':
         const half = parseInt(parts[1].replace('H', ''));
-        return new Date(year, half === 1 ? 6 : 12, 0); // Jun 30 or Dec 31
+        const halfEndMonth = half === 1 ? 6 : 12;
+        return new Date(year, halfEndMonth, 0, 23, 59, 59); // Jun 30 or Dec 31
       case 'weekly':
         const week = parseInt(parts[1].replace('W', ''));
         const jan4 = new Date(year, 0, 4);
         const weekStart = new Date(jan4.getTime() + (week - 1) * 7 * 24 * 60 * 60 * 1000);
         weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-        return new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+        return new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000 + 23 * 60 * 60 * 1000 + 59 * 60 * 1000 + 59 * 1000);
       default:
-        return new Date(year, 11, 31);
+        return new Date(year, 11, 31, 23, 59, 59);
     }
   };
 
