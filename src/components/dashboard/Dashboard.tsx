@@ -4,11 +4,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useRealTimeAnalytics } from "@/hooks/useRealTimeAnalytics";
 import { CommandHero } from "./redesign/CommandHero";
 import { MetricsOverview } from "./redesign/MetricsOverview";
-import { DepartmentBreakdown } from "./redesign/DepartmentBreakdown";
+import { BranchBreakdown } from "./redesign/BranchBreakdown";
 import { ActivityTimeline } from "./redesign/ActivityTimeline";
 import { PerformanceLeaderboard } from "./redesign/PerformanceLeaderboard";
 import { DocumentHealth } from "./redesign/DocumentHealth";
-import { QuickActionGrid } from "./redesign/QuickActionGrid";
 import { UpcomingEvents } from "./redesign/UpcomingEvents";
 import { TrendingMetrics } from "./redesign/TrendingMetrics";
 
@@ -19,7 +18,7 @@ interface DashboardData {
   completionRate: number;
   leavesByBranch?: Record<string, number>;
   complianceRates?: Record<string, number>;
-  departments: Array<{ name: string; count: number; color: string }>;
+  branches: Array<{ name: string; employeeCount: number; clientCount: number; color: string }>;
   recentActivity: Array<{ id: string; type: string; message: string; timestamp: string; user: string }>;
   topPerformers: Array<{ id: string; name: string; score: number; avatar: string; trend: number }>;
   documentStats: { total: number; valid: number; expiring: number; expired: number };
@@ -90,6 +89,36 @@ export function Dashboard() {
         ? Math.round((allCompliance.filter(r => r.status === 'completed').length / allCompliance.length) * 100)
         : 0;
 
+      // Fetch branches with employee and client counts
+      const { data: branchesData } = await supabase
+        .from('branches')
+        .select('id, name');
+
+      const branchColors = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4'];
+      
+      const branches = await Promise.all(
+        (branchesData || []).map(async (branch, index) => {
+          const { count: empCount } = await supabase
+            .from('employees')
+            .select('*', { count: 'exact', head: true })
+            .eq('branch_id', branch.id)
+            .eq('is_active', true);
+
+          const { count: clientCount } = await supabase
+            .from('clients')
+            .select('*', { count: 'exact', head: true })
+            .eq('branch_id', branch.id)
+            .eq('is_active', true);
+
+          return {
+            name: branch.name,
+            employeeCount: empCount || 0,
+            clientCount: clientCount || 0,
+            color: branchColors[index % branchColors.length]
+          };
+        })
+      );
+
       // Fetch document stats
       const { data: documents } = await supabase
         .from('document_tracker')
@@ -102,14 +131,6 @@ export function Dashboard() {
         expired: documents?.filter(d => d.status === 'expired').length || 0,
       };
 
-      // Mock department data (would come from employees table with joins)
-      const departments = [
-        { name: 'Care', count: Math.floor((employeeCount || 0) * 0.4), color: '#0ea5e9' },
-        { name: 'Admin', count: Math.floor((employeeCount || 0) * 0.2), color: '#8b5cf6' },
-        { name: 'Support', count: Math.floor((employeeCount || 0) * 0.25), color: '#f59e0b' },
-        { name: 'Management', count: Math.floor((employeeCount || 0) * 0.15), color: '#10b981' },
-      ];
-
       setData({
         totalEmployees: employeeCount || 0,
         activeProjects: clientsCount || 0,
@@ -117,7 +138,7 @@ export function Dashboard() {
         completionRate: overallCompletionRate,
         leavesByBranch,
         complianceRates,
-        departments,
+        branches,
         recentActivity: [
           { id: '1', type: 'employee', message: 'New employee onboarded', timestamp: new Date().toISOString(), user: 'Sarah Johnson' },
           { id: '2', type: 'document', message: 'Document verification completed', timestamp: new Date(Date.now() - 3600000).toISOString(), user: 'Mike Chen' },
@@ -189,9 +210,9 @@ export function Dashboard() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Department & Performance */}
+        {/* Left Column - Branch & Performance */}
         <div className="space-y-6">
-          <DepartmentBreakdown departments={data.departments} />
+          <BranchBreakdown branches={data.branches} />
           <PerformanceLeaderboard performers={data.topPerformers} />
         </div>
 
@@ -207,9 +228,6 @@ export function Dashboard() {
           <UpcomingEvents events={data.upcomingEvents} />
         </div>
       </div>
-
-      {/* Quick Actions */}
-      <QuickActionGrid />
     </div>
   );
 }
