@@ -759,6 +759,7 @@ export function ClientCompliancePeriodDialog({
           initialData={editingSpotCheckData}
           periodIdentifier={periodIdentifier}
           frequency={frequency}
+          clientName={selectedClient?.name}
         />
 
         <ClientDeleteConfirmDialog

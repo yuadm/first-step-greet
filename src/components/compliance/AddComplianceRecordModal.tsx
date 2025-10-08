@@ -624,6 +624,7 @@ const [selectedPeriod, setSelectedPeriod] = useState(periodIdentifier || getCurr
           setSpotcheckData(data);
           setSpotcheckOpen(false);
         }}
+        employeeName={employeeName}
       />
       <SupervisionFormDialog
         open={supervisionOpen}

@@ -128,7 +128,7 @@ export function ComplianceTypeContent() {
 const [spotcheckEditOpen, setSpotcheckEditOpen] = useState(false);
 const [spotcheckInitialData, setSpotcheckInitialData] = useState<SpotCheckFormData | null>(null);
 const [spotcheckRowId, setSpotcheckRowId] = useState<string | null>(null);
-const [spotcheckTarget, setSpotcheckTarget] = useState<{ employeeId: string; period: string } | null>(null);
+const [spotcheckTarget, setSpotcheckTarget] = useState<{ employeeId: string; period: string; employeeName?: string } | null>(null);
 // Supervision state
 const [supervisionEditOpen, setSupervisionEditOpen] = useState(false);
 const [supervisionInitialData, setSupervisionInitialData] = useState<any>(null);
@@ -758,32 +758,40 @@ const handleSaveSupervisionEdit = async (formData: any) => {
 const handleOpenSpotcheckEdit = async (employeeId: string, period: string) => {
   if (!id) return;
   try {
-    const { data, error } = await supabase
-      .from('spot_check_records')
-      .select('id, service_user_name, care_worker1, care_worker2, check_date, time_from, time_to, carried_by, observations')
-      .eq('employee_id', employeeId)
-      .eq('compliance_type_id', id)
-      .eq('period_identifier', period)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Fetch both spot check data and employee name
+    const [spotCheckRes, employeeRes] = await Promise.all([
+      supabase
+        .from('spot_check_records')
+        .select('id, service_user_name, care_worker1, care_worker2, check_date, time_from, time_to, carried_by, observations')
+        .eq('employee_id', employeeId)
+        .eq('compliance_type_id', id)
+        .eq('period_identifier', period)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('employees')
+        .select('name')
+        .eq('id', employeeId)
+        .single()
+    ]);
 
-    if (error) throw error;
+    if (spotCheckRes.error) throw spotCheckRes.error;
 
     const initial: SpotCheckFormData = {
-      serviceUserName: (data as any)?.service_user_name || '',
-      careWorker1: (data as any)?.care_worker1 || '',
-      careWorker2: (data as any)?.care_worker2 || '',
-      date: (data as any)?.check_date || '',
-      timeFrom: (data as any)?.time_from || '',
-      timeTo: (data as any)?.time_to || '',
-      carriedBy: (data as any)?.carried_by || '',
-      observations: (((data as any)?.observations) as any) || [],
+      serviceUserName: (spotCheckRes.data as any)?.service_user_name || '',
+      careWorker1: (spotCheckRes.data as any)?.care_worker1 || '',
+      careWorker2: (spotCheckRes.data as any)?.care_worker2 || '',
+      date: (spotCheckRes.data as any)?.check_date || '',
+      timeFrom: (spotCheckRes.data as any)?.time_from || '',
+      timeTo: (spotCheckRes.data as any)?.time_to || '',
+      carriedBy: (spotCheckRes.data as any)?.carried_by || '',
+      observations: (((spotCheckRes.data as any)?.observations) as any) || [],
     };
 
     setSpotcheckInitialData(initial);
-    setSpotcheckRowId((data as any)?.id || null);
-    setSpotcheckTarget({ employeeId, period });
+    setSpotcheckRowId((spotCheckRes.data as any)?.id || null);
+    setSpotcheckTarget({ employeeId, period, employeeName: employeeRes.data?.name || '' });
     setSpotcheckEditOpen(true);
   } catch (err) {
     console.error('Error loading spot check form:', err);
@@ -1697,6 +1705,7 @@ const handleStatusCardClick = (status: 'compliant' | 'overdue' | 'due' | 'pendin
   periodIdentifier={spotcheckTarget?.period}
   frequency={complianceType?.frequency}
   onSubmit={handleSaveSpotcheckEdit}
+  employeeName={spotcheckTarget?.employeeName}
 />
 
 {/* Supervision Edit Dialog */}

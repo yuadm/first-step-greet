@@ -45,9 +45,10 @@ interface SpotCheckFormDialogProps {
   initialData?: SpotCheckFormData | null;
   periodIdentifier?: string; // e.g., 2025-Q2
   frequency?: string; // e.g., 'quarterly'
+  employeeName?: string; // Pre-fill care worker name
 }
 
-export default function SpotCheckFormDialog({ open, onOpenChange, onSubmit, initialData, periodIdentifier, frequency }: SpotCheckFormDialogProps) {
+export default function SpotCheckFormDialog({ open, onOpenChange, onSubmit, initialData, periodIdentifier, frequency, employeeName }: SpotCheckFormDialogProps) {
   const { companySettings } = useCompany();
   const { toast } = useToast();
 
@@ -145,11 +146,12 @@ React.useEffect(() => {
   } else {
     setForm((prev) => ({
       ...prev,
+      careWorker1: employeeName || "", // Auto-fill with employee name if provided
       observations: baseObservations,
     }));
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [open, initialData, observationItems]);
+}, [open, initialData, observationItems, employeeName]);
 
   const updateField = (key: keyof SpotCheckFormData, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));

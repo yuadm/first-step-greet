@@ -528,6 +528,7 @@ export function AddClientComplianceRecordModal({
         }}
         periodIdentifier={selectedPeriod}
         frequency={frequency}
+        clientName={selectedClientName}
       />
     </>
   );

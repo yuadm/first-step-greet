@@ -1690,6 +1690,7 @@ export function ClientCompliancePeriodView({
         initialData={editingSpotCheckData}
         periodIdentifier={selectedPeriod}
         frequency={frequency}
+        clientName={selectedClient?.name}
       />
 
       {/* View Spot Check Dialog */}

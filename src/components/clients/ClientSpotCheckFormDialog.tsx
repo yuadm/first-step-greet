@@ -47,6 +47,7 @@ interface ClientSpotCheckFormDialogProps {
   initialData?: ClientSpotCheckFormData | null;
   periodIdentifier?: string;
   frequency?: string;
+  clientName?: string; // Pre-fill service user name
 }
 
 export default function ClientSpotCheckFormDialog({ 
@@ -55,7 +56,8 @@ export default function ClientSpotCheckFormDialog({
   onSubmit, 
   initialData, 
   periodIdentifier, 
-  frequency 
+  frequency,
+  clientName 
 }: ClientSpotCheckFormDialogProps) {
   const { companySettings } = useCompany();
   const { toast } = useToast();
@@ -259,13 +261,13 @@ export default function ClientSpotCheckFormDialog({
     } else {
       console.log('❌ No initial data, using empty form');
       setForm({
-        serviceUserName: "",
+        serviceUserName: clientName || "", // Auto-fill with client name if provided
         date: "",
         completedBy: "",
         observations: baseObservations,
       });
     }
-  }, [open, initialData, observationItems]);
+  }, [open, initialData, observationItems, clientName]);
 
   const updateField = (key: keyof ClientSpotCheckFormData, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
