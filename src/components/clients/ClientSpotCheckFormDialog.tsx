@@ -19,7 +19,10 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, CheckCircle2, AlertCircle, Info } from "lucide-react";
+import { CalendarIcon, CheckCircle2, AlertCircle, Info, ChevronsUpDown, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 export interface ClientSpotCheckObservation {
   id: string;
@@ -56,6 +59,9 @@ export default function ClientSpotCheckFormDialog({
 }: ClientSpotCheckFormDialogProps) {
   const { companySettings } = useCompany();
   const { toast } = useToast();
+
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
+  const [serviceUserPopoverOpen, setServiceUserPopoverOpen] = useState(false);
 
   const [errors, setErrors] = useState<{
     serviceUserName?: string;
@@ -180,6 +186,28 @@ export default function ClientSpotCheckFormDialog({
     
     setErrors(newErrors);
   };
+
+  // Fetch clients
+  useEffect(() => {
+    const fetchClients = async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching clients:', error);
+        toast({ title: "Error loading clients", variant: "destructive" });
+      } else {
+        setClients(data || []);
+      }
+    };
+
+    if (open) {
+      fetchClients();
+    }
+  }, [open, toast]);
 
   // Initialize form on open and reset on close
   React.useEffect(() => {
@@ -393,15 +421,52 @@ export default function ClientSpotCheckFormDialog({
                   Service User Name *
                   {form.serviceUserName && <CheckCircle2 className="inline h-3 w-3 text-green-600 ml-1" />}
                 </Label>
-                <Input
-                  value={form.serviceUserName}
-                  onChange={(e) => updateField("serviceUserName", e.target.value)}
-                  onBlur={() => validateField("serviceUserName")}
-                  aria-invalid={!!errors.serviceUserName}
-                  className={errors.serviceUserName ? "border-destructive focus-visible:ring-destructive" : 
-                    form.serviceUserName ? "border-green-500" : ""}
-                  placeholder="Enter service user name"
-                />
+                <Popover open={serviceUserPopoverOpen} onOpenChange={setServiceUserPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={serviceUserPopoverOpen}
+                      aria-invalid={!!errors.serviceUserName}
+                      className={cn(
+                        "w-full justify-between",
+                        errors.serviceUserName && "border-destructive focus-visible:ring-destructive",
+                        form.serviceUserName && "border-green-500"
+                      )}
+                    >
+                      {form.serviceUserName || "Select service user..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-popover" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search clients..." />
+                      <CommandList>
+                        <CommandEmpty>No client found.</CommandEmpty>
+                        <CommandGroup>
+                          {clients.map((client) => (
+                            <CommandItem
+                              key={client.id}
+                              value={client.name}
+                              onSelect={(currentValue) => {
+                                updateField("serviceUserName", currentValue === form.serviceUserName ? "" : currentValue);
+                                setServiceUserPopoverOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  form.serviceUserName === client.name ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {client.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {errors.serviceUserName && touchedFields.has("serviceUserName") && (
                   <p className="text-destructive text-xs mt-1 animate-fade-in">{errors.serviceUserName}</p>
                 )}
