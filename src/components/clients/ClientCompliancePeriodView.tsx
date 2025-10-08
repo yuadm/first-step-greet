@@ -129,7 +129,9 @@ export function ClientCompliancePeriodView({
         clientsQuery = clientsQuery.in('branch_id', accessibleBranches);
       }
       
-      const { data: clientsData, error: clientsError } = await clientsQuery.order('name');
+      const { data: clientsData, error: clientsError} = await clientsQuery
+        .eq('is_active', true)
+        .order('name');
 
       if (clientsError) throw clientsError;
 
@@ -908,7 +910,13 @@ export function ClientCompliancePeriodView({
     
     // Filter out clients created after the period end date
     let filtered = clients.filter(client => {
+      // Skip clients without created_at date
+      if (!client.created_at) return false;
+      
       const clientCreatedDate = new Date(client.created_at);
+      // Ensure valid date
+      if (isNaN(clientCreatedDate.getTime())) return false;
+      
       return clientCreatedDate <= periodEndDate;
     });
 
