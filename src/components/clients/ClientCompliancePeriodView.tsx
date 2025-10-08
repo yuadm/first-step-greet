@@ -575,14 +575,10 @@ export function ClientCompliancePeriodView({
         }
       }
 
-      // Set state and wait for it to update
+      // Set state first
+      console.log('🚀 Setting state and opening dialog');
       setSelectedClient(client);
       setEditingSpotCheckData(formData);
-      
-      // Wait for next tick to ensure state has updated
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
-      console.log('🚀 Opening dialog');
       setSpotCheckDialogOpen(true);
       
     } catch (error) {
