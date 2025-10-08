@@ -108,12 +108,13 @@ export default function ClientCompliance() {
   }, [id, complianceType, toast]);
 
   useEffect(() => {
-    if (clientTypeId) {
+    if (clientTypeId && complianceType) {
       fetchComplianceStats();
     }
-  }, [clientTypeId]);
+  }, [clientTypeId, complianceType]);
 
   const getCurrentPeriod = () => {
+    if (!complianceType) return '';
     const now = new Date();
     switch (complianceType.frequency.toLowerCase()) {
       case 'quarterly':
