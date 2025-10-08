@@ -1624,6 +1624,7 @@ export function ClientCompliancePeriodView({
 
       {/* Spot Check Dialog */}
       <ClientSpotCheckFormDialog
+        key={editingSpotCheckData ? 'edit' : 'new'}
         open={spotCheckDialogOpen}
         onOpenChange={(open) => {
           setSpotCheckDialogOpen(open);
