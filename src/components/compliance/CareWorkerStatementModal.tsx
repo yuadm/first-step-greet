@@ -239,10 +239,10 @@ export function CareWorkerStatementModal({
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                 <Command>
-                  <CommandInput placeholder="Search service users..." />
-                  <CommandList>
+                  <CommandInput placeholder="Search service users..." className="h-9" />
+                  <CommandList className="max-h-[300px] overflow-y-auto">
                     <CommandEmpty>No service user found.</CommandEmpty>
                     <CommandGroup>
                       {clients.map((client) => (
@@ -253,6 +253,7 @@ export function CareWorkerStatementModal({
                             handleClientChange(client.id);
                             setClientOpen(false);
                           }}
+                          className="cursor-pointer"
                         >
                           <Check
                             className={cn(
@@ -331,10 +332,10 @@ export function CareWorkerStatementModal({
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                   <Command>
-                    <CommandInput placeholder="Search employees..." />
-                    <CommandList>
+                    <CommandInput placeholder="Search employees..." className="h-9" />
+                    <CommandList className="max-h-[300px] overflow-y-auto">
                       <CommandEmpty>No employee found.</CommandEmpty>
                       <CommandGroup>
                         {employees.map((employee) => (
@@ -345,6 +346,7 @@ export function CareWorkerStatementModal({
                               handleEmployeeChange(employee.id);
                               setEmployeeOpen(false);
                             }}
+                            className="cursor-pointer"
                           >
                             <Check
                               className={cn(
