@@ -17,6 +17,8 @@ interface DashboardData {
   activeProjects: number;
   pendingTasks: number;
   completionRate: number;
+  leavesByBranch?: Record<string, number>;
+  complianceRates?: Record<string, number>;
   departments: Array<{ name: string; count: number; color: string }>;
   recentActivity: Array<{ id: string; type: string; message: string; timestamp: string; user: string }>;
   topPerformers: Array<{ id: string; name: string; score: number; avatar: string; trend: number }>;
@@ -44,11 +46,49 @@ export function Dashboard() {
         .from('employees')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch compliance tasks
-      const { count: tasksCount } = await supabase
-        .from('compliance_period_records')
+      // Fetch total clients
+      const { count: clientsCount } = await supabase
+        .from('clients')
         .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // Fetch pending leaves with branch breakdown
+      const { data: pendingLeaves } = await supabase
+        .from('leave_requests')
+        .select('*, employees!inner(branch)')
         .eq('status', 'pending');
+
+      const leavesByBranch = pendingLeaves?.reduce((acc, leave) => {
+        const branch = leave.employees?.branch || 'Unknown';
+        acc[branch] = (acc[branch] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) || {};
+
+      // Calculate compliance rate by branch
+      const { data: allCompliance } = await supabase
+        .from('compliance_period_records')
+        .select('status, employee_id, employees!compliance_period_records_employee_id_fkey(branch)');
+
+      const complianceByBranch = allCompliance?.reduce((acc, record) => {
+        const branch = (record.employees as any)?.branch || 'Unknown';
+        if (!acc[branch]) {
+          acc[branch] = { total: 0, completed: 0 };
+        }
+        acc[branch].total++;
+        if (record.status === 'completed') {
+          acc[branch].completed++;
+        }
+        return acc;
+      }, {} as Record<string, { total: number; completed: number }>) || {};
+
+      const complianceRates = Object.entries(complianceByBranch).reduce((acc, [branch, data]) => {
+        acc[branch] = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const overallCompletionRate = allCompliance && allCompliance.length > 0
+        ? Math.round((allCompliance.filter(r => r.status === 'completed').length / allCompliance.length) * 100)
+        : 0;
 
       // Fetch document stats
       const { data: documents } = await supabase
@@ -72,9 +112,11 @@ export function Dashboard() {
 
       setData({
         totalEmployees: employeeCount || 0,
-        activeProjects: Math.floor((employeeCount || 0) * 0.3),
-        pendingTasks: tasksCount || 0,
-        completionRate: 87,
+        activeProjects: clientsCount || 0,
+        pendingTasks: pendingLeaves?.length || 0,
+        completionRate: overallCompletionRate,
+        leavesByBranch,
+        complianceRates,
         departments,
         recentActivity: [
           { id: '1', type: 'employee', message: 'New employee onboarded', timestamp: new Date().toISOString(), user: 'Sarah Johnson' },
@@ -141,6 +183,8 @@ export function Dashboard() {
         activeProjects={data.activeProjects}
         pendingTasks={data.pendingTasks}
         completionRate={data.completionRate}
+        leavesByBranch={data.leavesByBranch}
+        complianceRates={data.complianceRates}
       />
 
       {/* Main Content Grid */}

@@ -6,14 +6,30 @@ interface MetricsOverviewProps {
   activeProjects: number;
   pendingTasks: number;
   completionRate: number;
+  leavesByBranch?: Record<string, number>;
+  complianceRates?: Record<string, number>;
 }
 
-export function MetricsOverview({
-  totalEmployees,
-  activeProjects,
-  pendingTasks,
-  completionRate
+export function MetricsOverview({ 
+  totalEmployees, 
+  activeProjects, 
+  pendingTasks, 
+  completionRate,
+  leavesByBranch,
+  complianceRates 
 }: MetricsOverviewProps) {
+  const leaveBreakdown = leavesByBranch 
+    ? Object.entries(leavesByBranch)
+        .map(([branch, count]) => `${branch} ${count}`)
+        .join(', ')
+    : '';
+
+  const complianceBreakdown = complianceRates
+    ? Object.entries(complianceRates)
+        .map(([branch, rate]) => `${branch} ${rate}%`)
+        .join(', ')
+    : '';
+
   const metrics = [
     {
       label: "Total Employees",
@@ -26,7 +42,7 @@ export function MetricsOverview({
       changePositive: true
     },
     {
-      label: "Active Projects",
+      label: "Total Clients",
       value: activeProjects,
       icon: Briefcase,
       color: "from-purple-500 to-pink-500",
@@ -36,14 +52,15 @@ export function MetricsOverview({
       changePositive: true
     },
     {
-      label: "Pending Tasks",
+      label: "Pending Leaves",
       value: pendingTasks,
       icon: CheckCircle2,
       color: "from-orange-500 to-red-500",
       bgColor: "bg-orange-500/10",
       textColor: "text-orange-600",
       change: "-23%",
-      changePositive: true
+      changePositive: true,
+      breakdown: leaveBreakdown
     },
     {
       label: "Completion Rate",
@@ -54,7 +71,8 @@ export function MetricsOverview({
       bgColor: "bg-green-500/10",
       textColor: "text-green-600",
       change: "+5%",
-      changePositive: true
+      changePositive: true,
+      breakdown: complianceBreakdown
     },
   ];
 
@@ -78,6 +96,7 @@ interface MetricCardProps {
   change: string;
   changePositive: boolean;
   index: number;
+  breakdown?: string;
 }
 
 function MetricCard({
@@ -90,7 +109,8 @@ function MetricCard({
   textColor,
   change,
   changePositive,
-  index
+  index,
+  breakdown
 }: MetricCardProps) {
   const [displayValue, setDisplayValue] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -154,6 +174,11 @@ function MetricCard({
           <div className="text-sm text-muted-foreground font-medium">
             {label}
           </div>
+          {breakdown && (
+            <div className="text-xs text-muted-foreground/70 mt-1">
+              {breakdown}
+            </div>
+          )}
         </div>
 
         {/* Mini sparkline */}
