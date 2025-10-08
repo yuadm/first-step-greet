@@ -334,14 +334,15 @@ export function ClientCompliancePeriodView({
       return;
     }
 
-    console.log('Saving spot check with complianceTypeId:', complianceTypeId);
+    console.log('💾 Saving spot check with complianceTypeId:', complianceTypeId);
+    console.log('💾 Editing mode:', !!editingSpotCheckData);
 
     try {
       // Get current user for audit trail
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
-      // Create or update the compliance period record without a pre-fetch to avoid 406/409
+      // Create or update the compliance period record
       const { data: updated, error: updateError } = await supabase
         .from('client_compliance_period_records')
         .update({
@@ -362,6 +363,7 @@ export function ClientCompliancePeriodView({
 
       if (updated && updated.length > 0) {
         complianceRecordId = updated[0].id;
+        console.log('✅ Updated compliance record:', complianceRecordId);
       } else {
         const { data: inserted, error: insertError } = await supabase
           .from('client_compliance_period_records')
@@ -382,28 +384,76 @@ export function ClientCompliancePeriodView({
         if (insertError) throw insertError;
         if (!inserted) throw new Error('Failed to create compliance record');
         complianceRecordId = inserted.id;
+        console.log('✅ Created compliance record:', complianceRecordId);
       }
 
-      // Save the spot check record
-      const { error: spotCheckError } = await supabase
-        .from('client_spot_check_records')
-        .insert({
-          client_id: selectedClient.id,
-          compliance_record_id: complianceRecordId,
-          service_user_name: data.serviceUserName,
-          care_workers: '', // Remove from form but keep for database compatibility
-          date: data.date,
-          time: '', // Remove from form but keep for database compatibility  
-          performed_by: data.completedBy, // Use completedBy value for performed_by field
-          observations: data.observations as any,
-          created_by: userId,
-          updated_by: userId
-        });
+      // Check if we're editing an existing spot check
+      if (editingSpotCheckData) {
+        // Find existing spot check record
+        const { data: existing } = await supabase
+          .from('client_spot_check_records')
+          .select('id')
+          .eq('compliance_record_id', complianceRecordId)
+          .maybeSingle();
 
-      if (spotCheckError) throw spotCheckError;
+        if (existing) {
+          // Update existing record
+          console.log('📝 Updating existing spot check:', existing.id);
+          const { error: updateSpotCheckError } = await supabase
+            .from('client_spot_check_records')
+            .update({
+              service_user_name: data.serviceUserName,
+              date: data.date,
+              performed_by: data.completedBy,
+              observations: data.observations as any,
+              updated_by: userId
+            })
+            .eq('id', existing.id);
+
+          if (updateSpotCheckError) throw updateSpotCheckError;
+        } else {
+          // Insert new record if not found
+          console.log('➕ Creating new spot check (editing mode but no existing record)');
+          const { error: insertSpotCheckError } = await supabase
+            .from('client_spot_check_records')
+            .insert({
+              client_id: selectedClient.id,
+              compliance_record_id: complianceRecordId,
+              service_user_name: data.serviceUserName,
+              care_workers: '',
+              date: data.date,
+              time: '',
+              performed_by: data.completedBy,
+              observations: data.observations as any,
+              created_by: userId,
+              updated_by: userId
+            });
+
+          if (insertSpotCheckError) throw insertSpotCheckError;
+        }
+      } else {
+        // Insert new spot check record
+        console.log('➕ Creating new spot check');
+        const { error: spotCheckError } = await supabase
+          .from('client_spot_check_records')
+          .insert({
+            client_id: selectedClient.id,
+            compliance_record_id: complianceRecordId,
+            service_user_name: data.serviceUserName,
+            care_workers: '',
+            date: data.date,
+            time: '',
+            performed_by: data.completedBy,
+            observations: data.observations as any,
+            created_by: userId,
+            updated_by: userId
+          });
+
+        if (spotCheckError) throw spotCheckError;
+      }
 
       toast({
-        title: "Spot check completed",
+        title: editingSpotCheckData ? "Spot check updated" : "Spot check completed",
         description: `Spot check for ${selectedClient.name} has been saved successfully.`,
       });
 
@@ -412,7 +462,7 @@ export function ClientCompliancePeriodView({
       setEditingSpotCheckData(null);
       fetchData();
     } catch (error) {
-      console.error('Error saving spot check:', error);
+      console.error('❌ Error saving spot check:', error);
       toast({
         title: "Error saving spot check",
         description: "Could not save the spot check. Please try again.",
