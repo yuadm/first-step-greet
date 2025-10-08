@@ -1000,7 +1000,7 @@ export function ClientCompliancePeriodView({
         return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
       }
     });
-  }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, sortField, sortDirection]);
+  }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, frequency, sortField, sortDirection]);
 
   // Pagination calculations
   const totalItems = filteredAndSortedClients.length;
