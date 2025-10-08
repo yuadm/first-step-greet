@@ -142,10 +142,10 @@ export default function ClientCompliance() {
   }, [complianceType, toast]);
 
   useEffect(() => {
-    if (clientTypeId) {
+    if (clientTypeId && complianceType) {
       fetchComplianceStats();
     }
-  }, [clientTypeId]);
+  }, [clientTypeId, complianceType]);
 
   const getCurrentPeriod = () => {
     if (!complianceType) return '';
@@ -270,7 +270,7 @@ export default function ClientCompliance() {
     }
   };
 
-  if (!id || !complianceType) {
+  if (!id) {
     return (
       <MainLayout>
         <div className="space-y-6">
@@ -291,7 +291,7 @@ export default function ClientCompliance() {
     );
   }
 
-  if (loading) {
+  if (loading || !complianceType) {
     return (
       <MainLayout>
         <div className="space-y-6 animate-pulse">
