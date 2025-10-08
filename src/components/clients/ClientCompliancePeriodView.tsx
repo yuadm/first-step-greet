@@ -162,23 +162,26 @@ export function ClientCompliancePeriodView({
 
   const getCurrentPeriod = () => {
     const now = new Date();
-    switch (frequency.toLowerCase()) {
+    const f = (frequency || '').toLowerCase().trim();
+    switch (f) {
       case 'quarterly':
         return `${now.getFullYear()}-Q${Math.ceil((now.getMonth() + 1) / 3)}`;
       case 'annual':
         return now.getFullYear().toString();
       case 'monthly':
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      case 'weekly':
+      case 'weekly': {
         // Calculate week number (ISO week)
         const startOfYear = new Date(now.getFullYear(), 0, 1);
         const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
         const weekNum = Math.ceil((days + startOfYear.getDay() + 1) / 7);
         return `${now.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+      }
       case 'bi-annual':
-      case 'biannual':
+      case 'biannual': {
         const half = now.getMonth() < 6 ? 1 : 2;
         return `${now.getFullYear()}-H${half}`;
+      }
       default:
         return now.getFullYear().toString();
     }
@@ -210,7 +213,8 @@ export function ClientCompliancePeriodView({
       const shouldShowDownload = yearsOld >= 1; // Changed from >= 5 to >= 1 for easier testing
       const archiveDueYear = year + 6;
       
-      switch (frequency.toLowerCase()) {
+      const f = (frequency || '').toLowerCase().trim();
+      switch (f) {
         case 'quarterly':
           if (year === selectedYear) {
             const currentQuarter = year === currentYear ? Math.ceil((new Date().getMonth() + 1) / 3) : 4;
