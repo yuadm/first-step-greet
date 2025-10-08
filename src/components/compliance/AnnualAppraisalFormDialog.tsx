@@ -49,7 +49,7 @@ interface AnnualAppraisalFormDialogProps {
 export default function AnnualAppraisalFormDialog({ open, onOpenChange, onSubmit, initialData }: AnnualAppraisalFormDialogProps) {
   const [errors, setErrors] = useState<Partial<Record<keyof AnnualAppraisalFormData, string>>>({});
   const [form, setForm] = useState<AnnualAppraisalFormData>({
-    job_title: "",
+    job_title: "Support Worker/Carer",
     appraisal_date: "",
     ratings: {
       clientCare: undefined as any,

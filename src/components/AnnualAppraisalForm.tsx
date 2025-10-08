@@ -156,7 +156,7 @@ export default function AnnualAppraisalForm() {
 
   const defaultValues: FormValues = useMemo(
     () => ({
-      job_title: "",
+      job_title: "Support Worker/Carer",
       appraisal_date: new Date(),
       ratings: Object.fromEntries(questions.map((q) => [q.id, undefined])) as any,
       comments_manager: "",
