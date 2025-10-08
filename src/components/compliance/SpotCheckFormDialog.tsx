@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
+import React, { useMemo, useState, useEffect } from "react";
+import { Check, X, ChevronsUpDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { format } from "date-fns";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 export interface SpotCheckObservation {
   id: string;
@@ -48,6 +51,12 @@ export default function SpotCheckFormDialog({ open, onOpenChange, onSubmit, init
   const { companySettings } = useCompany();
   const { toast } = useToast();
 
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
+  const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
+  const [clientSearchOpen, setClientSearchOpen] = useState(false);
+  const [employee1SearchOpen, setEmployee1SearchOpen] = useState(false);
+  const [employee2SearchOpen, setEmployee2SearchOpen] = useState(false);
+
   const [errors, setErrors] = useState<{
     serviceUserName?: string;
     careWorker1?: string;
@@ -68,6 +77,27 @@ export default function SpotCheckFormDialog({ open, onOpenChange, onSubmit, init
     carriedBy: "",
     observations: [],
   });
+
+  // Fetch clients and employees
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [clientsRes, employeesRes] = await Promise.all([
+          supabase.from('clients').select('id, name').order('name'),
+          supabase.from('employees').select('id, name').order('name')
+        ]);
+        
+        if (clientsRes.data) setClients(clientsRes.data);
+        if (employeesRes.data) setEmployees(employeesRes.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    
+    if (open) {
+      fetchData();
+    }
+  }, [open]);
 
   const observationItems = useMemo<SpotCheckObservation[]>(
     () => [
@@ -195,29 +225,149 @@ React.useEffect(() => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label>Service User's Name</Label>
-              <Input
-                value={form.serviceUserName}
-                onChange={(e) => updateField("serviceUserName", e.target.value)}
-                aria-invalid={!!errors.serviceUserName}
-                className={errors.serviceUserName ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
+              <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={clientSearchOpen}
+                    aria-invalid={!!errors.serviceUserName}
+                    className={cn(
+                      "w-full justify-between",
+                      errors.serviceUserName && "border-destructive"
+                    )}
+                  >
+                    {form.serviceUserName || "Select client..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-popover" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search clients..." />
+                    <CommandList>
+                      <CommandEmpty>No client found.</CommandEmpty>
+                      <CommandGroup>
+                        {clients.map((client) => (
+                          <CommandItem
+                            key={client.id}
+                            value={client.name}
+                            onSelect={(currentValue) => {
+                              updateField("serviceUserName", currentValue === form.serviceUserName ? "" : currentValue);
+                              setClientSearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                form.serviceUserName === client.name ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {client.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               {errors.serviceUserName && <p className="text-destructive text-xs mt-1">{errors.serviceUserName}</p>}
             </div>
+            
             <div className="space-y-1">
               <Label>Care Worker(s) attending</Label>
-              <Input
-                value={form.careWorker1}
-                onChange={(e) => updateField("careWorker1", e.target.value)}
-                placeholder="Name 1"
-                aria-invalid={!!errors.careWorker1}
-                className={errors.careWorker1 ? "border-destructive focus-visible:ring-destructive" : ""}
-              />
+              <Popover open={employee1SearchOpen} onOpenChange={setEmployee1SearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={employee1SearchOpen}
+                    aria-invalid={!!errors.careWorker1}
+                    className={cn(
+                      "w-full justify-between",
+                      errors.careWorker1 && "border-destructive"
+                    )}
+                  >
+                    {form.careWorker1 || "Select care worker..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-popover" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search employees..." />
+                    <CommandList>
+                      <CommandEmpty>No employee found.</CommandEmpty>
+                      <CommandGroup>
+                        {employees.map((employee) => (
+                          <CommandItem
+                            key={employee.id}
+                            value={employee.name}
+                            onSelect={(currentValue) => {
+                              updateField("careWorker1", currentValue === form.careWorker1 ? "" : currentValue);
+                              setEmployee1SearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                form.careWorker1 === employee.name ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {employee.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               {errors.careWorker1 && <p className="text-destructive text-xs mt-1">{errors.careWorker1}</p>}
             </div>
+            
             <div className="space-y-1">
-              <Label>Care Worker(s) attending</Label>
-              <Input value={form.careWorker2} onChange={(e) => updateField("careWorker2", e.target.value)} placeholder="Name 2 (optional)" />
+              <Label>Care Worker(s) attending (optional)</Label>
+              <Popover open={employee2SearchOpen} onOpenChange={setEmployee2SearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={employee2SearchOpen}
+                    className="w-full justify-between"
+                  >
+                    {form.careWorker2 || "Select care worker..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-popover" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search employees..." />
+                    <CommandList>
+                      <CommandEmpty>No employee found.</CommandEmpty>
+                      <CommandGroup>
+                        {employees.map((employee) => (
+                          <CommandItem
+                            key={employee.id}
+                            value={employee.name}
+                            onSelect={(currentValue) => {
+                              updateField("careWorker2", currentValue === form.careWorker2 ? "" : currentValue);
+                              setEmployee2SearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                form.careWorker2 === employee.name ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {employee.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
+            
 <div className="space-y-1">
   <Label>Date of spot check</Label>
   <Popover>
