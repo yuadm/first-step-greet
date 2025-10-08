@@ -3,56 +3,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Canvas as FabricCanvas, Circle, FabricText, FabricImage, Rect } from "fabric";
 
-// Body part regions with their names and approximate click areas (adjusted for dual-view body diagram)
-// Front view on the left, back view on the right
+// Body part regions with their names and approximate click areas (adjusted for the body diagram image)
 const BODY_PARTS = [
-  // Front view (left side)
-  { name: "Head (Front)", x: 200, y: 60, region: { minX: 170, maxX: 230, minY: 30, maxY: 90 } },
-  { name: "Neck (Front)", x: 200, y: 100, region: { minX: 185, maxX: 215, minY: 90, maxY: 120 } },
-  { name: "Left Shoulder (Front)", x: 160, y: 130, region: { minX: 140, maxX: 180, minY: 115, maxY: 150 } },
-  { name: "Right Shoulder (Front)", x: 240, y: 130, region: { minX: 220, maxX: 260, minY: 115, maxY: 150 } },
-  { name: "Left Upper Arm (Front)", x: 130, y: 180, region: { minX: 110, maxX: 150, minY: 150, maxY: 210 } },
-  { name: "Right Upper Arm (Front)", x: 270, y: 180, region: { minX: 250, maxX: 290, minY: 150, maxY: 210 } },
-  { name: "Chest", x: 200, y: 165, region: { minX: 175, maxX: 225, minY: 145, maxY: 195 } },
-  { name: "Abdomen", x: 200, y: 215, region: { minX: 175, maxX: 225, minY: 195, maxY: 245 } },
-  { name: "Left Forearm (Front)", x: 110, y: 240, region: { minX: 90, maxX: 135, minY: 210, maxY: 270 } },
-  { name: "Right Forearm (Front)", x: 290, y: 240, region: { minX: 265, maxX: 310, minY: 210, maxY: 270 } },
-  { name: "Left Hand (Front)", x: 95, y: 285, region: { minX: 75, maxX: 120, minY: 270, maxY: 310 } },
-  { name: "Right Hand (Front)", x: 305, y: 285, region: { minX: 285, maxX: 325, minY: 270, maxY: 310 } },
-  { name: "Left Hip (Front)", x: 180, y: 260, region: { minX: 165, maxX: 195, minY: 245, maxY: 280 } },
-  { name: "Right Hip (Front)", x: 220, y: 260, region: { minX: 205, maxX: 235, minY: 245, maxY: 280 } },
-  { name: "Left Thigh (Front)", x: 175, y: 330, region: { minX: 160, maxX: 195, minY: 280, maxY: 380 } },
-  { name: "Right Thigh (Front)", x: 225, y: 330, region: { minX: 205, maxX: 240, minY: 280, maxY: 380 } },
-  { name: "Left Knee (Front)", x: 175, y: 395, region: { minX: 160, maxX: 195, minY: 380, maxY: 420 } },
-  { name: "Right Knee (Front)", x: 225, y: 395, region: { minX: 205, maxX: 240, minY: 380, maxY: 420 } },
-  { name: "Left Shin (Front)", x: 175, y: 460, region: { minX: 160, maxX: 195, minY: 420, maxY: 495 } },
-  { name: "Right Shin (Front)", x: 225, y: 460, region: { minX: 205, maxX: 240, minY: 420, maxY: 495 } },
-  { name: "Left Foot (Front)", x: 175, y: 515, region: { minX: 155, maxX: 195, minY: 495, maxY: 540 } },
-  { name: "Right Foot (Front)", x: 225, y: 515, region: { minX: 205, maxX: 245, minY: 495, maxY: 540 } },
-  
-  // Back view (right side)
-  { name: "Head (Back)", x: 600, y: 60, region: { minX: 570, maxX: 630, minY: 30, maxY: 90 } },
-  { name: "Neck (Back)", x: 600, y: 100, region: { minX: 585, maxX: 615, minY: 90, maxY: 120 } },
-  { name: "Left Shoulder (Back)", x: 560, y: 130, region: { minX: 540, maxX: 580, minY: 115, maxY: 150 } },
-  { name: "Right Shoulder (Back)", x: 640, y: 130, region: { minX: 620, maxX: 660, minY: 115, maxY: 150 } },
-  { name: "Left Upper Arm (Back)", x: 530, y: 180, region: { minX: 510, maxX: 550, minY: 150, maxY: 210 } },
-  { name: "Right Upper Arm (Back)", x: 670, y: 180, region: { minX: 650, maxX: 690, minY: 150, maxY: 210 } },
-  { name: "Upper Back", x: 600, y: 165, region: { minX: 575, maxX: 625, minY: 145, maxY: 195 } },
-  { name: "Lower Back", x: 600, y: 215, region: { minX: 575, maxX: 625, minY: 195, maxY: 245 } },
-  { name: "Left Forearm (Back)", x: 510, y: 240, region: { minX: 490, maxX: 535, minY: 210, maxY: 270 } },
-  { name: "Right Forearm (Back)", x: 690, y: 240, region: { minX: 665, maxX: 710, minY: 210, maxY: 270 } },
-  { name: "Left Hand (Back)", x: 495, y: 285, region: { minX: 475, maxX: 520, minY: 270, maxY: 310 } },
-  { name: "Right Hand (Back)", x: 705, y: 285, region: { minX: 685, maxX: 725, minY: 270, maxY: 310 } },
-  { name: "Left Buttock", x: 580, y: 260, region: { minX: 565, maxX: 595, minY: 245, maxY: 280 } },
-  { name: "Right Buttock", x: 620, y: 260, region: { minX: 605, maxX: 635, minY: 245, maxY: 280 } },
-  { name: "Left Thigh (Back)", x: 575, y: 330, region: { minX: 560, maxX: 595, minY: 280, maxY: 380 } },
-  { name: "Right Thigh (Back)", x: 625, y: 330, region: { minX: 605, maxX: 640, minY: 280, maxY: 380 } },
-  { name: "Left Knee (Back)", x: 575, y: 395, region: { minX: 560, maxX: 595, minY: 380, maxY: 420 } },
-  { name: "Right Knee (Back)", x: 625, y: 395, region: { minX: 605, maxX: 640, minY: 380, maxY: 420 } },
-  { name: "Left Calf", x: 575, y: 460, region: { minX: 560, maxX: 595, minY: 420, maxY: 495 } },
-  { name: "Right Calf", x: 625, y: 460, region: { minX: 605, maxX: 640, minY: 420, maxY: 495 } },
-  { name: "Left Foot (Back)", x: 575, y: 515, region: { minX: 555, maxX: 595, minY: 495, maxY: 540 } },
-  { name: "Right Foot (Back)", x: 625, y: 515, region: { minX: 605, maxX: 645, minY: 495, maxY: 540 } },
+  { name: "Head", x: 200, y: 60, region: { minX: 180, maxX: 220, minY: 40, maxY: 80 } },
+  { name: "Neck", x: 200, y: 90, region: { minX: 190, maxX: 210, minY: 80, maxY: 110 } },
+  { name: "Left Shoulder", x: 160, y: 120, region: { minX: 140, maxX: 180, minY: 110, maxY: 140 } },
+  { name: "Right Shoulder", x: 240, y: 120, region: { minX: 220, maxX: 260, minY: 110, maxY: 140 } },
+  { name: "Left Arm", x: 120, y: 160, region: { minX: 100, maxX: 150, minY: 140, maxY: 200 } },
+  { name: "Right Arm", x: 280, y: 160, region: { minX: 250, maxX: 300, minY: 140, maxY: 200 } },
+  { name: "Chest", x: 200, y: 150, region: { minX: 180, maxX: 220, minY: 130, maxY: 180 } },
+  { name: "Abdomen", x: 200, y: 200, region: { minX: 180, maxX: 220, minY: 180, maxY: 230 } },
+  { name: "Left Hand", x: 90, y: 210, region: { minX: 80, maxX: 110, minY: 200, maxY: 230 } },
+  { name: "Right Hand", x: 310, y: 210, region: { minX: 290, maxX: 320, minY: 200, maxY: 230 } },
+  { name: "Left Hip", x: 180, y: 240, region: { minX: 170, maxX: 190, minY: 230, maxY: 260 } },
+  { name: "Right Hip", x: 220, y: 240, region: { minX: 210, maxX: 230, minY: 230, maxY: 260 } },
+  { name: "Left Thigh", x: 180, y: 300, region: { minX: 170, maxX: 200, minY: 260, maxY: 340 } },
+  { name: "Right Thigh", x: 220, y: 300, region: { minX: 200, maxX: 230, minY: 260, maxY: 340 } },
+  { name: "Left Knee", x: 180, y: 360, region: { minX: 170, maxX: 200, minY: 340, maxY: 380 } },
+  { name: "Right Knee", x: 220, y: 360, region: { minX: 200, maxX: 230, minY: 340, maxY: 380 } },
+  { name: "Left Shin", x: 180, y: 420, region: { minX: 170, maxX: 200, minY: 380, maxY: 460 } },
+  { name: "Right Shin", x: 220, y: 420, region: { minX: 200, maxX: 230, minY: 380, maxY: 460 } },
+  { name: "Left Foot", x: 180, y: 480, region: { minX: 170, maxX: 200, minY: 460, maxY: 500 } },
+  { name: "Right Foot", x: 220, y: 480, region: { minX: 200, maxX: 230, minY: 460, maxY: 500 } },
 ];
 
 interface BodyMarker {
@@ -84,7 +56,7 @@ export default function BodyDiagramModal({
     if (!canvasRef.current || !open) return;
 
     const canvas = new FabricCanvas(canvasRef.current, {
-      width: 800,
+      width: 400,
       height: 550,
       backgroundColor: "#ffffff",
     });
@@ -92,24 +64,29 @@ export default function BodyDiagramModal({
     // Load the body diagram image
     const loadBodyDiagram = async () => {
       try {
-        console.log('Loading body diagram from /body-diagram.png');
-        
+        // Try to load the image first with better error handling
         FabricImage.fromURL('/body-diagram.png', {
           crossOrigin: 'anonymous'
         }).then((img) => {
-          console.log('Image loaded successfully', img.width, img.height);
-          
-          // Scale the image to fit the canvas
-          const scale = Math.min(
-            canvas.width! / img.width!,
-            canvas.height! / img.height!
-          );
+          if (!img || !img.width || !img.height) {
+            console.log('Invalid image, using fallback');
+            drawFallbackBodyOutline(canvas);
+            initialMarkers.forEach(marker => {
+              addMarkerToCanvas(canvas, marker.x, marker.y, marker.bodyPart);
+            });
+            return;
+          }
+
+          // Scale the image to fit the canvas while maintaining aspect ratio
+          const scaleX = canvas.width! / img.width!;
+          const scaleY = canvas.height! / img.height!;
+          const scale = Math.min(scaleX, scaleY);
           
           img.set({
             scaleX: scale,
             scaleY: scale,
-            left: 0,
-            top: 0,
+            left: (canvas.width! - img.width! * scale) / 2,
+            top: (canvas.height! - img.height! * scale) / 2,
             selectable: false,
             evented: false,
           });
@@ -118,14 +95,13 @@ export default function BodyDiagramModal({
           canvas.sendObjectToBack(img);
           canvas.renderAll();
           
-          console.log('Image added to canvas');
-          
           // Add initial markers after the image is loaded
           initialMarkers.forEach(marker => {
             addMarkerToCanvas(canvas, marker.x, marker.y, marker.bodyPart);
           });
         }).catch((error) => {
-          console.error('Failed to load body diagram:', error);
+          console.error('Error loading image from URL:', error);
+          console.log('Using fallback body outline');
           drawFallbackBodyOutline(canvas);
           
           // Add initial markers
@@ -146,76 +122,53 @@ export default function BodyDiagramModal({
 
     const drawFallbackBodyOutline = (canvas: FabricCanvas) => {
       console.log('Drawing fallback body outline');
-      
-      // Front view (left side)
-      // Head
+      // Fallback basic body outline with better visibility
+      // Head (circle)
       canvas.add(new Circle({ 
         left: 185, top: 45, radius: 25, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
-        selectable: false, evented: false 
-      }));
-      // Body
-      canvas.add(new Rect({ 
-        left: 175, top: 100, width: 50, height: 100, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
-        selectable: false, evented: false 
-      }));
-      // Arms
-      canvas.add(new Rect({ 
-        left: 130, top: 120, width: 40, height: 80, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
-        selectable: false, evented: false 
-      }));
-      canvas.add(new Rect({ 
-        left: 230, top: 120, width: 40, height: 80, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
-        selectable: false, evented: false 
-      }));
-      // Legs
-      canvas.add(new Rect({ 
-        left: 170, top: 210, width: 20, height: 100, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
-        selectable: false, evented: false 
-      }));
-      canvas.add(new Rect({ 
-        left: 210, top: 210, width: 20, height: 100, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
         selectable: false, evented: false 
       }));
       
-      // Back view (right side)
-      // Head
-      canvas.add(new Circle({ 
-        left: 585, top: 45, radius: 25, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
+      // Neck
+      canvas.add(new Rect({ 
+        left: 192, top: 75, width: 16, height: 20, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
         selectable: false, evented: false 
       }));
-      // Body
+      
+      // Torso (rectangle)
       canvas.add(new Rect({ 
-        left: 575, top: 100, width: 50, height: 100, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
+        left: 170, top: 100, width: 60, height: 120, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
         selectable: false, evented: false 
       }));
-      // Arms
+      
+      // Left Arm
       canvas.add(new Rect({ 
-        left: 530, top: 120, width: 40, height: 80, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
+        left: 120, top: 110, width: 50, height: 12, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
         selectable: false, evented: false 
       }));
+      
+      // Right Arm
       canvas.add(new Rect({ 
-        left: 630, top: 120, width: 40, height: 80, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
+        left: 230, top: 110, width: 50, height: 12, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
         selectable: false, evented: false 
       }));
-      // Legs
+      
+      // Left Leg
       canvas.add(new Rect({ 
-        left: 570, top: 210, width: 20, height: 100, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
+        left: 175, top: 220, width: 18, height: 120, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
         selectable: false, evented: false 
       }));
+      
+      // Right Leg
       canvas.add(new Rect({ 
-        left: 610, top: 210, width: 20, height: 100, 
-        fill: "transparent", stroke: "#666", strokeWidth: 2, 
+        left: 207, top: 220, width: 18, height: 120, 
+        fill: "transparent", stroke: "#555", strokeWidth: 3, 
         selectable: false, evented: false 
       }));
       
@@ -335,7 +288,7 @@ export default function BodyDiagramModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
