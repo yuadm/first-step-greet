@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { MapPin } from "lucide-react";
 
-// World topojson - using a different, more reliable CDN
-const geoUrl = "https://unpkg.com/world-atlas@2.0.2/countries-110m.json";
+// World topojson - using a reliable CDN
+const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 type CountryCounts = Record<string, number>;
 
@@ -111,7 +111,9 @@ export function DocumentCountryMap() {
               projectionConfig={{ 
                 scale: 147,
                 center: [0, 20]
-              }} 
+              }}
+              width={800}
+              height={400}
               style={{ width: "100%", height: "100%" }}
             >
               <Geographies 
