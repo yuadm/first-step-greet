@@ -10,6 +10,7 @@ import { DateTextPicker } from "@/components/ui/date-text-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useDocumentActions } from "@/hooks/queries/useDocumentQueries";
 import countries from "world-countries";
 import { determineNationalityStatus } from "@/utils/nationalityStatus";
 
@@ -89,6 +90,7 @@ export function DocumentEditDialog({
   const [sponsored, setSponsored] = useState(false);
   const [twentyHours, setTwentyHours] = useState(false);
   const { toast } = useToast();
+  const { updateDocument } = useDocumentActions();
 
   // Helper function to check if a string is a valid date
   const isValidDate = (dateStr: string) => {
@@ -184,6 +186,8 @@ export function DocumentEditDialog({
     }
 
     try {
+      console.log('Updating document ID:', document.id, 'with data:', editDocument);
+
       // Handle both Date and string values for dates
       let status = 'valid';
       let expiryDateString = '';
@@ -228,39 +232,27 @@ export function DocumentEditDialog({
         if (updateError) throw updateError;
       }
 
-      const { error } = await supabase
-        .from('document_tracker')
-        .update({
-          employee_id: editDocument.employee_id,
-          document_type_id: editDocument.document_type_id,
-          branch_id: editDocument.branch_id,
-          document_number: editDocument.document_number || null,
-          issue_date: issueDateString || null,
-          expiry_date: expiryDateString,
-          country: editDocument.country || null,
-          nationality_status: editDocument.nationality_status || null,
-          notes: editDocument.notes || null,
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', document.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Document updated",
-        description: "The document has been updated successfully.",
+      // Use mutation hook to update document
+      await updateDocument.mutateAsync({
+        id: document.id,
+        employee_id: editDocument.employee_id,
+        document_type_id: editDocument.document_type_id,
+        branch_id: editDocument.branch_id,
+        document_number: editDocument.document_number || null,
+        issue_date: issueDateString || null,
+        expiry_date: expiryDateString,
+        country: editDocument.country || null,
+        nationality_status: editDocument.nationality_status || null,
+        notes: editDocument.notes || null,
+        status
       });
 
+      console.log('Document updated successfully via mutation hook');
       onSave();
       onClose();
     } catch (error) {
       console.error('Error updating document:', error);
-      toast({
-        title: "Error updating document",
-        description: "Could not update document. Please try again.",
-        variant: "destructive",
-      });
+      // Error toast is already handled by the mutation hook
     }
   };
 
