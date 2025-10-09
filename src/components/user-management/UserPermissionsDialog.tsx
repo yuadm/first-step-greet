@@ -1,17 +1,12 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Key, Save, Shield, ChevronDown, Search, CheckCircle2, XCircle, MinusCircle, Lock, Unlock, Building2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Key, Save, Shield } from "lucide-react";
 
 interface UserWithRole {
   id: string;
@@ -42,8 +37,6 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
   const [loading, setLoading] = useState(false);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [branchAccess, setBranchAccess] = useState<BranchAccess[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const pageModules = [
@@ -245,41 +238,10 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
     ));
   };
 
-  const toggleSection = (key: string) => {
-    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const getModuleStatus = (moduleKey: string) => {
-    const actions = pageModules.find(m => m.key === moduleKey)?.actions || [];
-    const actionPerms = actions.map(action => 
-      permissions.find(p => p.key === `${moduleKey}:${action}` && p.type === 'page_action')?.granted ?? true
-    );
-    
-    const grantedCount = actionPerms.filter(Boolean).length;
-    if (grantedCount === actions.length) return 'full';
-    if (grantedCount === 0) return 'none';
-    return 'partial';
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'full':
-        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20"><CheckCircle2 className="w-3 h-3 mr-1" />Full Access</Badge>;
-      case 'partial':
-        return <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20"><MinusCircle className="w-3 h-3 mr-1" />Partial Access</Badge>;
-      case 'none':
-        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20"><XCircle className="w-3 h-3 mr-1" />No Access</Badge>;
-    }
-  };
-
-  const filteredModules = pageModules.filter(module =>
-    module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    module.key.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const savePermissions = async () => {
     setLoading(true);
     try {
+      // Save page and feature permissions
       for (const permission of permissions) {
         const { error: upsertError } = await supabase
           .from('user_permissions')
@@ -296,6 +258,8 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
         if (upsertError) throw upsertError;
       }
 
+      // Save branch access permissions
+      // First, remove all existing branch access for this user
       const { error: deleteError } = await supabase
         .from('user_branch_access')
         .delete()
@@ -303,6 +267,7 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
 
       if (deleteError) throw deleteError;
 
+      // Then, insert new branch access records for branches with access
       const branchesToInsert = branchAccess
         .filter(branch => branch.hasAccess)
         .map(branch => ({
@@ -340,263 +305,162 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full group hover:border-primary/50 transition-all">
-          <Shield className="w-4 h-4 mr-2 group-hover:text-primary transition-colors" />
-          Manage Permissions
+        <Button variant="outline" size="sm" className="hover:bg-primary/10 transition-colors">
+          <Key className="w-4 h-4 mr-2" />
+          Permissions
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-6xl h-[85vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-br from-background to-muted/20 shrink-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center border border-primary/20">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <DialogTitle className="text-2xl font-bold mb-1">Permission Control</DialogTitle>
-                <div className="flex items-center gap-2 text-sm">
-                  <p className="font-medium text-foreground">{user.email}</p>
-                  <Separator orientation="vertical" className="h-4" />
-                  <Badge variant="secondary" className="font-normal">
-                    {user.role}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </div>
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-t-lg -z-10"></div>
+          <DialogTitle className="text-2xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            Manage Permissions
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground">{user.email}</p>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden px-6 min-h-0">
-          <Tabs defaultValue="pages" className="w-full h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3 mb-6 h-12 bg-muted/50 p-1">
-              <TabsTrigger value="pages" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                <Lock className="w-4 h-4" />
-                <span className="font-medium">Page Access</span>
-                <Badge variant="outline" className="ml-1 text-xs">{pageModules.length}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="actions" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                <Key className="w-4 h-4" />
-                <span className="font-medium">Actions</span>
-                <Badge variant="outline" className="ml-1 text-xs">
-                  {pageModules.reduce((acc, m) => acc + m.actions.length, 0)}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="branches" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                <Building2 className="w-4 h-4" />
-                <span className="font-medium">Branches</span>
-                <Badge variant="outline" className="ml-1 text-xs">{branchAccess.length}</Badge>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Page Access Tab */}
-            <TabsContent value="pages" className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <div className="space-y-4 h-full flex flex-col min-h-0">
-                <div className="relative shrink-0">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search pages..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-11 bg-muted/30 border-muted"
-                  />
+        <div className="space-y-6">
+          {/* Page Access Permissions */}
+          <Card className="card-premium border-primary/20">
+            <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Key className="w-4 h-4 text-primary" />
                 </div>
-
-                <ScrollArea className="flex-1 min-h-0">
-                  <div className="grid grid-cols-2 gap-3 pr-4 pb-4">
-                    {filteredModules.map((module) => {
-                      const pageAccessPermission = permissions.find(p => 
-                        p.type === 'page_access' && p.key === module.path
-                      );
-                      const permIndex = permissions.findIndex(p => 
-                        p.type === 'page_access' && p.key === module.path
-                      );
-                      
-                      if (!pageAccessPermission) return null;
-                      
-                      return (
-                        <div 
-                          key={`page-${module.key}`} 
-                          className="group relative flex items-center justify-between p-4 rounded-xl border-2 bg-card hover:border-primary/30 hover:shadow-md transition-all duration-200"
-                        >
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                              pageAccessPermission.granted 
-                                ? 'bg-primary/10 text-primary' 
-                                : 'bg-muted text-muted-foreground'
-                            }`}>
-                              {pageAccessPermission.granted ? (
-                                <Unlock className="w-5 h-5" />
-                              ) : (
-                                <Lock className="w-5 h-5" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <Label 
-                                htmlFor={`page-access-${module.key}`}
-                                className="text-sm font-semibold cursor-pointer block mb-0.5"
-                              >
-                                {module.name}
-                              </Label>
-                              <p className="text-xs text-muted-foreground font-mono">{module.path}</p>
-                            </div>
-                          </div>
-                          <Switch
-                            id={`page-access-${module.key}`}
-                            checked={pageAccessPermission.granted}
-                            onCheckedChange={(checked) => handlePermissionChange(permIndex, checked)}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              </div>
-            </TabsContent>
-
-            {/* Actions Tab */}
-            <TabsContent value="actions" className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <div className="space-y-4 h-full flex flex-col min-h-0">
-                <div className="relative shrink-0">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search modules..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-11 bg-muted/30 border-muted"
-                  />
-                </div>
-
-                <ScrollArea className="flex-1 min-h-0">
-                  <div className="space-y-3 pr-4 pb-4">
-                    {filteredModules.map((module) => {
-                      const pageAccessPermission = permissions.find(p => 
-                        p.type === 'page_access' && p.key === module.path
-                      );
-                      const hasPageAccess = pageAccessPermission?.granted ?? true;
-                      const status = getModuleStatus(module.key);
-                      const isOpen = openSections[module.key] ?? false;
-                      
-                      return (
-                        <Collapsible
-                          key={module.key}
-                          open={isOpen}
-                          onOpenChange={() => toggleSection(module.key)}
-                          className="border-2 rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-all"
-                        >
-                          <CollapsibleTrigger className="w-full p-4 hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
-                                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                                </div>
-                                <div className="text-left">
-                                  <p className="font-semibold text-base">{module.name}</p>
-                                  <p className="text-xs text-muted-foreground font-mono">{module.path}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {getStatusBadge(status)}
-                                <Badge variant="outline" className="text-xs">{module.actions.length} actions</Badge>
-                              </div>
-                            </div>
-                            {!hasPageAccess && (
-                              <div className="mt-3 flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20">
-                                <XCircle className="w-3.5 h-3.5" />
-                                Page access disabled - Enable page access first
-                              </div>
-                            )}
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <Separator />
-                            <div className="p-4 bg-muted/20">
-                              <div className="grid grid-cols-2 gap-2.5">
-                                {module.actions.map((action) => {
-                                  const permKey = `${module.key}:${action}`;
-                                  const permission = permissions.find(p => p.key === permKey && p.type === 'page_action');
-                                  const permIndex = permissions.findIndex(p => p.key === permKey && p.type === 'page_action');
-                                  
-                                  if (!permission) return null;
-                                  
-                                  return (
-                                    <div 
-                                      key={action} 
-                                      className="flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/30 transition-colors"
-                                    >
-                                      <Label 
-                                        htmlFor={`${module.key}-${action}`}
-                                        className="text-sm capitalize cursor-pointer flex-1 font-medium"
-                                      >
-                                        {action.replace(/-/g, ' ')}
-                                      </Label>
-                                      <Switch
-                                        id={`${module.key}-${action}`}
-                                        checked={permission.granted}
-                                        disabled={!hasPageAccess}
-                                        onCheckedChange={(checked) => handlePermissionChange(permIndex, checked)}
-                                      />
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              </div>
-            </TabsContent>
-
-            {/* Branch Access Tab */}
-            <TabsContent value="branches" className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <ScrollArea className="h-full min-h-0">
-                <div className="grid grid-cols-2 gap-3 pr-4 pb-4">
-                  {branchAccess.map((branch) => (
-                    <div 
-                      key={branch.id} 
-                      className="group flex items-center justify-between p-4 rounded-xl border-2 bg-card hover:border-primary/30 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                          branch.hasAccess 
-                            ? 'bg-primary/10 text-primary' 
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
-                          <Building2 className="w-5 h-5" />
-                        </div>
-                        <Label 
-                          htmlFor={`branch-${branch.id}`} 
-                          className="cursor-pointer font-semibold flex-1 text-sm"
-                        >
-                          {branch.name}
-                        </Label>
-                      </div>
-                      <Switch
-                        id={`branch-${branch.id}`}
-                        checked={branch.hasAccess}
-                        onCheckedChange={(checked) => handleBranchAccessChange(branch.id, checked)}
+                Page Access
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Control which pages the user can access
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {pageModules.map((module) => {
+                  const pageAccessPermission = permissions.find(p => 
+                    p.type === 'page_access' && p.key === module.path
+                  );
+                  const permIndex = permissions.findIndex(p => 
+                    p.type === 'page_access' && p.key === module.path
+                  );
+                  
+                  if (!pageAccessPermission) return null;
+                  
+                  return (
+                    <div key={`page-${module.key}`} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`page-access-${module.key}`}
+                        checked={pageAccessPermission.granted}
+                        onCheckedChange={(checked) => handlePermissionChange(permIndex, !!checked)}
                       />
+                      <Label 
+                        htmlFor={`page-access-${module.key}`}
+                        className="text-sm cursor-pointer font-medium"
+                      >
+                        {module.name}
+                      </Label>
                     </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
-        </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
-        <div className="flex justify-end gap-3 px-6 py-4 border-t bg-muted/20 shrink-0">
-          <Button variant="outline" onClick={() => setOpen(false)} className="min-w-24">
-            Cancel
-          </Button>
-          <Button 
-            onClick={savePermissions} 
-            disabled={loading}
-            className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 min-w-32 shadow-md"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {loading ? "Saving..." : "Save Changes"}
-          </Button>
+          {/* Page Action Permissions */}
+          {pageModules.map((module) => {
+            const pageAccessPermission = permissions.find(p => 
+              p.type === 'page_access' && p.key === module.path
+            );
+            const hasPageAccess = pageAccessPermission?.granted ?? true;
+            
+            return (
+              <Card key={module.key} className={`card-premium ${!hasPageAccess ? "opacity-50" : ""}`}>
+                <CardHeader className="bg-gradient-to-br from-muted/30 to-transparent">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                      <Key className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      {module.name} - Actions
+                      <span className="text-sm text-muted-foreground font-normal block">
+                        {module.path}
+                      </span>
+                    </div>
+                  </CardTitle>
+                  {!hasPageAccess && (
+                    <p className="text-xs text-muted-foreground bg-warning/10 p-2 rounded">
+                      ⚠️ Page access must be granted for these permissions to take effect
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {module.actions.map((action) => {
+                      const permKey = `${module.key}:${action}`;
+                      const permission = permissions.find(p => p.key === permKey && p.type === 'page_action');
+                      const permIndex = permissions.findIndex(p => p.key === permKey && p.type === 'page_action');
+                      
+                      if (!permission) return null;
+                      
+                      return (
+                        <div key={action} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`${module.key}-${action}`}
+                            checked={permission.granted}
+                            disabled={!hasPageAccess}
+                            onCheckedChange={(checked) => handlePermissionChange(permIndex, !!checked)}
+                          />
+                          <Label 
+                            htmlFor={`${module.key}-${action}`}
+                            className="text-sm capitalize cursor-pointer"
+                          >
+                            {action}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* Branch Access */}
+          <Card className="card-premium border-purple-500/20">
+            <CardHeader className="bg-gradient-to-br from-purple-500/5 to-transparent">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-purple-600" />
+                </div>
+                Branch Access
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {branchAccess.map((branch) => (
+                <div key={branch.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`branch-${branch.id}`}
+                    checked={branch.hasAccess}
+                    onCheckedChange={(checked) => handleBranchAccessChange(branch.id, !!checked)}
+                  />
+                  <Label htmlFor={`branch-${branch.id}`}>{branch.name}</Label>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={savePermissions} 
+              disabled={loading}
+              className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {loading ? "Saving..." : "Save Permissions"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
