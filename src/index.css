@@ -2,24 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.2);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.3);
-}
-
 /* Premium Apple-inspired HR SaaS Design System
 All colors MUST be HSL. This creates a sophisticated, modern design with subtle depth.
 */

@@ -71,9 +71,9 @@ export function DocumentHealthCarousel({ stats, expiringDocuments }: DocumentHea
   const expiringCount = expiringDocuments.filter(d => d.status === 'expiring').length;
 
   return (
-    <div className="card-premium p-6">
+    <div className="card-premium p-6 flex flex-col min-h-[620px]">
       <Carousel 
-        className="w-full"
+        className="w-full flex-1 flex flex-col"
         opts={{ loop: true }}
         plugins={[
           Autoplay({
