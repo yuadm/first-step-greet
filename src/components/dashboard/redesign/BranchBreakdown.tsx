@@ -7,6 +7,11 @@ import {
 } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface Branch {
   name: string;
@@ -134,23 +139,57 @@ export function BranchBreakdown({ branches, branchHealth }: BranchBreakdownProps
                             else if (branch.overall_score >= 70) color = '#f59e0b';
 
                             return (
-                              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                                <div className="flex items-center gap-3">
-                                  <div
-                                    className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: color }}
-                                  />
-                                  <span className="text-sm font-medium">{branch.branch_name}</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <Badge className={getScoreBadge(branch.overall_score)}>
-                                    {branch.overall_score}%
-                                  </Badge>
-                                  <span className="text-sm font-semibold" style={{ color }}>
-                                    {percentage}%
-                                  </span>
-                                </div>
-                              </div>
+                              <HoverCard key={index}>
+                                <HoverCardTrigger asChild>
+                                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className="w-3 h-3 rounded-full"
+                                        style={{ backgroundColor: color }}
+                                      />
+                                      <span className="text-sm font-medium">{branch.branch_name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <Badge className={getScoreBadge(branch.overall_score)}>
+                                        {branch.overall_score}%
+                                      </Badge>
+                                      <span className="text-sm font-semibold" style={{ color }}>
+                                        {percentage}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80">
+                                  <div className="space-y-3">
+                                    <h4 className="font-semibold text-sm">{branch.branch_name}</h4>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground">Compliance Rate</span>
+                                        <span className={getScoreColor(branch.compliance_rate)}>{branch.compliance_rate}%</span>
+                                      </div>
+                                      <Progress value={branch.compliance_rate} className="h-1" />
+                                      
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground">Document Validity</span>
+                                        <span className={getScoreColor(branch.document_validity_rate)}>{branch.document_validity_rate}%</span>
+                                      </div>
+                                      <Progress value={branch.document_validity_rate} className="h-1" />
+                                      
+                                      <div className="flex items-center justify-between text-xs pt-1">
+                                        <span className="text-muted-foreground">Active Employees</span>
+                                        <span className="font-medium">{branch.active_employees}</span>
+                                      </div>
+                                      
+                                      {branch.leave_backlog > 0 && (
+                                        <div className="flex items-center justify-between text-xs">
+                                          <span className="text-muted-foreground">Leave Backlog</span>
+                                          <Badge variant="secondary" className="text-xs">{branch.leave_backlog}</Badge>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
                             );
                           })}
                         </div>
