@@ -24,6 +24,7 @@ export function BranchBreakdown({ branches }: BranchBreakdownProps) {
     <div className="card-premium p-6">
       <Carousel 
         className="w-full"
+        opts={{ loop: true }}
         plugins={[
           Autoplay({
             delay: 4000,
