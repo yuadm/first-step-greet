@@ -159,7 +159,7 @@ export function BranchBreakdown({ branches, branchHealth }: BranchBreakdownProps
                                     </div>
                                   </div>
                                 </HoverCardTrigger>
-                                <HoverCardContent className="w-80 bg-card border-border shadow-lg">
+                                <HoverCardContent side="top" align="start" sideOffset={8} className="w-80 bg-card border-border shadow-lg z-50">
                                   <div className="space-y-4">
                                     <h4 className="font-semibold text-base text-foreground">{branch.branch_name}</h4>
                                     <div className="space-y-3">
