@@ -34,6 +34,30 @@ export function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Set up real-time subscriptions for activity updates
+    const channel = supabase
+      .channel('dashboard-activity')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, () => {
+        fetchDashboardData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'document_tracker' }, () => {
+        fetchDashboardData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'compliance_period_records' }, () => {
+        fetchDashboardData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leave_requests' }, () => {
+        fetchDashboardData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'job_applications' }, () => {
+        fetchDashboardData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchDashboardData = async () => {
@@ -131,6 +155,106 @@ export function Dashboard() {
         expired: documents?.filter(d => d.status === 'expired').length || 0,
       };
 
+      // Fetch recent activity from multiple sources
+      const recentActivity = [];
+
+      // Recent employees (created)
+      const { data: recentEmployees } = await supabase
+        .from('employees')
+        .select('id, name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      recentEmployees?.forEach(emp => {
+        recentActivity.push({
+          id: `emp-${emp.id}`,
+          type: 'employee',
+          message: `New employee onboarded: ${emp.name}`,
+          timestamp: emp.created_at,
+          user: 'System'
+        });
+      });
+
+      // Recent documents (updated)
+      const { data: recentDocs } = await supabase
+        .from('document_tracker')
+        .select('id, updated_at, employees(name)')
+        .order('updated_at', { ascending: false })
+        .limit(5);
+
+      recentDocs?.forEach(doc => {
+        const employeeName = (doc.employees as any)?.name || 'Unknown';
+        recentActivity.push({
+          id: `doc-${doc.id}`,
+          type: 'document',
+          message: `Document updated for ${employeeName}`,
+          timestamp: doc.updated_at,
+          user: employeeName
+        });
+      });
+
+      // Recent compliance completions
+      const { data: recentCompliance } = await supabase
+        .from('compliance_period_records')
+        .select('id, updated_at, status, employees(name), compliance_types(name)')
+        .eq('status', 'completed')
+        .order('updated_at', { ascending: false })
+        .limit(5);
+
+      recentCompliance?.forEach(comp => {
+        const employeeName = (comp.employees as any)?.name || 'Unknown';
+        const complianceType = (comp.compliance_types as any)?.name || 'training';
+        recentActivity.push({
+          id: `comp-${comp.id}`,
+          type: 'compliance',
+          message: `${complianceType} completed by ${employeeName}`,
+          timestamp: comp.updated_at,
+          user: employeeName
+        });
+      });
+
+      // Recent leave requests
+      const { data: recentLeaves } = await supabase
+        .from('leave_requests')
+        .select('id, created_at, status, employees(name)')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      recentLeaves?.forEach(leave => {
+        const employeeName = (leave.employees as any)?.name || 'Unknown';
+        recentActivity.push({
+          id: `leave-${leave.id}`,
+          type: 'document',
+          message: `Leave request ${leave.status} for ${employeeName}`,
+          timestamp: leave.created_at,
+          user: employeeName
+        });
+      });
+
+      // Recent job applications
+      const { data: recentApps } = await supabase
+        .from('job_applications')
+        .select('id, created_at, personal_info')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      recentApps?.forEach(app => {
+        const personalInfo = app.personal_info as any;
+        const name = personalInfo?.full_name || 'Applicant';
+        recentActivity.push({
+          id: `app-${app.id}`,
+          type: 'employee',
+          message: `New job application received from ${name}`,
+          timestamp: app.created_at,
+          user: name
+        });
+      });
+
+      // Sort all activities by timestamp and take the top 10
+      const sortedActivity = recentActivity
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 10);
+
       setData({
         totalEmployees: employeeCount || 0,
         activeProjects: clientsCount || 0,
@@ -139,11 +263,7 @@ export function Dashboard() {
         leavesByBranch,
         complianceRates,
         branches,
-        recentActivity: [
-          { id: '1', type: 'employee', message: 'New employee onboarded', timestamp: new Date().toISOString(), user: 'Sarah Johnson' },
-          { id: '2', type: 'document', message: 'Document verification completed', timestamp: new Date(Date.now() - 3600000).toISOString(), user: 'Mike Chen' },
-          { id: '3', type: 'compliance', message: 'Compliance training completed', timestamp: new Date(Date.now() - 7200000).toISOString(), user: 'Emma Wilson' },
-        ],
+        recentActivity: sortedActivity,
         topPerformers: [
           { id: '1', name: 'Sarah Johnson', score: 98, avatar: 'SJ', trend: 5 },
           { id: '2', name: 'Mike Chen', score: 95, avatar: 'MC', trend: 3 },
