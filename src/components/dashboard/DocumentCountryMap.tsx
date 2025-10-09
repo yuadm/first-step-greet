@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { MapPin } from "lucide-react";
-
-// World topojson - using a reliable CDN
-const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+import worldMapData from "@/assets/world-countries-110m.json";
 
 type CountryCounts = Record<string, number>;
 
@@ -12,6 +10,7 @@ export function DocumentCountryMap() {
   const [counts, setCounts] = useState<CountryCounts>({});
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,11 +116,18 @@ export function DocumentCountryMap() {
               style={{ width: "100%", height: "100%" }}
             >
               <Geographies 
-                geography={geoUrl}
-                onError={() => setMapError(true)}
+                geography={worldMapData}
+                onError={(error) => {
+                  console.error("Map loading error:", error);
+                  setMapError(true);
+                }}
               >
-                {({ geographies }) =>
-                  geographies.map((geo) => {
+                {({ geographies }) => {
+                  if (!mapLoaded) {
+                    console.log("Map geographies loaded:", geographies.length);
+                    setMapLoaded(true);
+                  }
+                  return geographies.map((geo) => {
                     const rawName =
                       (geo.properties?.name as string) ||
                       (geo.properties?.NAME as string) ||
@@ -161,8 +167,8 @@ export function DocumentCountryMap() {
                         </title>
                       </Geography>
                     );
-                  })
-                }
+                  });
+                }}
               </Geographies>
             </ComposableMap>
           )}
