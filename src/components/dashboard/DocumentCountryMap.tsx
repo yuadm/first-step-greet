@@ -55,12 +55,12 @@ export function DocumentCountryMap() {
   }, [counts]);
 
   const getFill = (value: number) => {
-    if (value <= 0) return "hsl(var(--muted))";
+    if (value <= 0) return "hsl(var(--muted) / 0.3)";
     const ratio = value / Math.max(1, max);
-    if (ratio > 0.75) return "hsl(var(--primary) / 0.55)";
-    if (ratio > 0.5) return "hsl(var(--primary) / 0.4)";
-    if (ratio > 0.25) return "hsl(var(--primary) / 0.28)";
-    return "hsl(var(--primary) / 0.18)";
+    if (ratio > 0.75) return "hsl(var(--primary) / 0.9)";
+    if (ratio > 0.5) return "hsl(var(--primary) / 0.75)";
+    if (ratio > 0.25) return "hsl(var(--primary) / 0.6)";
+    return "hsl(var(--primary) / 0.45)";
   };
 
   const totalEmployees = useMemo(() => {
