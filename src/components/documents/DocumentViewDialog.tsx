@@ -2,18 +2,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DateTextPicker } from "@/components/ui/date-text-picker";
 import { AlertTriangle, CheckCircle, Clock, Edit2, Save, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
-import countries from "world-countries";
-import { determineNationalityStatus } from "@/utils/nationalityStatus";
-
-// Precomputed country list for the Country select
-const COUNTRY_NAMES = countries.map((c) => c.name.common).sort();
 
 interface Document {
   id: string;
@@ -31,6 +25,7 @@ interface Document {
     name: string;
     email: string;
     branch: string;
+    country?: string;
   };
   document_types?: {
     name: string;
@@ -47,22 +42,13 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
   const [employeeDocuments, setEmployeeDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingDocument, setEditingDocument] = useState<string | null>(null);
-  const [editingMain, setEditingMain] = useState(false);
   const [editValues, setEditValues] = useState<any>({});
-  const [mainEditValues, setMainEditValues] = useState({
-    country: '',
-    nationality_status: ''
-  });
   const { toast } = useToast();
   const { canEditDocuments } = usePagePermissions();
 
   useEffect(() => {
     if (document && open) {
       fetchEmployeeDocuments(document.employee_id);
-      setMainEditValues({
-        country: document.country || '',
-        nationality_status: document.nationality_status || ''
-      });
     }
   }, [document, open]);
 
@@ -73,7 +59,7 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
         .from('document_tracker')
         .select(`
           *,
-          employees (name, email, branch),
+          employees (name, email, branch, country),
           document_types (name)
         `)
         .eq('employee_id', employeeId);
@@ -96,87 +82,9 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
     });
   };
 
-  const startMainEditing = () => {
-    setEditingMain(true);
-  };
-
   const cancelEdit = () => {
     setEditingDocument(null);
-    setEditingMain(false);
     setEditValues({});
-  };
-
-  const saveMainEdit = async () => {
-    if (!document) {
-      console.error('No document to update');
-      return;
-    }
-    
-    if (!document.id) {
-      console.error('Document ID is missing');
-      toast({
-        title: "Error",
-        description: "Cannot update document: Invalid document ID.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      console.log('Updating document:', document.id, 'with values:', mainEditValues);
-      
-      const { data, error, count } = await supabase
-        .from('document_tracker')
-        .update({
-          country: mainEditValues.country || null,
-          nationality_status: mainEditValues.nationality_status || null
-        })
-        .eq('id', document.id)
-        .select();
-
-      if (error) {
-        console.error('Supabase update error:', error);
-        throw error;
-      }
-
-      // Validate that exactly one row was updated
-      if (!data || data.length === 0) {
-        console.error('Update did not affect any rows. Document ID:', document.id);
-        toast({
-          title: "Error",
-          description: "Failed to update document. The document may no longer exist.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.length > 1) {
-        console.error('Update affected multiple rows:', data.length);
-        toast({
-          title: "Warning",
-          description: "Multiple documents were updated. Please refresh the page.",
-          variant: "destructive",
-        });
-      }
-
-      console.log('Successfully updated document:', data[0]);
-
-      toast({
-        title: "Document updated",
-        description: "Country and nationality status updated successfully.",
-      });
-
-      setEditingMain(false);
-      // Refresh the documents
-      fetchEmployeeDocuments(document.employee_id);
-    } catch (error) {
-      console.error('Error updating document:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update document. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   const saveEdit = async (docId: string) => {
@@ -218,7 +126,9 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
       setEditingDocument(null);
       setEditValues({});
       // Refresh the documents
-      fetchEmployeeDocuments(document.employee_id);
+      if (document) {
+        fetchEmployeeDocuments(document.employee_id);
+      }
     } catch (error) {
       console.error('Error updating document:', error);
       toast({
@@ -285,91 +195,14 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
             </div>
           </div>
 
-          {/* Country and Nationality Status - Editable */}
-          <div className="border rounded-lg p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">Additional Information</h3>
-              {!editingMain && canEditDocuments() && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={startMainEditing}
-                >
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-              )}
+          {/* Country - Read Only from Employee */}
+          <div className="border rounded-lg p-4">
+            <h3 className="text-sm font-medium mb-3">Employee Information</h3>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Country</label>
+              <p className="text-sm">{document.employees?.country || 'N/A'}</p>
+              <p className="text-xs text-muted-foreground mt-1">This is set at the employee level</p>
             </div>
-            
-            {editingMain ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Country</label>
-                  <Select
-                    value={mainEditValues.country}
-                    onValueChange={(val) => {
-                      const nationalityStatus = determineNationalityStatus(val);
-                      setMainEditValues({
-                        ...mainEditValues, 
-                        country: val,
-                        nationality_status: nationalityStatus
-                      });
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select country" />
-                    </SelectTrigger>
-                    <SelectContent className="z-50">
-                      {COUNTRY_NAMES.map((name) => (
-                        <SelectItem key={name} value={name}>
-                          {name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Nationality Status</label>
-                  <Input
-                    value={mainEditValues.nationality_status}
-                    onChange={(e) => setMainEditValues({...mainEditValues, nationality_status: e.target.value})}
-                    placeholder="e.g., British, EU, Non-EU"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Country</label>
-                  <p className="text-sm">{document.country || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Nationality Status</label>
-                  <p className="text-sm">{document.nationality_status || 'N/A'}</p>
-                </div>
-              </div>
-            )}
-
-            {editingMain && (
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={saveMainEdit}
-                  className="bg-gradient-primary hover:opacity-90"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={cancelEdit}
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Cancel
-                </Button>
-              </div>
-            )}
           </div>
 
           {/* All Document Types for Employee */}
@@ -474,13 +307,13 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
                     )}
                   </div>
                 ))}
-                {employeeDocuments.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No documents found for this employee.</p>
-                )}
               </div>
             )}
           </div>
         </div>
+        <DialogFooter>
+          <Button onClick={onClose} variant="outline">Close</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

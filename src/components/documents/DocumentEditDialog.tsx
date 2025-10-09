@@ -44,6 +44,7 @@ interface Employee {
   branch_id: string;
   sponsored?: boolean;
   twenty_hours?: boolean;
+  country?: string;
 }
 
 interface DocumentType {
@@ -82,8 +83,6 @@ export function DocumentEditDialog({
     document_number: "",
     issue_date: null as Date | string | null,
     expiry_date: null as Date | string | null,
-    country: "",
-    nationality_status: "",
     notes: ""
   });
   const [sponsored, setSponsored] = useState(false);
@@ -106,8 +105,6 @@ export function DocumentEditDialog({
         document_number: document.document_number || "",
         issue_date: document.issue_date && isValidDate(document.issue_date) ? new Date(document.issue_date) : document.issue_date,
         expiry_date: document.expiry_date && isValidDate(document.expiry_date) ? new Date(document.expiry_date) : document.expiry_date,
-        country: document.country || "",
-        nationality_status: document.nationality_status || "",
         notes: document.notes || ""
       });
 
@@ -162,8 +159,6 @@ export function DocumentEditDialog({
             document_type_id: documentTypeId,
             document_number: existingDoc.document_number || prev.document_number,
             issue_date: existingDoc.issue_date && isValidDate(existingDoc.issue_date) ? new Date(existingDoc.issue_date) : existingDoc.issue_date,
-            country: existingDoc.country || prev.country,
-            nationality_status: existingDoc.nationality_status || prev.nationality_status,
             notes: existingDoc.notes || prev.notes
           }));
         }
@@ -237,8 +232,6 @@ export function DocumentEditDialog({
           document_number: editDocument.document_number || null,
           issue_date: issueDateString || null,
           expiry_date: expiryDateString,
-          country: editDocument.country || null,
-          nationality_status: editDocument.nationality_status || null,
           notes: editDocument.notes || null,
           status,
           updated_at: new Date().toISOString()
@@ -337,43 +330,6 @@ export function DocumentEditDialog({
                 value={editDocument.expiry_date}
                 onChange={(value) => setEditDocument(prev => ({ ...prev, expiry_date: value }))}
                 placeholder="Pick date or enter text (e.g., NOT REQUIRED)"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Select
-                value={editDocument.country}
-                onValueChange={(val) => {
-                  const nationalityStatus = determineNationalityStatus(val);
-                  setEditDocument(prev => ({ 
-                    ...prev, 
-                    country: val,
-                    nationality_status: nationalityStatus
-                  }));
-                }}
-              >
-                <SelectTrigger id="country">
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent className="z-[60] bg-popover">
-                  {COUNTRY_NAMES.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="nationality_status">Nationality Status</Label>
-              <Input
-                id="nationality_status"
-                value={editDocument.nationality_status}
-                onChange={(e) => setEditDocument(prev => ({ ...prev, nationality_status: e.target.value }))}
-                placeholder="e.g., British, EU, Non-EU"
               />
             </div>
           </div>
