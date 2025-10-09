@@ -7,7 +7,7 @@ import { MetricsOverview } from "./redesign/MetricsOverview";
 import { BranchBreakdown } from "./redesign/BranchBreakdown";
 import { ActivityTimeline } from "./redesign/ActivityTimeline";
 import { DocumentHealthCarousel } from "./redesign/DocumentHealthCarousel";
-import { UpcomingEvents } from "./redesign/UpcomingEvents";
+import { DocumentCountryMap } from "./DocumentCountryMap";
 import { TrendingMetrics } from "./redesign/TrendingMetrics";
 
 interface DashboardData {
@@ -48,7 +48,6 @@ interface DashboardData {
     overall_score: number;
   }>;
   documentStats: { total: number; valid: number; expiring: number; expired: number };
-  upcomingEvents: Array<{ id: string; title: string; date: string; type: string }>;
   trends: Array<{ label: string; current: number; previous: number; change: number }>;
 }
 
@@ -404,11 +403,6 @@ export function Dashboard() {
         referenceStatus,
         branchHealth,
         documentStats,
-        upcomingEvents: [
-          { id: '1', title: 'Team Training Session', date: new Date(Date.now() + 86400000).toISOString(), type: 'training' },
-          { id: '2', title: 'Compliance Deadline', date: new Date(Date.now() + 172800000).toISOString(), type: 'deadline' },
-          { id: '3', title: 'Performance Reviews', date: new Date(Date.now() + 259200000).toISOString(), type: 'review' },
-        ],
         trends: [
           { label: 'Onboarding Speed', current: 4.2, previous: 5.1, change: -17.6 },
           { label: 'Compliance Rate', current: 94, previous: 89, change: 5.6 },
@@ -482,7 +476,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <UpcomingEvents events={data.upcomingEvents} />
+      <DocumentCountryMap />
     </div>
   );
 }
