@@ -345,8 +345,8 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
           Manage Permissions
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-br from-background to-muted/20">
+      <DialogContent className="sm:max-w-6xl h-[85vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-br from-background to-muted/20 shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center border border-primary/20">
@@ -366,7 +366,7 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
           </div>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden px-6">
+        <div className="flex-1 overflow-hidden px-6 min-h-0">
           <Tabs defaultValue="pages" className="w-full h-full flex flex-col">
             <TabsList className="grid w-full grid-cols-3 mb-6 h-12 bg-muted/50 p-1">
               <TabsTrigger value="pages" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
@@ -389,9 +389,9 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
             </TabsList>
 
             {/* Page Access Tab */}
-            <TabsContent value="pages" className="flex-1 overflow-hidden mt-0">
-              <div className="space-y-4 h-full flex flex-col">
-                <div className="relative">
+            <TabsContent value="pages" className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="space-y-4 h-full flex flex-col min-h-0">
+                <div className="relative shrink-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Search pages..."
@@ -401,7 +401,7 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
                   />
                 </div>
 
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 min-h-0">
                   <div className="grid grid-cols-2 gap-3 pr-4 pb-4">
                     {filteredModules.map((module) => {
                       const pageAccessPermission = permissions.find(p => 
@@ -454,9 +454,9 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
             </TabsContent>
 
             {/* Actions Tab */}
-            <TabsContent value="actions" className="flex-1 overflow-hidden mt-0">
-              <div className="space-y-4 h-full flex flex-col">
-                <div className="relative">
+            <TabsContent value="actions" className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="space-y-4 h-full flex flex-col min-h-0">
+                <div className="relative shrink-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Search modules..."
@@ -466,7 +466,7 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
                   />
                 </div>
 
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 min-h-0">
                   <div className="space-y-3 pr-4 pb-4">
                     {filteredModules.map((module) => {
                       const pageAccessPermission = permissions.find(p => 
@@ -549,8 +549,8 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
             </TabsContent>
 
             {/* Branch Access Tab */}
-            <TabsContent value="branches" className="flex-1 overflow-hidden mt-0">
-              <ScrollArea className="h-full">
+            <TabsContent value="branches" className="flex-1 overflow-hidden mt-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <ScrollArea className="h-full min-h-0">
                 <div className="grid grid-cols-2 gap-3 pr-4 pb-4">
                   {branchAccess.map((branch) => (
                     <div 
@@ -585,7 +585,7 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
           </Tabs>
         </div>
 
-        <div className="flex justify-end gap-3 px-6 py-4 border-t bg-muted/20">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t bg-muted/20 shrink-0">
           <Button variant="outline" onClick={() => setOpen(false)} className="min-w-24">
             Cancel
           </Button>
