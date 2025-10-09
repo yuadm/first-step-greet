@@ -345,8 +345,8 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
           Manage Permissions
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-5xl max-h-[90vh]">
-        <DialogHeader className="sticky top-0 bg-background z-10 pb-4 border-b">
+      <DialogContent className="sm:max-w-5xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="pb-4 border-b">
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl font-bold">Permissions Manager</DialogTitle>
@@ -363,199 +363,205 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
           </div>
         </DialogHeader>
         
-        <Tabs defaultValue="pages" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="pages" className="gap-2">
-              <Key className="w-4 h-4" />
-              Page Access
-              <Badge variant="secondary" className="ml-1">{pageModules.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="actions" className="gap-2">
-              <Shield className="w-4 h-4" />
-              Actions
-              <Badge variant="secondary" className="ml-1">
-                {pageModules.reduce((acc, m) => acc + m.actions.length, 0)}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="branches" className="gap-2">
-              <Shield className="w-4 h-4" />
-              Branches
-              <Badge variant="secondary" className="ml-1">{branchAccess.length}</Badge>
-            </TabsTrigger>
-          </TabsList>
+        <div className="flex-1 overflow-hidden">
+          <Tabs defaultValue="pages" className="w-full h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="pages" className="gap-2">
+                <Key className="w-4 h-4" />
+                Page Access
+                <Badge variant="secondary" className="ml-1">{pageModules.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="actions" className="gap-2">
+                <Shield className="w-4 h-4" />
+                Actions
+                <Badge variant="secondary" className="ml-1">
+                  {pageModules.reduce((acc, m) => acc + m.actions.length, 0)}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger value="branches" className="gap-2">
+                <Shield className="w-4 h-4" />
+                Branches
+                <Badge variant="secondary" className="ml-1">{branchAccess.length}</Badge>
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Page Access Tab */}
-          <TabsContent value="pages" className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search pages..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+            {/* Page Access Tab */}
+            <TabsContent value="pages" className="flex-1 overflow-hidden mt-0">
+              <div className="space-y-4 h-full flex flex-col">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search pages..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
 
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="grid grid-cols-2 gap-3">
-                {filteredModules.map((module) => {
-                  const pageAccessPermission = permissions.find(p => 
-                    p.type === 'page_access' && p.key === module.path
-                  );
-                  const permIndex = permissions.findIndex(p => 
-                    p.type === 'page_access' && p.key === module.path
-                  );
-                  
-                  if (!pageAccessPermission) return null;
-                  
-                  return (
-                    <div 
-                      key={`page-${module.key}`} 
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <Key className="w-4 h-4 text-muted-foreground" />
-                        <div>
-                          <Label 
-                            htmlFor={`page-access-${module.key}`}
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            {module.name}
-                          </Label>
-                          <p className="text-xs text-muted-foreground">{module.path}</p>
-                        </div>
-                      </div>
-                      <Switch
-                        id={`page-access-${module.key}`}
-                        checked={pageAccessPermission.granted}
-                        onCheckedChange={(checked) => handlePermissionChange(permIndex, checked)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          {/* Actions Tab */}
-          <TabsContent value="actions" className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search modules..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-3">
-                {filteredModules.map((module) => {
-                  const pageAccessPermission = permissions.find(p => 
-                    p.type === 'page_access' && p.key === module.path
-                  );
-                  const hasPageAccess = pageAccessPermission?.granted ?? true;
-                  const status = getModuleStatus(module.key);
-                  const isOpen = openSections[module.key] ?? false;
-                  
-                  return (
-                    <Collapsible
-                      key={module.key}
-                      open={isOpen}
-                      onOpenChange={() => toggleSection(module.key)}
-                      className="border rounded-lg overflow-hidden"
-                    >
-                      <CollapsibleTrigger className="w-full p-4 hover:bg-accent/50 transition-colors">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                            <div className="text-left">
-                              <p className="font-semibold">{module.name}</p>
+                <ScrollArea className="flex-1">
+                  <div className="grid grid-cols-2 gap-3 pr-4">
+                    {filteredModules.map((module) => {
+                      const pageAccessPermission = permissions.find(p => 
+                        p.type === 'page_access' && p.key === module.path
+                      );
+                      const permIndex = permissions.findIndex(p => 
+                        p.type === 'page_access' && p.key === module.path
+                      );
+                      
+                      if (!pageAccessPermission) return null;
+                      
+                      return (
+                        <div 
+                          key={`page-${module.key}`} 
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <Key className="w-4 h-4 text-muted-foreground" />
+                            <div>
+                              <Label 
+                                htmlFor={`page-access-${module.key}`}
+                                className="text-sm font-medium cursor-pointer"
+                              >
+                                {module.name}
+                              </Label>
                               <p className="text-xs text-muted-foreground">{module.path}</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {getStatusBadge(status)}
-                            <Badge variant="outline">{module.actions.length} actions</Badge>
-                          </div>
+                          <Switch
+                            id={`page-access-${module.key}`}
+                            checked={pageAccessPermission.granted}
+                            onCheckedChange={(checked) => handlePermissionChange(permIndex, checked)}
+                          />
                         </div>
-                        {!hasPageAccess && (
-                          <div className="mt-2 flex items-center gap-2 text-xs text-yellow-600">
-                            <XCircle className="w-3 h-3" />
-                            Page access disabled - Enable page access first
-                          </div>
-                        )}
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <Separator />
-                        <div className="p-4 bg-muted/30">
-                          <div className="grid grid-cols-2 gap-3">
-                            {module.actions.map((action) => {
-                              const permKey = `${module.key}:${action}`;
-                              const permission = permissions.find(p => p.key === permKey && p.type === 'page_action');
-                              const permIndex = permissions.findIndex(p => p.key === permKey && p.type === 'page_action');
-                              
-                              if (!permission) return null;
-                              
-                              return (
-                                <div 
-                                  key={action} 
-                                  className="flex items-center justify-between p-2 rounded-md bg-background"
-                                >
-                                  <Label 
-                                    htmlFor={`${module.key}-${action}`}
-                                    className="text-sm capitalize cursor-pointer flex-1"
-                                  >
-                                    {action.replace(/-/g, ' ')}
-                                  </Label>
-                                  <Switch
-                                    id={`${module.key}-${action}`}
-                                    checked={permission.granted}
-                                    disabled={!hasPageAccess}
-                                    onCheckedChange={(checked) => handlePermissionChange(permIndex, checked)}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          {/* Branch Access Tab */}
-          <TabsContent value="branches" className="space-y-4">
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="grid grid-cols-2 gap-3">
-                {branchAccess.map((branch) => (
-                  <div 
-                    key={branch.id} 
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <Label 
-                      htmlFor={`branch-${branch.id}`} 
-                      className="cursor-pointer font-medium flex-1"
-                    >
-                      {branch.name}
-                    </Label>
-                    <Switch
-                      id={`branch-${branch.id}`}
-                      checked={branch.hasAccess}
-                      onCheckedChange={(checked) => handleBranchAccessChange(branch.id, checked)}
-                    />
+                      );
+                    })}
                   </div>
-                ))}
+                </ScrollArea>
               </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
 
-        <div className="flex justify-end gap-3 pt-4 border-t sticky bottom-0 bg-background">
+            {/* Actions Tab */}
+            <TabsContent value="actions" className="flex-1 overflow-hidden mt-0">
+              <div className="space-y-4 h-full flex flex-col">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search modules..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                <ScrollArea className="flex-1">
+                  <div className="space-y-3 pr-4">
+                    {filteredModules.map((module) => {
+                      const pageAccessPermission = permissions.find(p => 
+                        p.type === 'page_access' && p.key === module.path
+                      );
+                      const hasPageAccess = pageAccessPermission?.granted ?? true;
+                      const status = getModuleStatus(module.key);
+                      const isOpen = openSections[module.key] ?? false;
+                      
+                      return (
+                        <Collapsible
+                          key={module.key}
+                          open={isOpen}
+                          onOpenChange={() => toggleSection(module.key)}
+                          className="border rounded-lg overflow-hidden"
+                        >
+                          <CollapsibleTrigger className="w-full p-4 hover:bg-accent/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                                <div className="text-left">
+                                  <p className="font-semibold">{module.name}</p>
+                                  <p className="text-xs text-muted-foreground">{module.path}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {getStatusBadge(status)}
+                                <Badge variant="outline">{module.actions.length} actions</Badge>
+                              </div>
+                            </div>
+                            {!hasPageAccess && (
+                              <div className="mt-2 flex items-center gap-2 text-xs text-yellow-600">
+                                <XCircle className="w-3 h-3" />
+                                Page access disabled - Enable page access first
+                              </div>
+                            )}
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <Separator />
+                            <div className="p-4 bg-muted/30">
+                              <div className="grid grid-cols-2 gap-3">
+                                {module.actions.map((action) => {
+                                  const permKey = `${module.key}:${action}`;
+                                  const permission = permissions.find(p => p.key === permKey && p.type === 'page_action');
+                                  const permIndex = permissions.findIndex(p => p.key === permKey && p.type === 'page_action');
+                                  
+                                  if (!permission) return null;
+                                  
+                                  return (
+                                    <div 
+                                      key={action} 
+                                      className="flex items-center justify-between p-2 rounded-md bg-background"
+                                    >
+                                      <Label 
+                                        htmlFor={`${module.key}-${action}`}
+                                        className="text-sm capitalize cursor-pointer flex-1"
+                                      >
+                                        {action.replace(/-/g, ' ')}
+                                      </Label>
+                                      <Switch
+                                        id={`${module.key}-${action}`}
+                                        checked={permission.granted}
+                                        disabled={!hasPageAccess}
+                                        onCheckedChange={(checked) => handlePermissionChange(permIndex, checked)}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </div>
+            </TabsContent>
+
+            {/* Branch Access Tab */}
+            <TabsContent value="branches" className="flex-1 overflow-hidden mt-0">
+              <ScrollArea className="h-full">
+                <div className="grid grid-cols-2 gap-3 pr-4">
+                  {branchAccess.map((branch) => (
+                    <div 
+                      key={branch.id} 
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <Label 
+                        htmlFor={`branch-${branch.id}`} 
+                        className="cursor-pointer font-medium flex-1"
+                      >
+                        {branch.name}
+                      </Label>
+                      <Switch
+                        id={`branch-${branch.id}`}
+                        checked={branch.hasAccess}
+                        onCheckedChange={(checked) => handleBranchAccessChange(branch.id, checked)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t mt-4">
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
