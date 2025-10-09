@@ -108,8 +108,8 @@ export function DocumentCountryMap() {
             <ComposableMap 
               projection="geoMercator"
               projectionConfig={{ 
-                scale: 147,
-                center: [0, 20]
+                scale: 100,
+                center: [0, 0]
               }}
               width={800}
               height={400}
