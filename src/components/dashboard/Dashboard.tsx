@@ -6,10 +6,14 @@ import { CommandHero } from "./redesign/CommandHero";
 import { MetricsOverview } from "./redesign/MetricsOverview";
 import { BranchBreakdown } from "./redesign/BranchBreakdown";
 import { ActivityTimeline } from "./redesign/ActivityTimeline";
-import { PerformanceLeaderboard } from "./redesign/PerformanceLeaderboard";
 import { DocumentHealth } from "./redesign/DocumentHealth";
 import { UpcomingEvents } from "./redesign/UpcomingEvents";
 import { TrendingMetrics } from "./redesign/TrendingMetrics";
+import { LeaveToday } from "./redesign/LeaveToday";
+import { DocumentsExpiring } from "./redesign/DocumentsExpiring";
+import { ApplicationPipeline } from "./redesign/ApplicationPipeline";
+import { ReferenceTracker } from "./redesign/ReferenceTracker";
+import { BranchHealthScore } from "./redesign/BranchHealthScore";
 
 interface DashboardData {
   totalEmployees: number;
@@ -20,7 +24,34 @@ interface DashboardData {
   complianceRates?: Record<string, number>;
   branches: Array<{ name: string; employeeCount: number; clientCount: number; color: string }>;
   recentActivity: Array<{ id: string; type: string; message: string; timestamp: string; user: string }>;
-  topPerformers: Array<{ id: string; name: string; score: number; avatar: string; trend: number }>;
+  leavesToday: Array<{
+    employee_name: string;
+    leave_type: string;
+    start_date: string;
+    end_date: string;
+  }>;
+  documentsExpiring: Array<{
+    employee_name: string;
+    document_type: string;
+    expiry_date: string;
+    status: 'valid' | 'expiring' | 'expired';
+  }>;
+  applicationStats: Record<string, number>;
+  referenceStatus: Array<{
+    application_id: string;
+    applicant_name: string;
+    references_pending: number;
+    references_received: number;
+    total_references: number;
+  }>;
+  branchHealth: Array<{
+    branch_name: string;
+    compliance_rate: number;
+    document_validity_rate: number;
+    leave_backlog: number;
+    active_employees: number;
+    overall_score: number;
+  }>;
   documentStats: { total: number; valid: number; expiring: number; expired: number };
   upcomingEvents: Array<{ id: string; title: string; date: string; type: string }>;
   trends: Array<{ label: string; current: number; previous: number; change: number }>;
@@ -65,9 +96,9 @@ export function Dashboard() {
       setLoading(true);
 
       // Fetch employees
-      const { count: employeeCount } = await supabase
+      const { data: employeesData, count: employeeCount } = await supabase
         .from('employees')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact' });
 
       // Fetch total clients
       const { count: clientsCount } = await supabase
@@ -75,22 +106,37 @@ export function Dashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
 
-      // Fetch pending leaves with branch breakdown
-      const { data: pendingLeaves } = await supabase
+      // Fetch leave requests with details
+      const { data: leavesData } = await supabase
         .from('leave_requests')
-        .select('*, employees!inner(branch)')
-        .eq('status', 'pending');
+        .select(`
+          *,
+          employees!leave_requests_employee_id_fkey(name, branch, branch_id),
+          leave_types!leave_requests_leave_type_id_fkey(name)
+        `);
 
-      const leavesByBranch = pendingLeaves?.reduce((acc, leave) => {
+      const pendingLeaves = leavesData?.filter(l => l.status === 'pending') || [];
+      
+      // Process leaves for "Who's on leave" widget
+      const leavesToday = leavesData
+        ?.filter(l => l.status === 'approved')
+        .map(leave => ({
+          employee_name: leave.employees?.name || 'Unknown',
+          leave_type: leave.leave_types?.name || 'Leave',
+          start_date: leave.start_date,
+          end_date: leave.end_date
+        })) || [];
+
+      const leavesByBranch = pendingLeaves.reduce((acc, leave) => {
         const branch = leave.employees?.branch || 'Unknown';
         acc[branch] = (acc[branch] || 0) + 1;
         return acc;
-      }, {} as Record<string, number>) || {};
+      }, {} as Record<string, number>);
 
       // Calculate compliance rate by branch
       const { data: allCompliance } = await supabase
         .from('compliance_period_records')
-        .select('status, employee_id, employees!compliance_period_records_employee_id_fkey(branch)');
+        .select('status, employee_id, employees!compliance_period_records_employee_id_fkey(branch, branch_id)');
 
       const complianceByBranch = allCompliance?.reduce((acc, record) => {
         const branch = (record.employees as any)?.branch || 'Unknown';
@@ -143,10 +189,29 @@ export function Dashboard() {
         })
       );
 
-      // Fetch document stats
+      // Fetch document stats with employee details
       const { data: documents } = await supabase
         .from('document_tracker')
-        .select('status, expiry_date');
+        .select('*, employees(name, branch_id), document_types(name)')
+        .order('expiry_date', { ascending: true });
+
+      // Process documents expiring in next 30 days
+      const now = new Date();
+      const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      
+      const documentsExpiring = documents
+        ?.filter(doc => {
+          if (!doc.expiry_date || !/^\d{4}-\d{2}-\d{2}$/.test(doc.expiry_date)) return false;
+          const expiryDate = new Date(doc.expiry_date);
+          return expiryDate <= next30Days;
+        })
+        .map(doc => ({
+          employee_name: doc.employees?.name || 'Unknown',
+          document_type: doc.document_types?.name || 'Document',
+          expiry_date: doc.expiry_date,
+          status: doc.status as 'valid' | 'expiring' | 'expired'
+        }))
+        .slice(0, 10) || [];
 
       const documentStats = {
         total: documents?.length || 0,
@@ -231,16 +296,18 @@ export function Dashboard() {
         });
       });
 
-      // Recent job applications
+      // Recent job applications with full details
       const { data: recentApps } = await supabase
         .from('job_applications')
-        .select('id, created_at, personal_info')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(3);
 
       recentApps?.forEach(app => {
         const personalInfo = app.personal_info as any;
-        const name = personalInfo?.full_name || 'Applicant';
+        const name = personalInfo?.firstName && personalInfo?.lastName 
+          ? `${personalInfo.firstName} ${personalInfo.lastName}`
+          : 'Applicant';
         recentActivity.push({
           id: `app-${app.id}`,
           type: 'employee',
@@ -250,6 +317,75 @@ export function Dashboard() {
         });
       });
 
+      // Calculate application pipeline stats
+      const applicationStats: Record<string, number> = {};
+      recentApps?.forEach(app => {
+        const status = app.status || 'new';
+        applicationStats[status] = (applicationStats[status] || 0) + 1;
+      });
+      
+      // Process reference status
+      const referenceStatus = recentApps
+        ?.filter(app => app.reference_info)
+        .map(app => {
+          const personalInfo = app.personal_info as any;
+          const refInfo = app.reference_info as any;
+          const references = refInfo?.references || [];
+          const received = references.filter((r: any) => r.status === 'received').length;
+          const pending = references.length - received;
+          
+          return {
+            application_id: app.id,
+            applicant_name: personalInfo?.firstName && personalInfo?.lastName 
+              ? `${personalInfo.firstName} ${personalInfo.lastName}`
+              : 'Unknown Applicant',
+            references_pending: pending,
+            references_received: received,
+            total_references: references.length
+          };
+        })
+        .filter(ref => ref.references_pending > 0)
+        .slice(0, 10) || [];
+
+      // Calculate branch health scores
+      const branchHealth = await Promise.all(
+        (branchesData || []).map(async (branch) => {
+          const branchEmployees = employeesData?.filter(e => e.branch_id === branch.id) || [];
+          const branchDocuments = documents?.filter(d => d.employees?.branch_id === branch.id) || [];
+          const branchCompliance = allCompliance?.filter(c => {
+            const employee = employeesData?.find(e => e.id === c.employee_id);
+            return employee?.branch_id === branch.id;
+          }) || [];
+          
+          const activeEmployees = branchEmployees.filter(e => e.is_active !== false).length;
+          const validDocuments = branchDocuments.filter(d => d.status === 'valid').length;
+          const completedCompliance = branchCompliance.filter(c => c.status === 'completed').length;
+          
+          const documentValidityRate = branchDocuments.length > 0 
+            ? Math.round((validDocuments / branchDocuments.length) * 100)
+            : 100;
+          const complianceRate = branchCompliance.length > 0
+            ? Math.round((completedCompliance / branchCompliance.length) * 100)
+            : 100;
+          
+          const pendingLeaveRequests = leavesData?.filter(l => {
+            const employee = employeesData?.find(e => e.id === l.employee_id);
+            return employee?.branch_id === branch.id && l.status === 'pending';
+          }).length || 0;
+          
+          const overallScore = Math.round((complianceRate + documentValidityRate) / 2);
+          
+          return {
+            branch_name: branch.name,
+            compliance_rate: complianceRate,
+            document_validity_rate: documentValidityRate,
+            leave_backlog: pendingLeaveRequests,
+            active_employees: activeEmployees,
+            overall_score: overallScore
+          };
+        })
+      );
+
       // Sort all activities by timestamp and take the top 10
       const sortedActivity = recentActivity
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -258,19 +394,17 @@ export function Dashboard() {
       setData({
         totalEmployees: employeeCount || 0,
         activeProjects: clientsCount || 0,
-        pendingTasks: pendingLeaves?.length || 0,
+        pendingTasks: pendingLeaves.length,
         completionRate: overallCompletionRate,
         leavesByBranch,
         complianceRates,
         branches,
         recentActivity: sortedActivity,
-        topPerformers: [
-          { id: '1', name: 'Sarah Johnson', score: 98, avatar: 'SJ', trend: 5 },
-          { id: '2', name: 'Mike Chen', score: 95, avatar: 'MC', trend: 3 },
-          { id: '3', name: 'Emma Wilson', score: 92, avatar: 'EW', trend: -2 },
-          { id: '4', name: 'James Brown', score: 89, avatar: 'JB', trend: 7 },
-          { id: '5', name: 'Lisa Davis', score: 87, avatar: 'LD', trend: 1 },
-        ],
+        leavesToday,
+        documentsExpiring,
+        applicationStats,
+        referenceStatus,
+        branchHealth,
         documentStats,
         upcomingEvents: [
           { id: '1', title: 'Team Training Session', date: new Date(Date.now() + 86400000).toISOString(), type: 'training' },
@@ -330,10 +464,9 @@ export function Dashboard() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Branch & Performance */}
+        {/* Left Column - Branch */}
         <div className="space-y-6">
           <BranchBreakdown branches={data.branches} />
-          <PerformanceLeaderboard performers={data.topPerformers} />
         </div>
 
         {/* Center Column - Activity & Trends */}
@@ -342,12 +475,25 @@ export function Dashboard() {
           <TrendingMetrics trends={data.trends} />
         </div>
 
-        {/* Right Column - Documents & Events */}
+        {/* Right Column - Documents */}
         <div className="space-y-6">
           <DocumentHealth stats={data.documentStats} />
-          <UpcomingEvents events={data.upcomingEvents} />
         </div>
       </div>
+
+      {/* New Widgets Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <LeaveToday leaves={data.leavesToday} />
+        <DocumentsExpiring documents={data.documentsExpiring} />
+        <ApplicationPipeline stats={data.applicationStats} />
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ReferenceTracker references={data.referenceStatus} />
+        <BranchHealthScore branches={data.branchHealth} />
+      </div>
+      
+      <UpcomingEvents events={data.upcomingEvents} />
     </div>
   );
 }
