@@ -107,18 +107,59 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
   };
 
   const saveMainEdit = async () => {
-    if (!document) return;
+    if (!document) {
+      console.error('No document to update');
+      return;
+    }
+    
+    if (!document.id) {
+      console.error('Document ID is missing');
+      toast({
+        title: "Error",
+        description: "Cannot update document: Invalid document ID.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
-      const { error } = await supabase
+      console.log('Updating document:', document.id, 'with values:', mainEditValues);
+      
+      const { data, error, count } = await supabase
         .from('document_tracker')
         .update({
           country: mainEditValues.country || null,
           nationality_status: mainEditValues.nationality_status || null
         })
-        .eq('id', document.id);
+        .eq('id', document.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
+
+      // Validate that exactly one row was updated
+      if (!data || data.length === 0) {
+        console.error('Update did not affect any rows. Document ID:', document.id);
+        toast({
+          title: "Error",
+          description: "Failed to update document. The document may no longer exist.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.length > 1) {
+        console.error('Update affected multiple rows:', data.length);
+        toast({
+          title: "Warning",
+          description: "Multiple documents were updated. Please refresh the page.",
+          variant: "destructive",
+        });
+      }
+
+      console.log('Successfully updated document:', data[0]);
 
       toast({
         title: "Document updated",
