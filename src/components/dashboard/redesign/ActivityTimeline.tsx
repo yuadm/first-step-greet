@@ -46,7 +46,7 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
       </div>
 
       {/* Timeline */}
-      <div className="relative space-y-4 max-h-[520px] overflow-y-auto pr-2">
+      <div className="relative space-y-4 max-h-[600px] overflow-y-auto pr-2">
         {/* Timeline line */}
         <div className="absolute left-5 top-3 bottom-3 w-px bg-border"></div>
 
