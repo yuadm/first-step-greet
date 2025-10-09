@@ -8,7 +8,6 @@ import { BranchBreakdown } from "./redesign/BranchBreakdown";
 import { ActivityTimeline } from "./redesign/ActivityTimeline";
 import { DocumentHealthCarousel } from "./redesign/DocumentHealthCarousel";
 import { DocumentCountryMap } from "./DocumentCountryMap";
-import { TrendingMetrics } from "./redesign/TrendingMetrics";
 
 interface DashboardData {
   totalEmployees: number;
@@ -48,7 +47,6 @@ interface DashboardData {
     overall_score: number;
   }>;
   documentStats: { total: number; valid: number; expiring: number; expired: number };
-  trends: Array<{ label: string; current: number; previous: number; change: number }>;
 }
 
 export function Dashboard() {
@@ -395,12 +393,6 @@ export function Dashboard() {
         referenceStatus,
         branchHealth,
         documentStats,
-        trends: [
-          { label: 'Onboarding Speed', current: 4.2, previous: 5.1, change: -17.6 },
-          { label: 'Compliance Rate', current: 94, previous: 89, change: 5.6 },
-          { label: 'Doc Completion', current: 87, previous: 82, change: 6.1 },
-          { label: 'Employee Satisfaction', current: 4.8, previous: 4.6, change: 4.3 },
-        ],
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -453,10 +445,9 @@ export function Dashboard() {
           <BranchBreakdown branches={data.branches} branchHealth={data.branchHealth} />
         </div>
 
-        {/* Center Column - Activity & Trends */}
+        {/* Center Column - Activity */}
         <div className="space-y-6">
           <ActivityTimeline activities={data.recentActivity} />
-          <TrendingMetrics trends={data.trends} />
         </div>
 
         {/* Right Column - Documents */}
