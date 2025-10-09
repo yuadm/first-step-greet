@@ -9,7 +9,6 @@ import { ActivityTimeline } from "./redesign/ActivityTimeline";
 import { DocumentHealthCarousel } from "./redesign/DocumentHealthCarousel";
 import { UpcomingEvents } from "./redesign/UpcomingEvents";
 import { TrendingMetrics } from "./redesign/TrendingMetrics";
-import { ReferenceTracker } from "./redesign/ReferenceTracker";
 import { BranchHealthScore } from "./redesign/BranchHealthScore";
 
 interface DashboardData {
@@ -34,13 +33,6 @@ interface DashboardData {
     status: 'valid' | 'expiring' | 'expired';
   }>;
   applicationStats: Record<string, number>;
-  referenceStatus: Array<{
-    application_id: string;
-    applicant_name: string;
-    references_pending: number;
-    references_received: number;
-    total_references: number;
-  }>;
   branchHealth: Array<{
     branch_name: string;
     compliance_rate: number;
@@ -324,29 +316,6 @@ export function Dashboard() {
         applicationStats[status] = (applicationStats[status] || 0) + 1;
       });
       
-      // Process reference status
-      const referenceStatus = recentApps
-        ?.filter(app => app.reference_info)
-        .map(app => {
-          const personalInfo = app.personal_info as any;
-          const refInfo = app.reference_info as any;
-          const references = refInfo?.references || [];
-          const received = references.filter((r: any) => r.status === 'received').length;
-          const pending = references.length - received;
-          
-          return {
-            application_id: app.id,
-            applicant_name: personalInfo?.firstName && personalInfo?.lastName 
-              ? `${personalInfo.firstName} ${personalInfo.lastName}`
-              : 'Unknown Applicant',
-            references_pending: pending,
-            references_received: received,
-            total_references: references.length
-          };
-        })
-        .filter(ref => ref.references_pending > 0)
-        .slice(0, 10) || [];
-
       // Calculate branch health scores
       const branchHealth = await Promise.all(
         (branchesData || []).map(async (branch) => {
@@ -403,7 +372,6 @@ export function Dashboard() {
         leavesToday,
         documentsExpiring,
         applicationStats,
-        referenceStatus,
         branchHealth,
         documentStats,
         upcomingEvents: [
@@ -485,10 +453,7 @@ export function Dashboard() {
       </div>
 
       {/* Widgets Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ReferenceTracker references={data.referenceStatus} />
-        <BranchHealthScore branches={data.branchHealth} />
-      </div>
+      <BranchHealthScore branches={data.branchHealth} />
       
       <UpcomingEvents events={data.upcomingEvents} />
     </div>
