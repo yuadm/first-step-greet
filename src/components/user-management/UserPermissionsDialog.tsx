@@ -305,98 +305,95 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full hover:bg-primary/10 transition-colors">
+        <Button variant="outline" size="sm" className="hover:bg-primary/10 transition-colors">
           <Key className="w-4 h-4 mr-2" />
-          Manage Permissions
+          Permissions
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader className="space-y-3 pb-6 border-b">
-          <DialogTitle className="text-2xl font-bold">
-            Permissions Manager
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-t-lg -z-10"></div>
+          <DialogTitle className="text-2xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            Manage Permissions
           </DialogTitle>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">{user.email}</p>
-              <p className="text-xs text-muted-foreground">Configure access levels and permissions</p>
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground">{user.email}</p>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
+        <div className="space-y-6">
           {/* Page Access Permissions */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Key className="w-5 h-5 text-primary" />
+          <Card className="card-premium border-primary/20">
+            <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Key className="w-4 h-4 text-primary" />
+                </div>
+                Page Access
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Control which pages the user can access
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {pageModules.map((module) => {
+                  const pageAccessPermission = permissions.find(p => 
+                    p.type === 'page_access' && p.key === module.path
+                  );
+                  const permIndex = permissions.findIndex(p => 
+                    p.type === 'page_access' && p.key === module.path
+                  );
+                  
+                  if (!pageAccessPermission) return null;
+                  
+                  return (
+                    <div key={`page-${module.key}`} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`page-access-${module.key}`}
+                        checked={pageAccessPermission.granted}
+                        onCheckedChange={(checked) => handlePermissionChange(permIndex, !!checked)}
+                      />
+                      <Label 
+                        htmlFor={`page-access-${module.key}`}
+                        className="text-sm cursor-pointer font-medium"
+                      >
+                        {module.name}
+                      </Label>
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <h3 className="font-semibold text-lg">Page Access</h3>
-                <p className="text-sm text-muted-foreground">
-                  Control which pages the user can view
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 bg-muted/30 rounded-lg border"
-            >
-              {pageModules.map((module) => {
-                const pageAccessPermission = permissions.find(p => 
-                  p.type === 'page_access' && p.key === module.path
-                );
-                const permIndex = permissions.findIndex(p => 
-                  p.type === 'page_access' && p.key === module.path
-                );
-                
-                if (!pageAccessPermission) return null;
-                
-                return (
-                  <div key={`page-${module.key}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-background transition-colors">
-                    <Checkbox
-                      id={`page-access-${module.key}`}
-                      checked={pageAccessPermission.granted}
-                      onCheckedChange={(checked) => handlePermissionChange(permIndex, !!checked)}
-                    />
-                    <Label 
-                      htmlFor={`page-access-${module.key}`}
-                      className="text-sm cursor-pointer font-medium flex-1"
-                    >
-                      {module.name}
-                    </Label>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Page Action Permissions */}
-          <div className="space-y-4">
-            {pageModules.map((module) => {
-              const pageAccessPermission = permissions.find(p => 
-                p.type === 'page_access' && p.key === module.path
-              );
-              const hasPageAccess = pageAccessPermission?.granted ?? true;
-              
-              return (
-                <div key={module.key} className={`space-y-3 ${!hasPageAccess ? "opacity-50" : ""}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                      <Key className="w-5 h-5" />
+          {pageModules.map((module) => {
+            const pageAccessPermission = permissions.find(p => 
+              p.type === 'page_access' && p.key === module.path
+            );
+            const hasPageAccess = pageAccessPermission?.granted ?? true;
+            
+            return (
+              <Card key={module.key} className={`card-premium ${!hasPageAccess ? "opacity-50" : ""}`}>
+                <CardHeader className="bg-gradient-to-br from-muted/30 to-transparent">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                      <Key className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold">{module.name}</h4>
-                      <p className="text-xs text-muted-foreground">{module.path}</p>
-                      {!hasPageAccess && (
-                        <p className="text-xs text-warning mt-1 flex items-center gap-1">
-                          <span>⚠️</span> Page access required
-                        </p>
-                      )}
+                    <div className="flex-1">
+                      {module.name} - Actions
+                      <span className="text-sm text-muted-foreground font-normal block">
+                        {module.path}
+                      </span>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pl-13 p-3 bg-muted/20 rounded-lg border"
-                  >
+                  </CardTitle>
+                  {!hasPageAccess && (
+                    <p className="text-xs text-muted-foreground bg-warning/10 p-2 rounded">
+                      ⚠️ Page access must be granted for these permissions to take effect
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {module.actions.map((action) => {
                       const permKey = `${module.key}:${action}`;
                       const permission = permissions.find(p => p.key === permKey && p.type === 'page_action');
@@ -405,7 +402,7 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
                       if (!permission) return null;
                       
                       return (
-                        <div key={action} className="flex items-center space-x-2 p-2 rounded-md hover:bg-background transition-colors">
+                        <div key={action} className="flex items-center space-x-2">
                           <Checkbox
                             id={`${module.key}-${action}`}
                             checked={permission.granted}
@@ -414,45 +411,42 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
                           />
                           <Label 
                             htmlFor={`${module.key}-${action}`}
-                            className="text-sm capitalize cursor-pointer flex-1"
+                            className="text-sm capitalize cursor-pointer"
                           >
-                            {action.replace(/-/g, ' ')}
+                            {action}
                           </Label>
                         </div>
                       );
                     })}
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                </CardContent>
+              </Card>
+            );
+          })}
 
           {/* Branch Access */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Branch Access</h3>
-                <p className="text-sm text-muted-foreground">
-                  Select which branches the user can access
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 p-4 bg-muted/30 rounded-lg border">
+          <Card className="card-premium border-purple-500/20">
+            <CardHeader className="bg-gradient-to-br from-purple-500/5 to-transparent">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-purple-600" />
+                </div>
+                Branch Access
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               {branchAccess.map((branch) => (
-                <div key={branch.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-background transition-colors">
+                <div key={branch.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={`branch-${branch.id}`}
                     checked={branch.hasAccess}
                     onCheckedChange={(checked) => handleBranchAccessChange(branch.id, !!checked)}
                   />
-                  <Label htmlFor={`branch-${branch.id}`} className="cursor-pointer flex-1">{branch.name}</Label>
+                  <Label htmlFor={`branch-${branch.id}`}>{branch.name}</Label>
                 </div>
               ))}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button variant="outline" onClick={() => setOpen(false)}>
