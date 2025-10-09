@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Key, Save } from "lucide-react";
+import { Key, Save, Shield } from "lucide-react";
 
 interface UserWithRole {
   id: string;
@@ -305,21 +305,30 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="hover:bg-primary/10 transition-colors">
           <Key className="w-4 h-4 mr-2" />
           Permissions
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Manage Permissions for {user.email}</DialogTitle>
+        <DialogHeader className="relative pb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-t-lg -z-10"></div>
+          <DialogTitle className="text-2xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            Manage Permissions
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground">{user.email}</p>
         </DialogHeader>
         
         <div className="space-y-6">
           {/* Page Access Permissions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Page Access</CardTitle>
+          <Card className="card-premium border-primary/20">
+            <CardHeader className="bg-gradient-to-br from-primary/5 to-transparent">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Key className="w-4 h-4 text-primary" />
+                </div>
+                Page Access
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Control which pages the user can access
               </p>
@@ -364,17 +373,22 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
             const hasPageAccess = pageAccessPermission?.granted ?? true;
             
             return (
-              <Card key={module.key} className={!hasPageAccess ? "opacity-50" : ""}>
-                <CardHeader>
+              <Card key={module.key} className={`card-premium ${!hasPageAccess ? "opacity-50" : ""}`}>
+                <CardHeader className="bg-gradient-to-br from-muted/30 to-transparent">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    {module.name} - Actions
-                    <span className="text-sm text-muted-foreground font-normal">
-                      ({module.path})
-                    </span>
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                      <Key className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      {module.name} - Actions
+                      <span className="text-sm text-muted-foreground font-normal block">
+                        {module.path}
+                      </span>
+                    </div>
                   </CardTitle>
                   {!hasPageAccess && (
-                    <p className="text-xs text-muted-foreground">
-                      Page access must be granted for these permissions to take effect
+                    <p className="text-xs text-muted-foreground bg-warning/10 p-2 rounded">
+                      ⚠️ Page access must be granted for these permissions to take effect
                     </p>
                   )}
                 </CardHeader>
@@ -411,9 +425,14 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
           })}
 
           {/* Branch Access */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Branch Access</CardTitle>
+          <Card className="card-premium border-purple-500/20">
+            <CardHeader className="bg-gradient-to-br from-purple-500/5 to-transparent">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-purple-600" />
+                </div>
+                Branch Access
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {branchAccess.map((branch) => (
@@ -429,11 +448,15 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
             </CardContent>
           </Card>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-4 border-t">
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={savePermissions} disabled={loading}>
+            <Button 
+              onClick={savePermissions} 
+              disabled={loading}
+              className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
+            >
               <Save className="w-4 h-4 mr-2" />
               {loading ? "Saving..." : "Save Permissions"}
             </Button>

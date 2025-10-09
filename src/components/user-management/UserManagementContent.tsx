@@ -15,6 +15,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { UserRoleSelect } from "./UserRoleSelect";
 import { UserPermissionsDialog } from "./UserPermissionsDialog";
+import { UserManagementHero } from "./UserManagementHero";
+import { UserManagementMetrics } from "./UserManagementMetrics";
 
 interface UserWithRole {
   id: string;
@@ -325,168 +327,140 @@ export function UserManagementContent() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            User Management
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Manage user roles, permissions, and access control
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {canCreateUsers() && (
-            <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-gradient-primary hover:opacity-90">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New User</DialogTitle>
-                  <DialogDescription>
-                    Add a new user to the system and assign their role.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="user@example.com"
-                      value={newUserEmail}
-                      onChange={(e) => setNewUserEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter password"
-                      value={newUserPassword}
-                      onChange={(e) => setNewUserPassword(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select value={newUserRole} onValueChange={setNewUserRole}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex justify-end gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCreateUserOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button onClick={createUser} disabled={creating}>
-                      {creating ? "Creating..." : "Create User"}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
+      {/* Hero Section */}
+      <div className="animate-fade-in">
+        <UserManagementHero currentUserRole={userRole || 'user'} />
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-slide-up">
-        <Card className="card-premium">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                <p className="text-2xl font-bold">{users.length}</p>
+      {/* Add User Button */}
+      <div className="flex justify-end animate-fade-in" style={{ animationDelay: '100ms' }}>
+        {canCreateUsers() && (
+          <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-primary hover:opacity-90">
+                <Plus className="w-4 h-4 mr-2" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New User</DialogTitle>
+                <DialogDescription>
+                  Add a new user to the system and assign their role.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="user@example.com"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter password"
+                    value={newUserPassword}
+                    onChange={(e) => setNewUserPassword(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={newUserRole} onValueChange={setNewUserRole}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCreateUserOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={createUser} disabled={creating}>
+                    {creating ? "Creating..." : "Create User"}
+                  </Button>
+                </div>
               </div>
-              <Users className="w-8 h-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
 
-        <Card className="card-premium border-destructive/20 bg-gradient-to-br from-destructive-soft to-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Admins</p>
-                <p className="text-2xl font-bold text-destructive">
-                  {users.filter(u => u.role === 'admin').length}
-                </p>
-              </div>
-              <Shield className="w-8 h-8 text-destructive" />
-            </div>
-          </CardContent>
-        </Card>
-
-
-        <Card className="card-premium border-primary/20 bg-gradient-to-br from-primary-soft to-card">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Normal Users</p>
-                <p className="text-2xl font-bold text-primary">
-                  {users.filter(u => u.role === 'user').length}
-                </p>
-              </div>
-              <Users className="w-8 h-8 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Metrics Overview */}
+      <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
+        <UserManagementMetrics
+          totalUsers={users.length}
+          adminCount={users.filter(u => u.role === 'admin').length}
+          managerCount={users.filter(u => u.role === 'manager').length}
+          hrCount={users.filter(u => u.role === 'hr').length}
+          userCount={users.filter(u => u.role === 'user').length}
+        />
       </div>
 
       {/* Users Table */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-foreground">Active Users</h2>
-        <Card>
+      <div className="space-y-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          Active Users
+        </h2>
+        <Card className="card-premium overflow-hidden">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableRow className="hover:bg-muted/50">
+                  <TableHead className="font-semibold">User</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Role</TableHead>
+                  <TableHead className="font-semibold">Created</TableHead>
+                  <TableHead className="font-semibold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
+                {users.map((user, index) => (
+                  <TableRow 
+                    key={user.id} 
+                    className="hover:bg-muted/50 transition-colors animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
-                          <UserCog className="w-4 h-4 text-white" />
+                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${
+                          user.role === 'admin' ? 'from-red-500 to-pink-500' :
+                          user.role === 'manager' ? 'from-orange-500 to-amber-500' :
+                          user.role === 'hr' ? 'from-purple-500 to-pink-500' :
+                          'from-green-500 to-emerald-500'
+                        } flex items-center justify-center shadow-lg`}>
+                          <UserCog className="w-5 h-5 text-white" />
                         </div>
                         <div>
                           <p className="font-medium">
                             {user.email.split('@')[0]}
                             {isCurrentUser(user.id) && (
-                              <Badge variant="outline" className="ml-2">You</Badge>
+                              <Badge variant="outline" className="ml-2 bg-primary/10">You</Badge>
                             )}
                           </p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{user.email}</TableCell>
+                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
                     <TableCell>
                       <Badge className={getRoleBadgeColor(user.role)}>
                         {user.role.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-muted-foreground">
                       {new Date(user.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
