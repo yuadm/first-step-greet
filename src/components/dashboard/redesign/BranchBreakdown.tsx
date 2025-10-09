@@ -159,31 +159,35 @@ export function BranchBreakdown({ branches, branchHealth }: BranchBreakdownProps
                                     </div>
                                   </div>
                                 </HoverCardTrigger>
-                                <HoverCardContent className="w-80">
-                                  <div className="space-y-3">
-                                    <h4 className="font-semibold text-sm">{branch.branch_name}</h4>
-                                    <div className="space-y-2">
-                                      <div className="flex items-center justify-between text-xs">
-                                        <span className="text-muted-foreground">Compliance Rate</span>
-                                        <span className={getScoreColor(branch.compliance_rate)}>{branch.compliance_rate}%</span>
+                                <HoverCardContent className="w-80 bg-card border-border shadow-lg">
+                                  <div className="space-y-4">
+                                    <h4 className="font-semibold text-base text-foreground">{branch.branch_name}</h4>
+                                    <div className="space-y-3">
+                                      <div className="space-y-1">
+                                        <div className="flex items-center justify-between text-sm">
+                                          <span className="text-muted-foreground">Compliance Rate</span>
+                                          <span className={`font-semibold ${getScoreColor(branch.compliance_rate)}`}>{branch.compliance_rate}%</span>
+                                        </div>
+                                        <Progress value={branch.compliance_rate} className="h-2" />
                                       </div>
-                                      <Progress value={branch.compliance_rate} className="h-1" />
                                       
-                                      <div className="flex items-center justify-between text-xs">
-                                        <span className="text-muted-foreground">Document Validity</span>
-                                        <span className={getScoreColor(branch.document_validity_rate)}>{branch.document_validity_rate}%</span>
+                                      <div className="space-y-1">
+                                        <div className="flex items-center justify-between text-sm">
+                                          <span className="text-muted-foreground">Document Validity</span>
+                                          <span className={`font-semibold ${getScoreColor(branch.document_validity_rate)}`}>{branch.document_validity_rate}%</span>
+                                        </div>
+                                        <Progress value={branch.document_validity_rate} className="h-2" />
                                       </div>
-                                      <Progress value={branch.document_validity_rate} className="h-1" />
                                       
-                                      <div className="flex items-center justify-between text-xs pt-1">
+                                      <div className="flex items-center justify-between text-sm pt-1 border-t border-border">
                                         <span className="text-muted-foreground">Active Employees</span>
-                                        <span className="font-medium">{branch.active_employees}</span>
+                                        <span className="font-semibold text-foreground">{branch.active_employees}</span>
                                       </div>
                                       
                                       {branch.leave_backlog > 0 && (
-                                        <div className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center justify-between text-sm">
                                           <span className="text-muted-foreground">Leave Backlog</span>
-                                          <Badge variant="secondary" className="text-xs">{branch.leave_backlog}</Badge>
+                                          <Badge variant="secondary" className="text-xs font-semibold">{branch.leave_backlog}</Badge>
                                         </div>
                                       )}
                                     </div>
