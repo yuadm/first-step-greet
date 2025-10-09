@@ -6,24 +6,6 @@ import worldMapData from "@/assets/world-countries-110m.json";
 
 type CountryCounts = Record<string, number>;
 
-// Normalize country names for matching between database and map
-const normalizeCountryName = (name: string) => {
-  const normalized = name.toLowerCase().trim();
-  // Handle common variations between database and TopoJSON
-  const mappings: Record<string, string> = {
-    'antigua and barb.': 'antigua and barbuda',
-    'bosnia and herz.': 'bosnia and herzegovina',
-    'eq. guinea': 'equatorial guinea',
-    'dominican rep.': 'dominican republic',
-    'dem. rep. congo': 'democratic republic of the congo',
-    'central african rep.': 'central african republic',
-    's. sudan': 'south sudan',
-    'solomon is.': 'solomon islands',
-    'n. cyprus': 'northern cyprus',
-  };
-  return mappings[normalized] || normalized;
-};
-
 export function DocumentCountryMap() {
   const [counts, setCounts] = useState<CountryCounts>({});
   const [loading, setLoading] = useState(true);
@@ -75,11 +57,10 @@ export function DocumentCountryMap() {
   const getFill = (value: number) => {
     if (value <= 0) return "hsl(var(--muted))";
     const ratio = value / Math.max(1, max);
-    // Use more prominent primary colors for countries with employees
-    if (ratio > 0.75) return "hsl(var(--primary) / 0.9)";
-    if (ratio > 0.5) return "hsl(var(--primary) / 0.7)";
-    if (ratio > 0.25) return "hsl(var(--primary) / 0.5)";
-    return "hsl(var(--primary) / 0.35)";
+    if (ratio > 0.75) return "hsl(var(--primary) / 0.55)";
+    if (ratio > 0.5) return "hsl(var(--primary) / 0.4)";
+    if (ratio > 0.25) return "hsl(var(--primary) / 0.28)";
+    return "hsl(var(--primary) / 0.18)";
   };
 
   const totalEmployees = useMemo(() => {
@@ -127,8 +108,8 @@ export function DocumentCountryMap() {
             <ComposableMap 
               projection="geoMercator"
               projectionConfig={{ 
-                scale: 135,
-                center: [10, 20]
+                scale: 147,
+                center: [0, 20]
               }}
               width={800}
               height={400}
@@ -152,41 +133,38 @@ export function DocumentCountryMap() {
                       (geo.properties?.NAME as string) ||
                       (geo.properties?.NAME_LONG as string) ||
                       "";
-                    const normalizedName = normalizeCountryName(rawName);
-                    const value = counts[normalizedName] || 0;
+                    const key = rawName.toLowerCase();
+                    const value = counts[key] || 0;
                     const percentage = totalEmployees > 0 ? ((value / totalEmployees) * 100).toFixed(1) : "0.0";
-                    const hasEmployees = value > 0;
                     
                     return (
                       <Geography
                         key={geo.rsmKey}
                         geography={geo}
                         fill={getFill(value)}
-                        stroke={hasEmployees ? "hsl(var(--primary))" : "hsl(var(--border))"}
-                        strokeWidth={hasEmployees ? 1 : 0.5}
+                        stroke="hsl(var(--border))"
+                        strokeWidth={0.5}
                         style={{
                           default: { 
                             outline: "none",
                             transition: "all 0.2s ease-in-out"
                           },
                           hover: { 
-                            fill: hasEmployees ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.3)", 
+                            fill: "hsl(var(--primary) / 0.8)", 
                             outline: "none",
-                            stroke: hasEmployees ? "hsl(var(--primary))" : "hsl(var(--border))",
-                            strokeWidth: hasEmployees ? 1.5 : 0.5,
-                            cursor: hasEmployees ? "pointer" : "default"
+                            stroke: "hsl(var(--primary))",
+                            strokeWidth: 1.5,
+                            cursor: "pointer"
                           },
                           pressed: { 
-                            fill: hasEmployees ? "hsl(var(--primary) / 0.95)" : "hsl(var(--muted))", 
+                            fill: "hsl(var(--primary) / 0.9)", 
                             outline: "none"
                           },
                         }}
                       >
-                        {hasEmployees && (
-                          <title>
-                            {rawName}: {value} employee{value !== 1 ? 's' : ''} ({percentage}%)
-                          </title>
-                        )}
+                        <title>
+                          {rawName}: {value} employees ({percentage}%)
+                        </title>
                       </Geography>
                     );
                   });
