@@ -1,4 +1,5 @@
 import { Building2 } from "lucide-react";
+import Autoplay from "embla-carousel-autoplay";
 import {
   Carousel,
   CarouselContent,
@@ -21,7 +22,16 @@ export function BranchBreakdown({ branches }: BranchBreakdownProps) {
   
   return (
     <div className="card-premium p-6">
-      <Carousel className="w-full">
+      <Carousel 
+        className="w-full"
+        plugins={[
+          Autoplay({
+            delay: 4000,
+            stopOnInteraction: false,
+            stopOnMouseEnter: true,
+          }),
+        ]}
+      >
         <CarouselContent>
           {views.map((view) => {
             const total = branches.reduce((sum, branch) => 
