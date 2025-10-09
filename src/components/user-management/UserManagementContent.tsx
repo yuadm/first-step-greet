@@ -15,7 +15,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { UserRoleSelect } from "./UserRoleSelect";
 import { UserPermissionsDialog } from "./UserPermissionsDialog";
-import { UserManagementHero } from "./UserManagementHero";
 import { UserManagementMetrics } from "./UserManagementMetrics";
 
 interface UserWithRole {
@@ -327,15 +326,20 @@ export function UserManagementContent() {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="animate-fade-in">
-        <UserManagementHero currentUserRole={userRole || 'user'} />
-      </div>
-
-      {/* Add User Button */}
-      <div className="flex justify-end animate-fade-in" style={{ animationDelay: '100ms' }}>
-        {canCreateUsers() && (
-          <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            User Management
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Manage user roles, permissions, and access control
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          {canCreateUsers() && (
+            <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-primary hover:opacity-90">
                 <Plus className="w-4 h-4 mr-2" />
@@ -397,130 +401,128 @@ export function UserManagementContent() {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </div>
 
       {/* Metrics Overview */}
-      <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
+      <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
         <UserManagementMetrics
           totalUsers={users.length}
           adminCount={users.filter(u => u.role === 'admin').length}
-          managerCount={users.filter(u => u.role === 'manager').length}
-          hrCount={users.filter(u => u.role === 'hr').length}
           userCount={users.filter(u => u.role === 'user').length}
         />
       </div>
 
-      {/* Users Table */}
-      <div className="space-y-6 animate-fade-in" style={{ animationDelay: '300ms' }}>
+      {/* Users Grid */}
+      <div className="space-y-6 animate-fade-in" style={{ animationDelay: '200ms' }}>
         <h2 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
           Active Users
         </h2>
-        <Card className="card-premium overflow-hidden">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-muted/50">
-                  <TableHead className="font-semibold">User</TableHead>
-                  <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="font-semibold">Role</TableHead>
-                  <TableHead className="font-semibold">Created</TableHead>
-                  <TableHead className="font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user, index) => (
-                  <TableRow 
-                    key={user.id} 
-                    className="hover:bg-muted/50 transition-colors animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${
-                          user.role === 'admin' ? 'from-red-500 to-pink-500' :
-                          user.role === 'manager' ? 'from-orange-500 to-amber-500' :
-                          user.role === 'hr' ? 'from-purple-500 to-pink-500' :
-                          'from-green-500 to-emerald-500'
-                        } flex items-center justify-center shadow-lg`}>
-                          <UserCog className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            {user.email.split('@')[0]}
-                            {isCurrentUser(user.id) && (
-                              <Badge variant="outline" className="ml-2 bg-primary/10">You</Badge>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                    <TableCell>
-                      <Badge className={getRoleBadgeColor(user.role)}>
-                        {user.role.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {canEditUsers() && (
-                          <UserRoleSelect
-                            value={user.role}
-                            onValueChange={(newRole) => updateUserRole(user.id, newRole)}
-                            disabled={isCurrentUser(user.id)}
-                          />
-                        )}
-                        {canEditUsers() && (
-                          <UserPermissionsDialog
-                            user={user}
-                            onSuccess={fetchUsers}
-                          />
-                        )}
-                        {canEditUsers() && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openResetPasswordDialog(user.id)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {users.map((user, index) => (
+            <Card 
+              key={user.id} 
+              className="card-premium group hover:shadow-xl transition-all hover:scale-[1.02] animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <CardContent className="p-6">
+                {/* User Avatar & Info */}
+                <div className="flex items-start gap-4 mb-4">
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${
+                    user.role === 'admin' ? 'from-red-500 to-pink-500' :
+                    user.role === 'manager' ? 'from-orange-500 to-amber-500' :
+                    user.role === 'hr' ? 'from-purple-500 to-pink-500' :
+                    'from-green-500 to-emerald-500'
+                  } flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                    <UserCog className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-lg truncate">
+                        {user.email.split('@')[0]}
+                      </h3>
+                      {isCurrentUser(user.id) && (
+                        <Badge variant="outline" className="bg-primary/10 border-primary/20">You</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </div>
+
+                {/* Role Badge */}
+                <div className="mb-4">
+                  <Badge className={`${getRoleBadgeColor(user.role)} px-3 py-1`}>
+                    {user.role.toUpperCase()}
+                  </Badge>
+                </div>
+
+                {/* Created Date */}
+                <div className="text-xs text-muted-foreground mb-4">
+                  Joined {new Date(user.created_at).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  })}
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-2">
+                  {canEditUsers() && (
+                    <UserRoleSelect
+                      value={user.role}
+                      onValueChange={(newRole) => updateUserRole(user.id, newRole)}
+                      disabled={isCurrentUser(user.id)}
+                    />
+                  )}
+                  {canEditUsers() && (
+                    <UserPermissionsDialog
+                      user={user}
+                      onSuccess={fetchUsers}
+                    />
+                  )}
+                  {canEditUsers() && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => openResetPasswordDialog(user.id)}
+                      className="w-full justify-start"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Reset Password
+                    </Button>
+                  )}
+                  {canDeleteUsers() && !isCurrentUser(user.id) && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full justify-start text-destructive hover:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete User
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete User</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this user? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteUser(user.id)}
+                            className="bg-destructive hover:bg-destructive/90"
                           >
-                            <RotateCcw className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {canDeleteUsers() && !isCurrentUser(user.id) && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete User</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this user? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteUser(user.id)}
-                                  className="bg-destructive hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Admin Password Reset Dialog */}
