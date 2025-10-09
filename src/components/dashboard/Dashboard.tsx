@@ -9,8 +9,6 @@ import { ActivityTimeline } from "./redesign/ActivityTimeline";
 import { DocumentHealthCarousel } from "./redesign/DocumentHealthCarousel";
 import { UpcomingEvents } from "./redesign/UpcomingEvents";
 import { TrendingMetrics } from "./redesign/TrendingMetrics";
-import { LeaveToday } from "./redesign/LeaveToday";
-import { ApplicationPipeline } from "./redesign/ApplicationPipeline";
 import { ReferenceTracker } from "./redesign/ReferenceTracker";
 import { BranchHealthScore } from "./redesign/BranchHealthScore";
 
@@ -81,6 +79,9 @@ export function Dashboard() {
         fetchDashboardData();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'job_applications' }, () => {
+        fetchDashboardData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => {
         fetchDashboardData();
       })
       .subscribe();
@@ -483,12 +484,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* New Widgets Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <LeaveToday leaves={data.leavesToday} />
-        <ApplicationPipeline stats={data.applicationStats} />
-      </div>
-      
+      {/* Widgets Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ReferenceTracker references={data.referenceStatus} />
         <BranchHealthScore branches={data.branchHealth} />
