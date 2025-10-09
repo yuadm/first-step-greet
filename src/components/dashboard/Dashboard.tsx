@@ -9,7 +9,6 @@ import { ActivityTimeline } from "./redesign/ActivityTimeline";
 import { DocumentHealthCarousel } from "./redesign/DocumentHealthCarousel";
 import { UpcomingEvents } from "./redesign/UpcomingEvents";
 import { TrendingMetrics } from "./redesign/TrendingMetrics";
-import { ReferenceTracker } from "./redesign/ReferenceTracker";
 import { BranchHealthScore } from "./redesign/BranchHealthScore";
 
 interface DashboardData {
@@ -485,10 +484,7 @@ export function Dashboard() {
       </div>
 
       {/* Widgets Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ReferenceTracker references={data.referenceStatus} />
-        <BranchHealthScore branches={data.branchHealth} />
-      </div>
+      <BranchHealthScore branches={data.branchHealth} />
       
       <UpcomingEvents events={data.upcomingEvents} />
     </div>
