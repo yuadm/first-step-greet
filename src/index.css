@@ -196,6 +196,15 @@ All colors MUST be HSL. This creates a sophisticated, modern design with subtle 
     transform: translateY(-2px);
   }
   
+  /* Hover scale */
+  .hover\:scale-102:hover {
+    transform: scale(1.02);
+  }
+  
+  .hover\:scale-105:hover {
+    transform: scale(1.05);
+  }
+  
   /* Status badges */
   .badge-success {
     background: hsl(var(--success-soft));
