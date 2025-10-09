@@ -1,10 +1,12 @@
-import { Building2 } from "lucide-react";
+import { Building2, Activity } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 interface Branch {
   name: string;
@@ -13,12 +15,34 @@ interface Branch {
   color: string;
 }
 
-interface BranchBreakdownProps {
-  branches: Branch[];
+interface BranchHealth {
+  branch_name: string;
+  compliance_rate: number;
+  document_validity_rate: number;
+  leave_backlog: number;
+  active_employees: number;
+  overall_score: number;
 }
 
-export function BranchBreakdown({ branches }: BranchBreakdownProps) {
-  const views = ['employees', 'clients'] as const;
+interface BranchBreakdownProps {
+  branches: Branch[];
+  branchHealth: BranchHealth[];
+}
+
+export function BranchBreakdown({ branches, branchHealth }: BranchBreakdownProps) {
+  const views = ['employees', 'clients', 'health'] as const;
+  
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-success';
+    if (score >= 70) return 'text-warning';
+    return 'text-destructive';
+  };
+
+  const getScoreBadge = (score: number) => {
+    if (score >= 90) return 'bg-success/10 text-success border-success/20';
+    if (score >= 70) return 'bg-warning/10 text-warning border-warning/20';
+    return 'bg-destructive/10 text-destructive border-destructive/20';
+  };
   
   return (
     <div className="card-premium p-6">
@@ -35,6 +59,74 @@ export function BranchBreakdown({ branches }: BranchBreakdownProps) {
       >
         <CarouselContent>
           {views.map((view) => {
+            if (view === 'health') {
+              return (
+                <CarouselItem key={view}>
+                  <div className="space-y-6">
+                    {/* Header */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center">
+                        <Activity className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Branch Health Score</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Overall performance metrics
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Branch Health List */}
+                    <div className="space-y-3">
+                      {branchHealth.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-8">No branch data available</p>
+                      ) : (
+                        branchHealth.map((branch, index) => (
+                          <div
+                            key={index}
+                            className="space-y-3 rounded-lg bg-muted/50 p-4 hover:bg-muted transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-sm font-semibold">{branch.branch_name}</h4>
+                              <Badge className={getScoreBadge(branch.overall_score)}>
+                                {branch.overall_score}%
+                              </Badge>
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground">Compliance</span>
+                                <span className={getScoreColor(branch.compliance_rate)}>{branch.compliance_rate}%</span>
+                              </div>
+                              <Progress value={branch.compliance_rate} className="h-1.5" />
+
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground">Document Validity</span>
+                                <span className={getScoreColor(branch.document_validity_rate)}>{branch.document_validity_rate}%</span>
+                              </div>
+                              <Progress value={branch.document_validity_rate} className="h-1.5" />
+
+                              <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50 mt-2">
+                                <span className="text-muted-foreground">Active Employees</span>
+                                <span className="font-medium">{branch.active_employees}</span>
+                              </div>
+
+                              {branch.leave_backlog > 0 && (
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-muted-foreground">Leave Backlog</span>
+                                  <Badge variant="secondary" className="text-xs">{branch.leave_backlog}</Badge>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </CarouselItem>
+              );
+            }
+
             const total = branches.reduce((sum, branch) => 
               sum + (view === 'employees' ? branch.employeeCount : branch.clientCount), 0
             );

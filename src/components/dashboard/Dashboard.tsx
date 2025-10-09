@@ -9,7 +9,6 @@ import { ActivityTimeline } from "./redesign/ActivityTimeline";
 import { DocumentHealthCarousel } from "./redesign/DocumentHealthCarousel";
 import { UpcomingEvents } from "./redesign/UpcomingEvents";
 import { TrendingMetrics } from "./redesign/TrendingMetrics";
-import { BranchHealthScore } from "./redesign/BranchHealthScore";
 
 interface DashboardData {
   totalEmployees: number;
@@ -465,7 +464,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Branch */}
         <div className="space-y-6">
-          <BranchBreakdown branches={data.branches} />
+          <BranchBreakdown branches={data.branches} branchHealth={data.branchHealth} />
         </div>
 
         {/* Center Column - Activity & Trends */}
@@ -483,9 +482,6 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Widgets Row */}
-      <BranchHealthScore branches={data.branchHealth} />
-      
       <UpcomingEvents events={data.upcomingEvents} />
     </div>
   );
