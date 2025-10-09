@@ -27,30 +27,11 @@ export function DocumentCountryMap() {
           const employeeId = row?.employee_id;
           if (!country || !employeeId) return;
           
-          // Normalize country name for better matching
-          let normalizedCountry = country.toLowerCase();
-          
-          // Handle common country name variations
-          const countryMap: Record<string, string> = {
-            'united states': 'united states of america',
-            'usa': 'united states of america',
-            'us': 'united states of america',
-            'uk': 'united kingdom',
-            'britain': 'united kingdom',
-            'great britain': 'united kingdom',
-            'dr congo': 'democratic republic of the congo',
-            'drc': 'democratic republic of the congo',
-            'republic of congo': 'congo',
-            'south korea': 'korea',
-            'north korea': 'korea',
-          };
-          
-          normalizedCountry = countryMap[normalizedCountry] || normalizedCountry;
-          
-          if (!employeesByCountry[normalizedCountry]) {
-            employeesByCountry[normalizedCountry] = new Set();
+          const key = country.toLowerCase();
+          if (!employeesByCountry[key]) {
+            employeesByCountry[key] = new Set();
           }
-          employeesByCountry[normalizedCountry].add(employeeId);
+          employeesByCountry[key].add(employeeId);
         });
         
         // Convert to counts
@@ -59,7 +40,6 @@ export function DocumentCountryMap() {
           map[country] = employeeSet.size;
         });
         
-        console.log('Country distribution:', map);
         setCounts(map);
       } catch (e) {
         console.error("Failed to load employee country distribution", e);
@@ -89,19 +69,11 @@ export function DocumentCountryMap() {
 
   const topCountries = useMemo(() => {
     return Object.entries(counts)
-      .map(([country, count]) => {
-        // Capitalize first letter of each word for display
-        const displayName = country
-          .split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        
-        return {
-          country: displayName,
-          count,
-          percentage: totalEmployees > 0 ? ((count / totalEmployees) * 100).toFixed(1) : "0.0"
-        };
-      })
+      .map(([country, count]) => ({
+        country: country.charAt(0).toUpperCase() + country.slice(1),
+        count,
+        percentage: totalEmployees > 0 ? ((count / totalEmployees) * 100).toFixed(1) : "0.0"
+      }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }, [counts, totalEmployees]);
@@ -161,19 +133,7 @@ export function DocumentCountryMap() {
                       (geo.properties?.NAME as string) ||
                       (geo.properties?.NAME_LONG as string) ||
                       "";
-                    
-                    // Normalize the map's country name for matching
-                    let key = rawName.toLowerCase();
-                    
-                    // Handle reverse mapping for map display
-                    const reverseMap: Record<string, string> = {
-                      'united states of america': 'united states of america',
-                      'united kingdom': 'united kingdom',
-                      'democratic republic of the congo': 'democratic republic of the congo',
-                    };
-                    
-                    key = reverseMap[key] || key;
-                    
+                    const key = rawName.toLowerCase();
                     const value = counts[key] || 0;
                     const percentage = totalEmployees > 0 ? ((value / totalEmployees) * 100).toFixed(1) : "0.0";
                     
