@@ -6,11 +6,10 @@ import { CommandHero } from "./redesign/CommandHero";
 import { MetricsOverview } from "./redesign/MetricsOverview";
 import { BranchBreakdown } from "./redesign/BranchBreakdown";
 import { ActivityTimeline } from "./redesign/ActivityTimeline";
-import { DocumentHealth } from "./redesign/DocumentHealth";
+import { DocumentHealthCarousel } from "./redesign/DocumentHealthCarousel";
 import { UpcomingEvents } from "./redesign/UpcomingEvents";
 import { TrendingMetrics } from "./redesign/TrendingMetrics";
 import { LeaveToday } from "./redesign/LeaveToday";
-import { DocumentsExpiring } from "./redesign/DocumentsExpiring";
 import { ApplicationPipeline } from "./redesign/ApplicationPipeline";
 import { ReferenceTracker } from "./redesign/ReferenceTracker";
 import { BranchHealthScore } from "./redesign/BranchHealthScore";
@@ -477,14 +476,16 @@ export function Dashboard() {
 
         {/* Right Column - Documents */}
         <div className="space-y-6">
-          <DocumentHealth stats={data.documentStats} />
+          <DocumentHealthCarousel 
+            stats={data.documentStats}
+            expiringDocuments={data.documentsExpiring}
+          />
         </div>
       </div>
 
       {/* New Widgets Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <LeaveToday leaves={data.leavesToday} />
-        <DocumentsExpiring documents={data.documentsExpiring} />
         <ApplicationPipeline stats={data.applicationStats} />
       </div>
       
