@@ -50,9 +50,9 @@ export function BranchBreakdown({ branches, branchHealth }: BranchBreakdownProps
   };
   
   return (
-    <div className="card-premium p-6 flex flex-col min-h-[620px]">
+    <div className="card-premium p-6">
       <Carousel 
-        className="w-full flex-1 flex flex-col"
+        className="w-full"
         opts={{ loop: true }}
         plugins={[
           Autoplay({
