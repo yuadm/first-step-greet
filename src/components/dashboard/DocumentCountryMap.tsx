@@ -20,26 +20,18 @@ export function DocumentCountryMap() {
           .select("country, employee_id");
         if (error) throw error;
         
-        // First, get the primary country for each employee (the first country they have a document for)
-        const employeePrimaryCountry: Record<string, string> = {};
+        // Count unique employees per country
+        const employeesByCountry: Record<string, Set<string>> = {};
         (data || []).forEach((row: any) => {
           const country = (row?.country || "").trim();
           const employeeId = row?.employee_id;
           if (!country || !employeeId) return;
           
-          // Only assign the first country encountered for each employee
-          if (!employeePrimaryCountry[employeeId]) {
-            employeePrimaryCountry[employeeId] = country.toLowerCase();
+          const key = country.toLowerCase();
+          if (!employeesByCountry[key]) {
+            employeesByCountry[key] = new Set();
           }
-        });
-        
-        // Count employees per their primary country (each employee counted only once)
-        const employeesByCountry: Record<string, Set<string>> = {};
-        Object.entries(employeePrimaryCountry).forEach(([employeeId, country]) => {
-          if (!employeesByCountry[country]) {
-            employeesByCountry[country] = new Set();
-          }
-          employeesByCountry[country].add(employeeId);
+          employeesByCountry[key].add(employeeId);
         });
         
         // Convert to counts
