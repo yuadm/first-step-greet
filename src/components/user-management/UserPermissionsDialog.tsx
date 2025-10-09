@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Key, Save, Shield, ChevronDown, Search, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
+import { Key, Save, Shield, ChevronDown, Search, CheckCircle2, XCircle, MinusCircle, Lock, Unlock, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface UserWithRole {
@@ -340,48 +340,51 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full hover:bg-primary/10 transition-colors">
-          <Key className="w-4 h-4 mr-2" />
+        <Button variant="outline" size="sm" className="w-full group hover:border-primary/50 transition-all">
+          <Shield className="w-4 h-4 mr-2 group-hover:text-primary transition-colors" />
           Manage Permissions
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-5xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="pb-4 border-b">
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-bold">Permissions Manager</DialogTitle>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Shield className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{user.email}</p>
-                  <p className="text-xs text-muted-foreground">Role: {user.role}</p>
+      <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-br from-background to-muted/20">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center border border-primary/20">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold mb-1">Permission Control</DialogTitle>
+                <div className="flex items-center gap-2 text-sm">
+                  <p className="font-medium text-foreground">{user.email}</p>
+                  <Separator orientation="vertical" className="h-4" />
+                  <Badge variant="secondary" className="font-normal">
+                    {user.role}
+                  </Badge>
                 </div>
               </div>
             </div>
           </div>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden px-6">
           <Tabs defaultValue="pages" className="w-full h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
-              <TabsTrigger value="pages" className="gap-2">
-                <Key className="w-4 h-4" />
-                Page Access
-                <Badge variant="secondary" className="ml-1">{pageModules.length}</Badge>
+            <TabsList className="grid w-full grid-cols-3 mb-6 h-12 bg-muted/50 p-1">
+              <TabsTrigger value="pages" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Lock className="w-4 h-4" />
+                <span className="font-medium">Page Access</span>
+                <Badge variant="outline" className="ml-1 text-xs">{pageModules.length}</Badge>
               </TabsTrigger>
-              <TabsTrigger value="actions" className="gap-2">
-                <Shield className="w-4 h-4" />
-                Actions
-                <Badge variant="secondary" className="ml-1">
+              <TabsTrigger value="actions" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Key className="w-4 h-4" />
+                <span className="font-medium">Actions</span>
+                <Badge variant="outline" className="ml-1 text-xs">
                   {pageModules.reduce((acc, m) => acc + m.actions.length, 0)}
                 </Badge>
               </TabsTrigger>
-              <TabsTrigger value="branches" className="gap-2">
-                <Shield className="w-4 h-4" />
-                Branches
-                <Badge variant="secondary" className="ml-1">{branchAccess.length}</Badge>
+              <TabsTrigger value="branches" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <Building2 className="w-4 h-4" />
+                <span className="font-medium">Branches</span>
+                <Badge variant="outline" className="ml-1 text-xs">{branchAccess.length}</Badge>
               </TabsTrigger>
             </TabsList>
 
@@ -394,12 +397,12 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
                     placeholder="Search pages..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-11 bg-muted/30 border-muted"
                   />
                 </div>
 
                 <ScrollArea className="flex-1">
-                  <div className="grid grid-cols-2 gap-3 pr-4">
+                  <div className="grid grid-cols-2 gap-3 pr-4 pb-4">
                     {filteredModules.map((module) => {
                       const pageAccessPermission = permissions.find(p => 
                         p.type === 'page_access' && p.key === module.path
@@ -413,18 +416,28 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
                       return (
                         <div 
                           key={`page-${module.key}`} 
-                          className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                          className="group relative flex items-center justify-between p-4 rounded-xl border-2 bg-card hover:border-primary/30 hover:shadow-md transition-all duration-200"
                         >
                           <div className="flex items-center gap-3 flex-1">
-                            <Key className="w-4 h-4 text-muted-foreground" />
-                            <div>
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                              pageAccessPermission.granted 
+                                ? 'bg-primary/10 text-primary' 
+                                : 'bg-muted text-muted-foreground'
+                            }`}>
+                              {pageAccessPermission.granted ? (
+                                <Unlock className="w-5 h-5" />
+                              ) : (
+                                <Lock className="w-5 h-5" />
+                              )}
+                            </div>
+                            <div className="flex-1">
                               <Label 
                                 htmlFor={`page-access-${module.key}`}
-                                className="text-sm font-medium cursor-pointer"
+                                className="text-sm font-semibold cursor-pointer block mb-0.5"
                               >
                                 {module.name}
                               </Label>
-                              <p className="text-xs text-muted-foreground">{module.path}</p>
+                              <p className="text-xs text-muted-foreground font-mono">{module.path}</p>
                             </div>
                           </div>
                           <Switch
@@ -449,12 +462,12 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
                     placeholder="Search modules..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-11 bg-muted/30 border-muted"
                   />
                 </div>
 
                 <ScrollArea className="flex-1">
-                  <div className="space-y-3 pr-4">
+                  <div className="space-y-3 pr-4 pb-4">
                     {filteredModules.map((module) => {
                       const pageAccessPermission = permissions.find(p => 
                         p.type === 'page_access' && p.key === module.path
@@ -468,33 +481,35 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
                           key={module.key}
                           open={isOpen}
                           onOpenChange={() => toggleSection(module.key)}
-                          className="border rounded-lg overflow-hidden"
+                          className="border-2 rounded-xl overflow-hidden bg-card shadow-sm hover:shadow-md transition-all"
                         >
-                          <CollapsibleTrigger className="w-full p-4 hover:bg-accent/50 transition-colors">
+                          <CollapsibleTrigger className="w-full p-4 hover:bg-muted/50 transition-colors">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                                <div className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+                                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                                </div>
                                 <div className="text-left">
-                                  <p className="font-semibold">{module.name}</p>
-                                  <p className="text-xs text-muted-foreground">{module.path}</p>
+                                  <p className="font-semibold text-base">{module.name}</p>
+                                  <p className="text-xs text-muted-foreground font-mono">{module.path}</p>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
                                 {getStatusBadge(status)}
-                                <Badge variant="outline">{module.actions.length} actions</Badge>
+                                <Badge variant="outline" className="text-xs">{module.actions.length} actions</Badge>
                               </div>
                             </div>
                             {!hasPageAccess && (
-                              <div className="mt-2 flex items-center gap-2 text-xs text-yellow-600">
-                                <XCircle className="w-3 h-3" />
+                              <div className="mt-3 flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20">
+                                <XCircle className="w-3.5 h-3.5" />
                                 Page access disabled - Enable page access first
                               </div>
                             )}
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <Separator />
-                            <div className="p-4 bg-muted/30">
-                              <div className="grid grid-cols-2 gap-3">
+                            <div className="p-4 bg-muted/20">
+                              <div className="grid grid-cols-2 gap-2.5">
                                 {module.actions.map((action) => {
                                   const permKey = `${module.key}:${action}`;
                                   const permission = permissions.find(p => p.key === permKey && p.type === 'page_action');
@@ -505,11 +520,11 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
                                   return (
                                     <div 
                                       key={action} 
-                                      className="flex items-center justify-between p-2 rounded-md bg-background"
+                                      className="flex items-center justify-between p-3 rounded-lg bg-background border hover:border-primary/30 transition-colors"
                                     >
                                       <Label 
                                         htmlFor={`${module.key}-${action}`}
-                                        className="text-sm capitalize cursor-pointer flex-1"
+                                        className="text-sm capitalize cursor-pointer flex-1 font-medium"
                                       >
                                         {action.replace(/-/g, ' ')}
                                       </Label>
@@ -536,18 +551,27 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
             {/* Branch Access Tab */}
             <TabsContent value="branches" className="flex-1 overflow-hidden mt-0">
               <ScrollArea className="h-full">
-                <div className="grid grid-cols-2 gap-3 pr-4">
+                <div className="grid grid-cols-2 gap-3 pr-4 pb-4">
                   {branchAccess.map((branch) => (
                     <div 
                       key={branch.id} 
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                      className="group flex items-center justify-between p-4 rounded-xl border-2 bg-card hover:border-primary/30 hover:shadow-md transition-all duration-200"
                     >
-                      <Label 
-                        htmlFor={`branch-${branch.id}`} 
-                        className="cursor-pointer font-medium flex-1"
-                      >
-                        {branch.name}
-                      </Label>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                          branch.hasAccess 
+                            ? 'bg-primary/10 text-primary' 
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                        <Label 
+                          htmlFor={`branch-${branch.id}`} 
+                          className="cursor-pointer font-semibold flex-1 text-sm"
+                        >
+                          {branch.name}
+                        </Label>
+                      </div>
                       <Switch
                         id={`branch-${branch.id}`}
                         checked={branch.hasAccess}
@@ -561,17 +585,17 @@ export function UserPermissionsDialog({ user, onSuccess }: UserPermissionsDialog
           </Tabs>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t mt-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>
+        <div className="flex justify-end gap-3 px-6 py-4 border-t bg-muted/20">
+          <Button variant="outline" onClick={() => setOpen(false)} className="min-w-24">
             Cancel
           </Button>
           <Button 
             onClick={savePermissions} 
             disabled={loading}
-            className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
+            className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 min-w-32 shadow-md"
           >
             <Save className="w-4 h-4 mr-2" />
-            {loading ? "Saving..." : "Save Permissions"}
+            {loading ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </DialogContent>
