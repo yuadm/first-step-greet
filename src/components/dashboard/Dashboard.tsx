@@ -100,8 +100,8 @@ export function Dashboard() {
         // Employees
         supabase.from('employees').select('*', { count: 'exact' }),
         
-        // Clients count
-        supabase.from('clients').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        // Clients with branch info
+        supabase.from('clients').select('*', { count: 'exact' }).eq('is_active', true),
         
         // Leaves with details
         supabase.from('leave_requests').select(`
@@ -125,6 +125,7 @@ export function Dashboard() {
 
       const employeesData = employeesResult.data;
       const employeeCount = employeesResult.count;
+      const clientsData = clientsResult.data;
       const clientsCount = clientsResult.count;
       const leavesData = leavesResult.data;
       const allCompliance = complianceResult.data;
@@ -170,17 +171,17 @@ export function Dashboard() {
         ? Math.round((allCompliance.filter(r => r.status === 'completed').length / allCompliance.length) * 100)
         : 0;
 
-      // Optimized branch counts - Single query per branch type instead of N+1
+      // Optimized branch counts - Calculate from already fetched data
       const branchColors = ['#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4'];
       
       const branches = (branchesData || []).map((branch, index) => {
         const empCount = employeesData?.filter(e => e.branch_id === branch.id && e.is_active !== false).length || 0;
-        // Note: We already have clientsCount total, for per-branch we'd need additional query
-        // For now using 0, can be optimized later if needed per branch
+        const clientCount = clientsData?.filter(c => c.branch_id === branch.id).length || 0;
+        
         return {
           name: branch.name,
           employeeCount: empCount,
-          clientCount: 0, // Optimized out - can add back if truly needed
+          clientCount: clientCount,
           color: branchColors[index % branchColors.length]
         };
       });
