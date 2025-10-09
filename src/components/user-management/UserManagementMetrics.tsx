@@ -4,16 +4,12 @@ import { useEffect, useState } from "react";
 interface UserManagementMetricsProps {
   totalUsers: number;
   adminCount: number;
-  managerCount: number;
-  hrCount: number;
   userCount: number;
 }
 
 export function UserManagementMetrics({ 
   totalUsers, 
   adminCount,
-  managerCount,
-  hrCount,
   userCount
 }: UserManagementMetricsProps) {
   const metrics = [
@@ -38,26 +34,6 @@ export function UserManagementMetrics({
       changePositive: true
     },
     {
-      label: "Managers",
-      value: managerCount,
-      icon: UserCog,
-      color: "from-orange-500 to-amber-500",
-      bgColor: "bg-orange-500/10",
-      textColor: "text-orange-600",
-      change: "+5",
-      changePositive: true
-    },
-    {
-      label: "HR Staff",
-      value: hrCount,
-      icon: Users,
-      color: "from-purple-500 to-pink-500",
-      bgColor: "bg-purple-500/10",
-      textColor: "text-purple-600",
-      change: "+3",
-      changePositive: true
-    },
-    {
       label: "Standard Users",
       value: userCount,
       icon: Users,
@@ -70,7 +46,7 @@ export function UserManagementMetrics({
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {metrics.map((metric, index) => (
         <MetricCard key={index} {...metric} index={index} />
       ))}
