@@ -65,7 +65,7 @@ export function ClientsContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
-  const { isAdmin } = usePermissions();
+  const { isAdmin, hasPageAction } = usePermissions();
   const { toast } = useToast();
 
   const [newClient, setNewClient] = useState({
@@ -509,22 +509,24 @@ export function ClientsContent() {
           <Building className="w-8 h-8 text-primary" />
           <h1 className="text-3xl font-bold text-foreground">Clients</h1>
         </div>
-        {isAdmin && (
-          <div className="flex gap-2">
+        <div className="flex gap-2">
+          {hasPageAction('clients', 'import') && (
             <Button onClick={() => setImportDialogOpen(true)} variant="outline" className="gap-2">
               <Upload className="w-4 h-4" />
               Import
             </Button>
+          )}
+          {hasPageAction('clients', 'create') && (
             <Button onClick={() => setDialogOpen(true)} className="gap-2">
               <Plus className="w-4 h-4" />
               Add Client
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Batch Actions Toolbar */}
-      {selectedClients.length > 0 && isAdmin && (
+      {selectedClients.length > 0 && hasPageAction('clients', 'delete') && (
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -590,7 +592,7 @@ export function ClientsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {isAdmin && (
+                  {(hasPageAction('clients', 'delete') || hasPageAction('clients', 'edit')) && (
                     <TableHead className="w-12">
                       <Checkbox 
                         checked={selectedClients.length === paginatedClients.length && paginatedClients.length > 0}
@@ -632,7 +634,7 @@ export function ClientsContent() {
               <TableBody>
                 {paginatedClients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-muted/50 transition-colors">
-                    {isAdmin && (
+                    {(hasPageAction('clients', 'delete') || hasPageAction('clients', 'edit')) && (
                       <TableCell>
                         <Checkbox 
                           checked={selectedClients.includes(client.id)}
@@ -660,7 +662,7 @@ export function ClientsContent() {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        {isAdmin && (
+                        {hasPageAction('clients', 'delete') && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -678,7 +680,7 @@ export function ClientsContent() {
                 ))}
                 {paginatedClients.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground">
+                    <TableCell colSpan={(hasPageAction('clients', 'delete') || hasPageAction('clients', 'edit')) ? 5 : 4} className="text-center text-muted-foreground">
                       No clients found
                     </TableCell>
                   </TableRow>
