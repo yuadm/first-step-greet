@@ -44,7 +44,7 @@ export default function UserGuide() {
             Complete User Guide
           </CardTitle>
           <CardDescription>
-            Download the full user manual with detailed instructions for all features
+            Download the full user manual with detailed instructions, screenshots, and walkthroughs for all features
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -85,11 +85,12 @@ export default function UserGuide() {
 
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
               <h3 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">
-                📚 150+ Page Comprehensive Manual
+                📚 150+ Page Comprehensive Manual with Visual Walkthroughs
               </h3>
               <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
-                This guide covers everything from basic navigation to advanced features. 
-                Perfect for new users and as a reference for experienced administrators.
+                This guide includes 20+ screenshots and visual walkthroughs covering every module. 
+                Perfect for new users and as a reference for experienced administrators. Screenshots show each button, 
+                form, and workflow step-by-step.
               </p>
               <Button onClick={handleDownloadGuide} size="lg" className="w-full sm:w-auto">
                 <Download className="mr-2 h-4 w-4" />
@@ -153,9 +154,9 @@ export default function UserGuide() {
         </CardHeader>
         <CardContent className="text-sm text-orange-800 dark:text-orange-200">
           <p>
-            This guide includes detailed written instructions for every feature. 
-            For visual references, please use the system itself alongside this guide. 
-            The step-by-step instructions are designed to be followed directly in the application.
+            This guide includes detailed written instructions AND visual screenshots for every feature. 
+            Screenshot placeholders are included in the PDF. To add actual screenshots, follow the guide in 
+            public/user-guide-screenshots/SCREENSHOT_GUIDE.md for capturing and placing screenshots.
           </p>
         </CardContent>
       </Card>

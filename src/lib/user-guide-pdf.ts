@@ -145,6 +145,52 @@ export const generateUserGuidePDF = () => {
     yPosition += 8;
   };
 
+  // Helper function to add screenshot
+  const addScreenshot = (imageName: string, caption: string, heightInMm: number = 80) => {
+    const imagePath = `/user-guide-screenshots/${imageName}`;
+    
+    checkNewPage(heightInMm + 20);
+    
+    try {
+      // Add a border for the screenshot area
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.rect(margin, yPosition, maxWidth, heightInMm, 'S');
+      
+      // Try to add the image
+      // Note: In production, you would need to load the image first
+      // For now, we'll add a placeholder box
+      doc.setFillColor(245, 245, 245);
+      doc.rect(margin + 1, yPosition + 1, maxWidth - 2, heightInMm - 2, 'F');
+      
+      // Add a centered text indicating where the screenshot should appear
+      doc.setFontSize(10);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`[Screenshot: ${imageName}]`, pageWidth / 2, yPosition + (heightInMm / 2), { align: 'center' });
+      doc.text('Place screenshot in: public/user-guide-screenshots/', pageWidth / 2, yPosition + (heightInMm / 2) + 5, { align: 'center' });
+      
+      yPosition += heightInMm + 3;
+      
+      // Add caption below screenshot
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.setFont('helvetica', 'italic');
+      const captionLines = doc.splitTextToSize(caption, maxWidth);
+      captionLines.forEach((line: string) => {
+        doc.text(line, margin, yPosition);
+        yPosition += 4;
+      });
+      
+      yPosition += 8;
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      
+    } catch (error) {
+      console.log(`Screenshot ${imageName} not found, adding placeholder`);
+      // Continue with placeholder
+    }
+  };
+
   // Title Page
   doc.setFillColor(41, 128, 185);
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
@@ -228,6 +274,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(1, 'Admin Portal: For administrators, managers, and staff users. Access via the main login page.');
   addNumberedStep(2, 'Employee Portal: For employee self-service. Employees use their email and default password (123456) for first login.');
   
+  addScreenshot('login-page.png', 'Figure 1.1: Admin login page with email and password fields');
+  
   addInfoBox('Security Note', 'All users should change their password after first login. Contact your system administrator if you experience login issues.', [230, 126, 34]);
 
   // Section 2: Getting Started
@@ -248,6 +296,8 @@ export const generateUserGuidePDF = () => {
   addBulletPoint('Job Applications - Application processing');
   addBulletPoint('Settings - System configuration');
   addBulletPoint('User Management - User and permission management (Admin only)');
+  
+  addScreenshot('sidebar-navigation.png', 'Figure 2.1: Sidebar navigation menu showing all available modules');
 
   addSectionHeader('Understanding the Dashboard', 2);
   addWrappedText('The dashboard provides a quick overview of your HR system:');
@@ -256,6 +306,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(3, 'Activity Timeline: Recent system activities and changes.');
   addNumberedStep(4, 'Document Health: Overview of document expiry status and compliance.');
   addNumberedStep(5, 'Quick Actions: Shortcuts to frequently used features.');
+  
+  addScreenshot('dashboard-overview.png', 'Figure 2.2: Dashboard overview with key metrics, branch breakdown, and activity timeline');
 
   // Section 3: Employee Management
   doc.addPage();
@@ -270,6 +322,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(3, 'Filter by branch using the branch dropdown (you will only see branches you have access to).');
   addNumberedStep(4, 'Sort the list by clicking column headers (Name, Employee Code, Branch, Working Hours, Leave Days).');
   addNumberedStep(5, 'View employee status badges indicating active/inactive status.');
+
+  addScreenshot('employees-list-view.png', 'Figure 3.1: Employee list view with search, filters, and action buttons');
 
   addInfoBox('Permission Note', 'You can only view employees if you have "view" permission for the Employees module. Contact your administrator if you cannot access this page.', [52, 152, 219]);
 
@@ -289,6 +343,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(11, 'Leave Allowance: Set the annual leave days allocated to this employee.');
   addNumberedStep(12, 'Hours Restriction: Set maximum weekly hours if applicable.');
   addNumberedStep(13, 'Click "Save" to create the employee record.');
+
+  addScreenshot('employees-add-form.png', 'Figure 3.2: Add employee form with all required and optional fields');
 
   addInfoBox('Default Password', 'New employees are assigned a default password: 123456. Employees should change this password on first login to the Employee Portal.', [230, 126, 34]);
 
@@ -330,6 +386,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(5, 'Review the import preview showing what will be created.');
   addNumberedStep(6, 'Confirm the import to add all employees.');
   addNumberedStep(7, 'Review any error messages for rows that failed validation.');
+
+  addScreenshot('employees-bulk-import.png', 'Figure 3.3: Bulk import interface with template download and file upload');
 
   addWrappedText('Exporting Employees:');
   addNumberedStep(1, 'Click the "Export" button.');
@@ -391,6 +449,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(3, 'Filter by status: All, Pending, Approved, or Rejected.');
   addNumberedStep(4, 'View leave details including employee, dates, type, and status.');
 
+  addScreenshot('leaves-list-view.png', 'Figure 5.1: Leave requests list with status filters and branch selection');
+
   addInfoBox('Status Indicators', 'Pending (Yellow): Awaiting approval | Approved (Green): Request accepted | Rejected (Red): Request denied', [52, 152, 219]);
 
   addSectionHeader('5.2 Creating Leave Requests', 2);
@@ -401,6 +461,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(5, 'Select end date (must be after start date).');
   addNumberedStep(6, 'Add notes or reason for the leave request.');
   addNumberedStep(7, 'Click "Submit" to create the request.');
+
+  addScreenshot('leaves-create-request.png', 'Figure 5.2: Create leave request form with employee selector and date pickers');
 
   addInfoBox('Leave Balance', 'The system will show the employee\'s remaining leave balance when creating a request. Ensure sufficient balance before submitting.', [46, 204, 113]);
 
@@ -420,6 +482,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(3, 'Enter a reason for rejection (recommended).');
   addNumberedStep(4, 'Confirm the rejection.');
   addNumberedStep(5, 'The employee will be notified with the reason.');
+
+  addScreenshot('leaves-approval-dialog.png', 'Figure 5.3: Leave approval/rejection dialog with comment field');
 
   addSectionHeader('5.4 Leave Analytics', 2);
   addWrappedText('View leave statistics and trends:');
@@ -452,6 +516,8 @@ export const generateUserGuidePDF = () => {
   addInfoBox('Expiring Soon (Orange)', 'Document expires within 30 days. Renewal should be initiated.', [230, 126, 34]);
   addInfoBox('Expired (Red)', 'Document has passed expiry date. Immediate action required.', [231, 76, 60]);
 
+  addScreenshot('documents-list-view.png', 'Figure 6.1: Documents list with expiry status indicators and filters');
+
   addSectionHeader('6.3 Adding Documents', 2);
   addNumberedStep(1, 'Navigate to Documents page (requires "view" permission).');
   addNumberedStep(2, 'Click "Add Document" (requires "create" permission).');
@@ -464,6 +530,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(9, 'Select nationality status if relevant.');
   addNumberedStep(10, 'Add any notes or additional information.');
   addNumberedStep(11, 'Click "Save" to create the document record.');
+  
+  addScreenshot('documents-upload-form.png', 'Figure 6.2: Document upload form with all required fields');
 
   addSectionHeader('6.4 Managing Documents', 2);
   addWrappedText('Edit or delete existing documents:');
@@ -527,6 +595,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(5, 'Assign employees or select all employees.');
   addNumberedStep(6, 'Save the period to activate it.');
 
+  addScreenshot('compliance-periods-view.png', 'Figure 7.1: Compliance periods view with period list and status');
+
   addSectionHeader('7.4 Recording Compliance', 2);
   addWrappedText('Complete compliance records for employees:');
   addNumberedStep(1, 'Open a compliance period.');
@@ -538,6 +608,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(7, 'Add supervisor notes or comments.');
   addNumberedStep(8, 'Save the compliance record.');
   addNumberedStep(9, 'Generate PDF of the completed form if needed.');
+  
+  addScreenshot('compliance-add-record.png', 'Figure 7.2: Add compliance record form with questionnaire or form fields');
 
   addSectionHeader('7.5 Supervision Records', 2);
   addWrappedText('Conducting employee supervision:');
@@ -560,6 +632,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(6, 'Note any areas for improvement.');
   addNumberedStep(7, 'Upload photos or evidence if applicable.');
   addNumberedStep(8, 'Mark as completed and save.');
+  
+  addScreenshot('compliance-spot-check.png', 'Figure 7.3: Spot check form with observation fields and file upload');
 
   addSectionHeader('7.7 Annual Appraisals', 2);
   addWrappedText('Conducting yearly performance reviews:');
@@ -790,6 +864,8 @@ export const generateUserGuidePDF = () => {
   addSectionHeader('11. Settings & Configuration', 1);
   
   addInfoBox('Admin Access Required', 'Most settings require Admin role or specific "edit" permissions. Contact your administrator if you cannot access settings.', [230, 126, 34]);
+  
+  addScreenshot('settings-navigation.png', 'Figure 11.1: Settings page with navigation showing all configuration options');
 
   addSectionHeader('11.1 Company Settings', 2);
   addNumberedStep(1, 'Navigate to Settings > Company Settings.');
@@ -810,6 +886,8 @@ export const generateUserGuidePDF = () => {
   addNumberedStep(4, 'Enter branch location/address.');
   addNumberedStep(5, 'Add contact information.');
   addNumberedStep(6, 'Save the new branch.');
+
+  addScreenshot('settings-branch-management.png', 'Figure 11.2: Branch management interface with add/edit capabilities');
 
   addWrappedText('Editing Branches:');
   addNumberedStep(1, 'Find branch in list.');
