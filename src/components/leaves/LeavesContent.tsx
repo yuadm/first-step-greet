@@ -342,11 +342,22 @@ export function LeavesContent() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Branches</SelectItem>
-            {branches.map((branch) => (
-              <SelectItem key={branch.id} value={branch.id}>
-                {branch.name}
-              </SelectItem>
-            ))}
+            {branches
+              .filter(branch => {
+                // Admins see all branches
+                if (isAdmin) return true;
+                // If user has accessible branches, only show those
+                if (accessibleBranches.length > 0) {
+                  return accessibleBranches.includes(branch.id);
+                }
+                // If no accessible branches defined, show all
+                return true;
+              })
+              .map((branch) => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {branch.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
 
