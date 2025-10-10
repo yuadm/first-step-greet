@@ -65,7 +65,7 @@ export function ClientsContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
-  const { isAdmin, hasPageAction } = usePermissions();
+  const { isAdmin, hasPageAction, getAccessibleBranches } = usePermissions();
   const { toast } = useToast();
 
   const [newClient, setNewClient] = useState({
@@ -570,11 +570,13 @@ export function ClientsContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Branches</SelectItem>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
+                  {branches
+                    .filter(branch => isAdmin || getAccessibleBranches().includes(branch.id))
+                    .map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -832,11 +834,13 @@ export function ClientsContent() {
                   <SelectValue placeholder="Select branch" />
                 </SelectTrigger>
                 <SelectContent>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
+                  {branches
+                    .filter(branch => isAdmin || getAccessibleBranches().includes(branch.id))
+                    .map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

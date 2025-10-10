@@ -975,11 +975,13 @@ export function DocumentsContent() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Branches</SelectItem>
-            {[...new Set(documents.map(doc => doc.employees?.branch).filter(Boolean))].map((branch) => (
-              <SelectItem key={branch} value={branch!}>
-                {branch}
-              </SelectItem>
-            ))}
+            {branches
+              .filter(branch => isAdmin || getAccessibleBranches().includes(branch.id))
+              .map((branch) => (
+                <SelectItem key={branch.id} value={branch.name}>
+                  {branch.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
@@ -1209,11 +1211,13 @@ export function DocumentsContent() {
                     <SelectValue placeholder="Select employee" />
                   </SelectTrigger>
                   <SelectContent>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.name} ({emp.branch})
-                      </SelectItem>
-                    ))}
+                    {employees
+                      .filter(emp => isAdmin || getAccessibleBranches().includes(emp.branch_id))
+                      .map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.name} ({emp.branch})
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

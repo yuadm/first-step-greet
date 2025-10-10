@@ -7,6 +7,7 @@ import { DatePickerWithRange } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/contexts/PermissionsContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -49,6 +50,7 @@ export function ReportsContent() {
   const [selectedColumns, setSelectedColumns] = useState<{[key: string]: string[]}>({});
   const [isColumnSelectorOpen, setIsColumnSelectorOpen] = useState(false);
   const { toast } = useToast();
+  const { isAdmin, getAccessibleBranches } = usePermissions();
 
   useEffect(() => {
     fetchBranches();
@@ -833,11 +835,13 @@ export function ReportsContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Branches</SelectItem>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.name}>
-                      {branch.name}
-                    </SelectItem>
-                  ))}
+                  {branches
+                    .filter(branch => isAdmin || getAccessibleBranches().includes(branch.id))
+                    .map((branch) => (
+                      <SelectItem key={branch.id} value={branch.name}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
