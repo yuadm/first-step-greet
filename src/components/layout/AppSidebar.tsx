@@ -16,7 +16,6 @@ import {
   LogOut,
   Briefcase,
   FileSignature,
-  BookOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -120,16 +119,6 @@ const settingsItems = [
   },
 ];
 
-const helpItems = [
-  {
-    title: "User Guide",
-    url: "/user-guide",
-    icon: BookOpen,
-    description: "Help & Documentation",
-    requiredPage: "/"
-  },
-];
-
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const { companySettings } = useCompany();
@@ -166,10 +155,6 @@ export function AppSidebar() {
   const accessibleSettingsItems = permissionsLoading 
     ? [] 
     : settingsItems.filter(item => hasPageAccess(item.requiredPage));
-
-  const accessibleHelpItems = permissionsLoading 
-    ? [] 
-    : helpItems.filter(item => hasPageAccess(item.requiredPage));
 
   return (
     <Sidebar
@@ -284,37 +269,6 @@ export function AppSidebar() {
                 <SidebarGroupContent>
                   <SidebarMenu className="space-y-1">
                     {accessibleSettingsItems.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild tooltip={collapsed ? item.title : undefined}>
-                          <NavLink to={item.url} className={getNavClassName(item.url)}>
-                            <item.icon className="w-5 h-5 flex-shrink-0" />
-                            {!collapsed && (
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium">{item.title}</div>
-                                <div className="text-xs opacity-60 truncate">
-                                  {item.description}
-                                </div>
-                              </div>
-                            )}
-                          </NavLink>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            )}
-
-            {accessibleHelpItems.length > 0 && (
-              <SidebarGroup className="mt-8">
-                {!collapsed && (
-                  <SidebarGroupLabel className="text-xs uppercase tracking-wider text-sidebar-foreground/60 font-semibold mb-2">
-                    Help
-                  </SidebarGroupLabel>
-                )}
-                <SidebarGroupContent>
-                  <SidebarMenu className="space-y-1">
-                    {accessibleHelpItems.map((item) => (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton asChild tooltip={collapsed ? item.title : undefined}>
                           <NavLink to={item.url} className={getNavClassName(item.url)}>
