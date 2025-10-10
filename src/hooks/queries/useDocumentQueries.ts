@@ -39,7 +39,6 @@ export interface Employee {
   employee_code: string;
   sponsored?: boolean;
   twenty_hours?: boolean;
-  country?: string;
 }
 
 export interface Branch {
@@ -62,7 +61,7 @@ export const fetchDocuments = async () => {
     .from('document_tracker')
     .select(`
       *,
-      employees (name, email, branch, country),
+      employees (name, email, branch),
       document_types (name)
     `)
     .order('expiry_date', { ascending: true });
@@ -74,7 +73,7 @@ export const fetchDocuments = async () => {
 export const fetchDocumentEmployees = async () => {
   const { data, error } = await supabase
     .from('employees')
-    .select('id, name, email, branch, branch_id, employee_code, sponsored, twenty_hours, country')
+    .select('id, name, email, branch, branch_id, employee_code, sponsored, twenty_hours')
     .order('name');
 
   if (error) throw error;

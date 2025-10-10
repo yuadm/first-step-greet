@@ -25,7 +25,6 @@ interface Document {
     name: string;
     email: string;
     branch: string;
-    country?: string;
   };
   document_types?: {
     name: string;
@@ -59,7 +58,7 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
         .from('document_tracker')
         .select(`
           *,
-          employees (name, email, branch, country),
+          employees (name, email, branch),
           document_types (name)
         `)
         .eq('employee_id', employeeId);
@@ -197,11 +196,16 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
 
           {/* Country - Read Only from Employee */}
           <div className="border rounded-lg p-4">
-            <h3 className="text-sm font-medium mb-3">Employee Information</h3>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Country</label>
-              <p className="text-sm">{document.employees?.country || 'N/A'}</p>
-              <p className="text-xs text-muted-foreground mt-1">This is set at the employee level</p>
+            <h3 className="text-sm font-medium mb-3">Document Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Country</label>
+                <p className="text-sm">{document.country || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Nationality Status</label>
+                <p className="text-sm">{document.nationality_status || 'N/A'}</p>
+              </div>
             </div>
           </div>
 

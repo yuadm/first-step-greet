@@ -44,7 +44,6 @@ interface Employee {
   branch_id: string;
   sponsored?: boolean;
   twenty_hours?: boolean;
-  country?: string;
 }
 
 interface DocumentType {
@@ -83,7 +82,9 @@ export function DocumentEditDialog({
     document_number: "",
     issue_date: null as Date | string | null,
     expiry_date: null as Date | string | null,
-    notes: ""
+    notes: "",
+    country: "",
+    nationality_status: ""
   });
   const [sponsored, setSponsored] = useState(false);
   const [twentyHours, setTwentyHours] = useState(false);
@@ -105,7 +106,9 @@ export function DocumentEditDialog({
         document_number: document.document_number || "",
         issue_date: document.issue_date && isValidDate(document.issue_date) ? new Date(document.issue_date) : document.issue_date,
         expiry_date: document.expiry_date && isValidDate(document.expiry_date) ? new Date(document.expiry_date) : document.expiry_date,
-        notes: document.notes || ""
+        notes: document.notes || "",
+        country: document.country || "",
+        nationality_status: document.nationality_status || ""
       });
 
       // Pre-populate employee status from employee data
@@ -233,6 +236,8 @@ export function DocumentEditDialog({
           issue_date: issueDateString || null,
           expiry_date: expiryDateString,
           notes: editDocument.notes || null,
+          country: editDocument.country || null,
+          nationality_status: editDocument.nationality_status || null,
           status,
           updated_at: new Date().toISOString()
         })
@@ -341,6 +346,26 @@ export function DocumentEditDialog({
               value={editDocument.notes}
               onChange={(e) => setEditDocument(prev => ({ ...prev, notes: e.target.value }))}
               placeholder="Additional information..."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="country">Country</Label>
+            <Input
+              id="country"
+              value={editDocument.country}
+              onChange={(e) => setEditDocument(prev => ({ ...prev, country: e.target.value }))}
+              placeholder="Country"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="nationality_status">Nationality Status</Label>
+            <Input
+              id="nationality_status"
+              value={editDocument.nationality_status}
+              onChange={(e) => setEditDocument(prev => ({ ...prev, nationality_status: e.target.value }))}
+              placeholder="Nationality Status"
             />
           </div>
 
