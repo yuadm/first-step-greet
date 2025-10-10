@@ -35,6 +35,7 @@ import DocumentSigningView from "./pages/DocumentSigningView";
 import EmployeeDocumentSigningView from "./pages/EmployeeDocumentSigningView";
 import Reference from "./pages/Reference";
 import EmployeeCareWorkerStatements from "./pages/EmployeeCareWorkerStatements";
+import UserGuide from "./pages/UserGuide";
 import NotFound from "./pages/NotFound";
 
 
@@ -161,6 +162,11 @@ function AppContent() {
       <Route path="/document-signing" element={
         <ProtectedRoute requiredPage="/document-signing">
           <DocumentSigning />
+        </ProtectedRoute>
+      } />
+      <Route path="/user-guide" element={
+        <ProtectedRoute requiredPage="/">
+          <UserGuide />
         </ProtectedRoute>
       } />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
