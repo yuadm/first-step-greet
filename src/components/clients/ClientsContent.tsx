@@ -83,7 +83,7 @@ export function ClientsContent() {
   const { createClient, updateClient, deleteClient } = useClientActions();
 
   const handleAddClient = () => {
-    if (!isAdmin) {
+    if (!hasPageAction('clients', 'create')) {
       toast({
         title: "Access denied",
         description: "You don't have permission to create clients.",
@@ -130,7 +130,7 @@ export function ClientsContent() {
   };
 
   const handleUpdateClient = () => {
-    if (!isAdmin) {
+    if (!hasPageAction('clients', 'edit')) {
       toast({
         title: "Access denied",
         description: "You don't have permission to edit clients.",
@@ -155,7 +155,7 @@ export function ClientsContent() {
   };
 
   const handleDeleteClient = (clientId: string) => {
-    if (!isAdmin) {
+    if (!hasPageAction('clients', 'delete')) {
       toast({
         title: "Access denied",
         description: "You don't have permission to delete clients.",
@@ -173,7 +173,7 @@ export function ClientsContent() {
   };
 
   const batchDeleteClients = async () => {
-    if (!isAdmin) {
+    if (!hasPageAction('clients', 'bulk-delete')) {
       toast({
         title: "Access denied",
         description: "You don't have permission to delete clients.",
