@@ -63,8 +63,53 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
     return Math.ceil((days + start.getDay() + 1) / 7);
   };
 
-  const calculatePeriodStats = (periodId: string, employeesData: any[], recordsData: any[]) => {
-    const totalEmployees = employeesData.length;
+  const getPeriodEndDate = (periodId: string, freq: string): Date => {
+    switch (freq.toLowerCase()) {
+      case 'annual': {
+        const year = parseInt(periodId);
+        return new Date(year, 11, 31, 23, 59, 59);
+      }
+      case 'monthly': {
+        const [year, month] = periodId.split('-').map(Number);
+        return new Date(year, month, 0, 23, 59, 59); // Last day of the month
+      }
+      case 'quarterly': {
+        const [yearStr, quarterStr] = periodId.split('-Q');
+        const year = parseInt(yearStr);
+        const quarter = parseInt(quarterStr);
+        const lastMonth = quarter * 3;
+        return new Date(year, lastMonth, 0, 23, 59, 59);
+      }
+      case 'bi-annual': {
+        const [yearStr, halfStr] = periodId.split('-H');
+        const year = parseInt(yearStr);
+        const half = parseInt(halfStr);
+        const lastMonth = half === 1 ? 6 : 12;
+        return new Date(year, lastMonth, 0, 23, 59, 59);
+      }
+      case 'weekly': {
+        const [yearStr, weekStr] = periodId.split('-W');
+        const year = parseInt(yearStr);
+        const week = parseInt(weekStr);
+        const jan4 = new Date(year, 0, 4);
+        const weekStart = new Date(jan4.getTime() - (jan4.getDay() - 1) * 24 * 60 * 60 * 1000);
+        const weekEnd = new Date(weekStart.getTime() + (week - 1) * 7 * 24 * 60 * 60 * 1000 + 6 * 24 * 60 * 60 * 1000);
+        weekEnd.setHours(23, 59, 59);
+        return weekEnd;
+      }
+      default:
+        return new Date();
+    }
+  };
+
+  const calculatePeriodStats = (periodId: string, employeesData: any[], recordsData: any[], periodEndDate: Date) => {
+    // Only count employees who existed during this period
+    const eligibleEmployees = employeesData.filter(emp => {
+      const empCreatedDate = new Date(emp.created_at);
+      return empCreatedDate <= periodEndDate;
+    });
+    
+    const totalEmployees = eligibleEmployees.length;
     const periodRecords = recordsData.filter(record => record.period_identifier === periodId);
     const completedRecords = periodRecords.filter(record => 
       record.status === 'completed' || record.completion_date
@@ -96,7 +141,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
       
       switch (frequency.toLowerCase()) {
         case 'annual':
-          const annualStats = calculatePeriodStats(year.toString(), employees, records);
+          const annualPeriodEnd = getPeriodEndDate(year.toString(), 'annual');
+          const annualStats = calculatePeriodStats(year.toString(), employees, records, annualPeriodEnd);
           generatedPeriods.push({
             period_identifier: year.toString(),
             year,
@@ -115,7 +161,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
             for (let month = monthsToShow; month >= 1; month--) {
               const periodId = `${year}-${String(month).padStart(2, '0')}`;
               const isCurrentMonth = year === currentYear && month === new Date().getMonth() + 1;
-              const monthStats = calculatePeriodStats(periodId, employees, records);
+              const monthPeriodEnd = getPeriodEndDate(periodId, 'monthly');
+              const monthStats = calculatePeriodStats(periodId, employees, records, monthPeriodEnd);
               generatedPeriods.push({
                 period_identifier: periodId,
                 year,
@@ -136,7 +183,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
             for (let quarter = currentQuarter; quarter >= 1; quarter--) {
               const periodId = `${year}-Q${quarter}`;
               const isCurrentQuarter = year === currentYear && quarter === Math.ceil((new Date().getMonth() + 1) / 3);
-              const quarterStats = calculatePeriodStats(periodId, employees, records);
+              const quarterPeriodEnd = getPeriodEndDate(periodId, 'quarterly');
+              const quarterStats = calculatePeriodStats(periodId, employees, records, quarterPeriodEnd);
               generatedPeriods.push({
                 period_identifier: periodId,
                 year,
@@ -157,7 +205,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
             for (let half = currentHalf; half >= 1; half--) {
               const periodId = `${year}-H${half}`;
               const isCurrentHalf = year === currentYear && half === (new Date().getMonth() < 6 ? 1 : 2);
-              const halfStats = calculatePeriodStats(periodId, employees, records);
+              const halfPeriodEnd = getPeriodEndDate(periodId, 'bi-annual');
+              const halfStats = calculatePeriodStats(periodId, employees, records, halfPeriodEnd);
               generatedPeriods.push({
                 period_identifier: periodId,
                 year,
@@ -179,7 +228,8 @@ export function CompliancePeriodView({ complianceTypeId, complianceTypeName, fre
             for (let week = Math.floor(currentWeek / 4) * 4; week >= 1; week -= 4) {
               const periodId = `${year}-W${String(week).padStart(2, '0')}`;
               const isCurrentWeek = year === currentYear && week === getWeekNumber(new Date());
-              const weekStats = calculatePeriodStats(periodId, employees, records);
+              const weekPeriodEnd = getPeriodEndDate(periodId, 'weekly');
+              const weekStats = calculatePeriodStats(periodId, employees, records, weekPeriodEnd);
               generatedPeriods.push({
                 period_identifier: periodId,
                 year,
