@@ -403,9 +403,9 @@ export function ClientCompliancePeriodDialog({
 
       const { data: upserted, error: upsertErr } = await supabase
         .from('client_compliance_period_records')
-        .upsert(complianceRecordPayload)
+        .upsert(complianceRecordPayload, { onConflict: 'client_compliance_type_id,client_id,period_identifier' })
         .select('id')
-        .single();
+        .maybeSingle();
       if (upsertErr) throw upsertErr;
 
       let complianceRecordId = upserted?.id as string | undefined;

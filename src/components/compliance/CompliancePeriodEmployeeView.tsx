@@ -178,18 +178,16 @@ export function CompliancePeriodEmployeeView({
       let status: 'compliant' | 'overdue' | 'due' | 'pending' = 'pending';
 
       if (record) {
-        // Use the database status field directly (like client compliance does)
+        // A record is compliant if it has a completion_date or status is completed
         if (record.status === 'completed' || record.completion_date) {
           status = 'compliant';
-        } else if (record.status === 'overdue' || record.is_overdue) {
+        } else if (record.status === 'overdue') {
           status = 'overdue';
-        } else if (record.status === 'pending') {
-          status = 'pending';
         } else {
           status = 'due';
         }
       } else {
-        // No record exists - check if we're past the period
+        // Check if we're past the period (this would be overdue)
         const now = new Date();
         const isOverdue = isPeriodOverdue(periodIdentifier, frequency, now);
         status = isOverdue ? 'overdue' : 'due';
@@ -241,7 +239,7 @@ export function CompliancePeriodEmployeeView({
   const compliantCount = filteredEmployeeStatusList.filter(item => item.status === 'compliant').length;
   const overdueCount = filteredEmployeeStatusList.filter(item => item.status === 'overdue').length;
   const dueCount = filteredEmployeeStatusList.filter(item => item.status === 'due').length;
-  const pendingCount = filteredEmployeeStatusList.filter(item => item.status === 'pending').length;
+  const pendingCount = 0; // Remove pending status as it's not part of the compliance status enum
 
   // Pagination calculations
   const totalItems = filteredEmployeeStatusList.length;
