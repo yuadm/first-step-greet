@@ -239,6 +239,7 @@ export function CompliancePeriodEmployeeView({
   const compliantCount = filteredEmployeeStatusList.filter(item => item.status === 'compliant').length;
   const overdueCount = filteredEmployeeStatusList.filter(item => item.status === 'overdue').length;
   const dueCount = filteredEmployeeStatusList.filter(item => item.status === 'due').length;
+  const pendingCount = 0; // Remove pending status as it's not part of the compliance status enum
 
   // Pagination calculations
   const totalItems = filteredEmployeeStatusList.length;
@@ -295,7 +296,7 @@ export function CompliancePeriodEmployeeView({
         ) : (
           <div className="space-y-6">
             {/* Stats Overview */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <Card className="card-premium border-success/20 bg-gradient-to-br from-success-soft to-card">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -332,6 +333,17 @@ export function CompliancePeriodEmployeeView({
                 </CardContent>
               </Card>
 
+              <Card className="card-premium border-muted/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                      <p className="text-2xl font-bold text-muted-foreground">{pendingCount}</p>
+                    </div>
+                    <Users className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Employee Table */}

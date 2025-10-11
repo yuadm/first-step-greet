@@ -226,7 +226,7 @@ export function ClientCompliancePeriodDialog({
   }, [clients, periodRecords, periodIdentifier, frequency]);
 
   // Calculate statistics
-  const { completedCount, overdueCount, dueCount } = useMemo(() => {
+  const { completedCount, overdueCount, dueCount, pendingCount } = useMemo(() => {
     const completed = clientStatusList.filter(c => c.status === 'completed').length;
     const overdue = clientStatusList.filter(c => c.status === 'overdue').length;
     const due = clientStatusList.filter(c => c.status === 'due').length;
@@ -234,7 +234,8 @@ export function ClientCompliancePeriodDialog({
     return {
       completedCount: completed,
       overdueCount: overdue,
-      dueCount: due
+      dueCount: due,
+      pendingCount: 0
     };
   }, [clientStatusList]);
 
@@ -499,8 +500,8 @@ export function ClientCompliancePeriodDialog({
         {isLoading ? (
           <div className="space-y-4 animate-pulse">
             <div className="h-8 bg-muted rounded w-64"></div>
-            <div className="grid grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
+            <div className="grid grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-20 bg-muted rounded-xl"></div>
               ))}
             </div>
@@ -509,7 +510,7 @@ export function ClientCompliancePeriodDialog({
         ) : (
           <div className="space-y-6">
             {/* Stats Overview */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <Card className="card-premium border-success/20 bg-gradient-to-br from-success-soft to-card">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
@@ -546,6 +547,17 @@ export function ClientCompliancePeriodDialog({
                 </CardContent>
               </Card>
 
+              <Card className="card-premium border-muted/20">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                      <p className="text-2xl font-bold text-muted-foreground">{pendingCount}</p>
+                    </div>
+                    <Users className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Client Table */}
