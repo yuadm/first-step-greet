@@ -408,7 +408,8 @@ export function ClientCompliancePeriodView({
               date: data.date,
               performed_by: data.completedBy,
               observations: data.observations as any,
-              updated_by: userId
+              updated_by: userId,
+              time: null
             })
             .eq('id', existing.id);
 
@@ -424,7 +425,7 @@ export function ClientCompliancePeriodView({
               service_user_name: data.serviceUserName,
               care_workers: '',
               date: data.date,
-              time: '',
+              time: null,
               performed_by: data.completedBy,
               observations: data.observations as any,
               created_by: userId,
@@ -444,7 +445,7 @@ export function ClientCompliancePeriodView({
             service_user_name: data.serviceUserName,
             care_workers: '',
             date: data.date,
-            time: '',
+            time: null,
             performed_by: data.completedBy,
             observations: data.observations as any,
             created_by: userId,

@@ -339,7 +339,7 @@ export type Database = {
           observations: Json
           performed_by: string
           service_user_name: string
-          time: string
+          time: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -356,7 +356,7 @@ export type Database = {
           observations?: Json
           performed_by: string
           service_user_name: string
-          time: string
+          time?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -373,7 +373,7 @@ export type Database = {
           observations?: Json
           performed_by?: string
           service_user_name?: string
-          time?: string
+          time?: string | null
           updated_at?: string
           updated_by?: string | null
         }
