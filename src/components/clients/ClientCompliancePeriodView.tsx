@@ -344,30 +344,50 @@ export function ClientCompliancePeriodView({
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
-      // Create or update the compliance period record using upsert
-      const { data: upserted, error: upsertError } = await supabase
+      // Create or update the compliance period record
+      const { data: updated, error: updateError } = await supabase
         .from('client_compliance_period_records')
-        .upsert({
-          client_compliance_type_id: complianceTypeId,
-          client_id: selectedClient.id,
-          period_identifier: selectedPeriod,
+        .update({
           status: 'completed',
           completion_date: data.date,
           completion_method: 'spotcheck',
           completed_by: userId,
-          created_by: userId,
           updated_by: userId
-        }, {
-          onConflict: 'client_compliance_type_id,client_id,period_identifier'
         })
-        .select('id')
-        .single();
+        .eq('client_compliance_type_id', complianceTypeId)
+        .eq('client_id', selectedClient.id)
+        .eq('period_identifier', selectedPeriod)
+        .select('id');
 
-      if (upsertError) throw upsertError;
-      if (!upserted) throw new Error('Failed to create/update compliance record');
-      
-      const complianceRecordId = upserted.id;
-      console.log('✅ Upserted compliance record:', complianceRecordId);
+      if (updateError) throw updateError;
+
+      let complianceRecordId: string;
+
+      if (updated && updated.length > 0) {
+        complianceRecordId = updated[0].id;
+        console.log('✅ Updated compliance record:', complianceRecordId);
+      } else {
+        const { data: inserted, error: insertError } = await supabase
+          .from('client_compliance_period_records')
+          .insert({
+            client_compliance_type_id: complianceTypeId,
+            client_id: selectedClient.id,
+            period_identifier: selectedPeriod,
+            status: 'completed',
+            completion_date: data.date,
+            completion_method: 'spotcheck',
+            completed_by: userId,
+            created_by: userId,
+            updated_by: userId
+          })
+          .select('id')
+          .maybeSingle();
+
+        if (insertError) throw insertError;
+        if (!inserted) throw new Error('Failed to create compliance record');
+        complianceRecordId = inserted.id;
+        console.log('✅ Created compliance record:', complianceRecordId);
+      }
 
       // Check if we're editing an existing spot check
       if (editingSpotCheckData) {
