@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Search, Edit, Trash2, Download, Filter } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Search, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/ui/download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,13 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -41,12 +34,6 @@ interface Employee {
   name: string;
   branch: string;
   created_at: string;
-  branch_id?: string;
-}
-
-interface Branch {
-  id: string;
-  name: string;
 }
 
 interface ComplianceRecord {
@@ -85,15 +72,12 @@ export function CompliancePeriodEmployeeView({
   trigger 
 }: CompliancePeriodEmployeeViewProps) {
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [branchFilter, setBranchFilter] = useState<string>('all');
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [open, setOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
-  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const { toast } = useToast();
   const { companySettings } = useCompany();
 
@@ -102,22 +86,6 @@ export function CompliancePeriodEmployeeView({
   
   const employees = data?.employees || [];
   const records = data?.records || [];
-
-  // Fetch branches
-  useEffect(() => {
-    const fetchBranches = async () => {
-      const { data: branchesData } = await supabase
-        .from('branches')
-        .select('id, name')
-        .order('name');
-      
-      if (branchesData) {
-        setBranches(branchesData);
-      }
-    };
-    
-    fetchBranches();
-  }, []);
 
   // Handler to delete a record
   const handleDeleteRecord = async (recordId: string, employeeName: string) => {
@@ -146,156 +114,6 @@ export function CompliancePeriodEmployeeView({
         description: error.message || "Failed to delete compliance record",
         variant: "destructive",
       });
-    }
-  };
-
-  // Handler to download all completed PDFs
-  const handleDownloadAllPDFs = async () => {
-    setIsDownloadingAll(true);
-    
-    try {
-      // Filter for completed records only
-      const completedRecords = filteredEmployeeStatusList.filter(
-        item => item.record && item.record.status === 'completed' && item.record.completion_method
-      );
-
-      if (completedRecords.length === 0) {
-        toast({
-          title: "No completed forms",
-          description: "There are no completed forms to download",
-          variant: "destructive",
-        });
-        setIsDownloadingAll(false);
-        return;
-      }
-
-      toast({
-        title: "Generating PDFs",
-        description: `Generating ${completedRecords.length} PDF${completedRecords.length > 1 ? 's' : ''}...`,
-      });
-
-      // Generate each PDF
-      for (const item of completedRecords) {
-        const record = item.record!;
-        
-        try {
-          if (record.completion_method === 'spotcheck') {
-            const { data, error } = await supabase
-              .from('spot_check_records')
-              .select('service_user_name, care_worker1, care_worker2, check_date, time_from, time_to, carried_by, observations')
-              .eq('employee_id', item.employee.id)
-              .eq('compliance_type_id', complianceTypeId)
-              .eq('period_identifier', record.period_identifier)
-              .single();
-            
-            if (!error && data) {
-              const formData = {
-                serviceUserName: data.service_user_name,
-                careWorker1: data.care_worker1,
-                careWorker2: data.care_worker2,
-                date: data.check_date,
-                timeFrom: data.time_from,
-                timeTo: data.time_to,
-                carriedBy: data.carried_by,
-                observations: data.observations as any
-              };
-              
-              const { generateSpotCheckPdf } = await import('@/lib/spot-check-pdf');
-              await generateSpotCheckPdf(formData, {
-                name: companySettings?.name || 'Company',
-                logo: companySettings?.logo
-              });
-            }
-          } else if (record.completion_method === 'supervision' && record.notes) {
-            const parsedData = JSON.parse(record.notes);
-            const { generateSupervisionPdf } = await import('@/lib/supervision-pdf');
-            await generateSupervisionPdf(parsedData, {
-              name: companySettings?.name || 'Company',
-              logo: companySettings?.logo
-            });
-          } else if (record.completion_method === 'annual_appraisal' && record.notes) {
-            const parsedData = JSON.parse(record.notes);
-            const { generateAnnualAppraisalPDF } = await import('@/lib/annual-appraisal-pdf');
-            await generateAnnualAppraisalPDF(parsedData, item.employee.name, {
-              name: companySettings?.name || 'Company',
-              logo: companySettings?.logo
-            });
-          } else if ((record.completion_method === 'medication_competency' || 
-                     (record.completion_method === 'questionnaire' && record.form_data && (record.form_data as any)?.competencyItems)) &&
-                     (record.form_data || record.notes)) {
-            const parsedData = record.form_data || (record.notes ? JSON.parse(record.notes) : null);
-            if (parsedData) {
-              const items = parsedData.competencyItems;
-              const responses = Array.isArray(items)
-                ? items.map((item: any) => ({
-                    question: item?.performanceCriteria || item?.id || 'Competency Item',
-                    answer: item?.competent === 'yes' ? 'yes' : item?.competent === 'not-yet' ? 'not-yet' : 'yes',
-                    comment: item?.comments || 'No comment provided',
-                    section: 'Competency Assessment',
-                    helpText: item?.examples || 'Direct observation / discussion'
-                  }))
-                : items && typeof items === 'object'
-                ? Object.values(items).map((value: any) => ({
-                    question: value?.performanceCriteria || value?.id || 'Competency Item',
-                    answer: value?.competent === 'yes' ? 'yes' : value?.competent === 'not-yet' ? 'not-yet' : 'yes',
-                    comment: value?.comments || 'No comment provided',
-                    section: 'Competency Assessment',
-                    helpText: value?.examples || 'Direct observation / discussion'
-                  }))
-                : [];
-
-              if (parsedData.acknowledgement?.signature) {
-                responses.push({
-                  question: 'Employee Signature',
-                  answer: 'yes',
-                  comment: parsedData.acknowledgement.signature,
-                  section: 'Acknowledgement',
-                  helpText: 'Employee acknowledgement'
-                });
-              }
-              
-              const competencyData = {
-                employeeId: record.employee_id,
-                employeeName: item.employee.name,
-                periodIdentifier: record.period_identifier,
-                assessmentDate: record.completion_date,
-                responses: responses,
-                signature: parsedData.acknowledgement?.signature || '',
-                completedAt: record.created_at,
-                questionnaireName: 'Medication Competency Assessment',
-                assessorName: parsedData.signatures?.assessorName || '',
-                assessorSignatureData: parsedData.signatures?.assessorSignatureData || '',
-                employeeSignatureData: parsedData.signatures?.employeeSignatureData || ''
-              };
-
-              const { generateMedicationCompetencyPdf } = await import('@/lib/medication-competency-pdf');
-              await generateMedicationCompetencyPdf(competencyData, {
-                name: companySettings?.name || 'Company',
-                logo: companySettings?.logo
-              });
-            }
-          }
-          
-          // Small delay between downloads to avoid browser throttling
-          await new Promise(resolve => setTimeout(resolve, 300));
-        } catch (err) {
-          console.error(`Error generating PDF for ${item.employee.name}:`, err);
-        }
-      }
-
-      toast({
-        title: "Success",
-        description: `Generated ${completedRecords.length} PDF${completedRecords.length > 1 ? 's' : ''} successfully`,
-      });
-    } catch (error: any) {
-      console.error('Error downloading PDFs:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate some PDFs",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDownloadingAll(false);
     }
   };
 
@@ -413,13 +231,9 @@ export function CompliancePeriodEmployeeView({
 
   // Calculate stats for this period
   const filteredEmployeeStatusList = employeeStatusList.filter(item => {
-    const matchesSearch = !searchTerm.trim() || 
-      item.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.employee.branch.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesBranch = branchFilter === 'all' || item.employee.branch === branchFilter;
-    
-    return matchesSearch && matchesBranch;
+    if (!searchTerm.trim()) return true;
+    return item.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           item.employee.branch.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const compliantCount = filteredEmployeeStatusList.filter(item => item.status === 'compliant').length;
@@ -535,51 +349,21 @@ export function CompliancePeriodEmployeeView({
             {/* Employee Table */}
             <Card className="card-premium">
               <CardHeader>
-                <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-3">
                     <Users className="w-6 h-6" />
                     Employee Status ({totalItems} of {employees.length} employees)
                   </CardTitle>
                   
-                  <div className="flex items-center gap-3">
-                    {/* Search */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search employees..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
-                      />
-                    </div>
-                    
-                    {/* Branch Filter */}
-                    <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-muted-foreground" />
-                      <Select value={branchFilter} onValueChange={setBranchFilter}>
-                        <SelectTrigger className="w-40">
-                          <SelectValue placeholder="All Branches" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Branches</SelectItem>
-                          {branches.map((branch) => (
-                            <SelectItem key={branch.id} value={branch.name}>
-                              {branch.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {/* Download All Button */}
-                    <Button
-                      onClick={handleDownloadAllPDFs}
-                      disabled={isDownloadingAll || filteredEmployeeStatusList.filter(item => item.record?.status === 'completed').length === 0}
-                      className="gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      {isDownloadingAll ? 'Generating...' : 'Download All PDFs'}
-                    </Button>
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search employees..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
+                    />
                   </div>
                 </div>
               </CardHeader>
