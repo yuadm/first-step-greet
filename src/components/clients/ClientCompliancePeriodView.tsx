@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Download, AlertTriangle, Plus, Eye, Edit, Trash2, Filter, Users, Search, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, Clock, Shield } from "lucide-react";
+import { Calendar, Download, AlertTriangle, Plus, Eye, Edit, Trash2, Filter, Users, Search, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, Clock, Shield, Loader2 } from "lucide-react";
 import { ClientCompliancePeriodDialog } from "./ClientCompliancePeriodDialog";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/ui/download-button";
@@ -99,6 +99,8 @@ export function ClientCompliancePeriodView({
   const [selectedComplianceRecord, setSelectedComplianceRecord] = useState<any>(null);
   const [editingSpotCheckData, setEditingSpotCheckData] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const { toast } = useToast();
   const { companySettings } = useCompany();
   const { getAccessibleBranches, isAdmin } = usePermissions();
@@ -777,6 +779,128 @@ export function ClientCompliancePeriodView({
     }
   };
 
+  const handleDownloadAllPDFs = async () => {
+    setIsDownloadingAll(true);
+    setDownloadProgress(0);
+    
+    const eligibleClients = filteredAndSortedClients.filter(client => {
+      const record = getClientRecordForPeriod(client.id, selectedPeriod);
+      return record && 
+        (record.status === 'completed' || record.completion_date) &&
+        record.completion_method === 'spotcheck';
+    });
+
+    toast({
+      title: "Starting Bulk Download",
+      description: `Preparing to download ${eligibleClients.length} PDFs...`,
+    });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < eligibleClients.length; i++) {
+      const client = eligibleClients[i];
+      setDownloadProgress(i + 1);
+
+      try {
+        // Add small delay between downloads to prevent overwhelming the browser
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        const record = getClientRecordForPeriod(client.id, selectedPeriod);
+        if (!record) continue;
+
+        // Fetch spot check record
+        let sc: any = null;
+        const { data: spotCheckData } = await supabase
+          .from('client_spot_check_records')
+          .select('*')
+          .eq('compliance_record_id', record.id)
+          .maybeSingle();
+
+        if (spotCheckData) {
+          sc = spotCheckData;
+        } else {
+          // Fallback query when no linked spot check
+          const periodId = selectedPeriod;
+          const freq = (frequency || '').toLowerCase();
+          const toISO = (d: Date) => d.toISOString().slice(0,10);
+          let start: string; let end: string;
+          if (freq === 'quarterly' && /\d{4}-Q[1-4]/.test(periodId)) {
+            const [y, qStr] = periodId.split('-Q');
+            const year = parseInt(y, 10); const q = parseInt(qStr, 10);
+            const mStart = (q - 1) * 3;
+            start = toISO(new Date(year, mStart, 1));
+            end = toISO(new Date(year, mStart + 3, 0));
+          } else if (freq === 'monthly' && /\d{4}-\d{2}/.test(periodId)) {
+            const [y, m] = periodId.split('-');
+            const year = parseInt(y, 10); const month = parseInt(m, 10) - 1;
+            start = toISO(new Date(year, month, 1));
+            end = toISO(new Date(year, month + 1, 0));
+          } else {
+            const year = parseInt(periodId.slice(0,4), 10);
+            start = toISO(new Date(year, 0, 1));
+            end = toISO(new Date(year, 11, 31));
+          }
+          const { data: fallbackSC } = await supabase
+            .from('client_spot_check_records')
+            .select('*')
+            .eq('client_id', client.id)
+            .gte('date', start)
+            .lte('date', end)
+            .order('date', { ascending: false })
+            .maybeSingle();
+          if (fallbackSC) sc = fallbackSC;
+        }
+
+        if (sc) {
+          // Parse observations
+          let observations: any = sc.observations;
+          if (typeof observations === 'string') {
+            try { observations = JSON.parse(observations); } catch { observations = []; }
+          }
+          if (observations && !Array.isArray(observations) && typeof observations === 'object') {
+            observations = Object.values(observations);
+          }
+          const transformedObservations = Array.isArray(observations)
+            ? observations.map((o: any) => ({
+                label: o?.label || 'Unknown Question',
+                value: o?.value || 'Not Rated',
+                comments: o?.comments || ''
+              }))
+            : [];
+
+          if (transformedObservations.length > 0) {
+            const pdfData = {
+              serviceUserName: sc.service_user_name || client.name,
+              date: sc.date || record.completion_date || '',
+              completedBy: sc.performed_by || 'Not specified',
+              observations: transformedObservations,
+            };
+
+            await generateClientSpotCheckPdf(pdfData, {
+              name: companySettings?.name,
+              logo: companySettings?.logo
+            });
+            successCount++;
+          }
+        }
+      } catch (error) {
+        console.error(`Error downloading PDF for ${client.name}:`, error);
+        errorCount++;
+      }
+    }
+
+    setIsDownloadingAll(false);
+    setDownloadProgress(0);
+
+    toast({
+      title: "Bulk Download Complete",
+      description: `Successfully downloaded ${successCount} PDFs${errorCount > 0 ? `, ${errorCount} failed` : ''}.`,
+    });
+  };
+
   const getPeriodLabel = (periodId: string) => {
     switch (frequency.toLowerCase()) {
       case 'quarterly':
@@ -1052,6 +1176,16 @@ export function ClientCompliancePeriodView({
     });
   }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, sortField, sortDirection]);
 
+  // Calculate completed records count for download all button
+  const completedRecordsCount = useMemo(() => {
+    return filteredAndSortedClients.filter(client => {
+      const record = getClientRecordForPeriod(client.id, selectedPeriod);
+      return record && 
+        (record.status === 'completed' || record.completion_date) &&
+        record.completion_method === 'spotcheck';
+    }).length;
+  }, [filteredAndSortedClients, selectedPeriod]);
+
   // Pagination calculations
   const totalItems = filteredAndSortedClients.length;
   const effectiveItemsPerPage = itemsPerPage >= 999999 ? totalItems : itemsPerPage;
@@ -1198,6 +1332,27 @@ export function ClientCompliancePeriodView({
                             </SelectContent>
                           </Select>
                         </div>
+
+                        {/* Download All PDFs Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDownloadAllPDFs}
+                          disabled={isDownloadingAll || completedRecordsCount === 0 || !selectedPeriod}
+                          className="flex items-center gap-2"
+                        >
+                          {isDownloadingAll ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Downloading... ({downloadProgress}/{completedRecordsCount})
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4" />
+                              Download All PDFs ({completedRecordsCount})
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
                   </CardHeader>
