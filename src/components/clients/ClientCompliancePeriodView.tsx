@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Calendar, Download, AlertTriangle, Plus, Eye, Edit, Trash2, Filter, Users, Search, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, Clock, Shield, Loader2 } from "lucide-react";
+import { getPeriodEndDate, isPeriodOverdue, parseDateSafe } from "@/lib/compliance-periods";
 import { ClientCompliancePeriodDialog } from "./ClientCompliancePeriodDialog";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/ui/download-button";
@@ -124,7 +125,8 @@ export function ClientCompliancePeriodView({
           branches (
             name
           )
-        `);
+        `)
+        .eq('is_active', true);
       
       // Apply branch filtering for non-admin users
       if (!isAdmin && accessibleBranches.length > 0) {
@@ -1175,7 +1177,7 @@ export function ClientCompliancePeriodView({
         return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
       }
     });
-  }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, sortField, sortDirection]);
+  }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, sortField, sortDirection, frequency]);
 
   // Calculate completed records count for download all button
   const completedRecordsCount = useMemo(() => {

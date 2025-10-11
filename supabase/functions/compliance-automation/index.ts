@@ -31,6 +31,19 @@ serve(async (req) => {
   try {
     console.log('Starting compliance automation process...');
 
+    // Fetch automation settings
+    const { data: automationSettings, error: settingsError } = await supabase
+      .from('compliance_automation_settings')
+      .select('*')
+      .maybeSingle();
+
+    if (settingsError) {
+      console.error('Error fetching automation settings:', settingsError);
+    }
+
+    const autoGenerateRecords = automationSettings?.auto_generate_records ?? true;
+    console.log('Auto-generate records setting:', autoGenerateRecords);
+
     // Get current date info
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
@@ -98,7 +111,7 @@ serve(async (req) => {
           continue;
       }
 
-      if (shouldGenerate) {
+      if (shouldGenerate && autoGenerateRecords) {
         console.log(`Generating employee records for ${type.name} - ${periodIdentifier}`);
         
         // Call the database function to generate records
@@ -115,6 +128,8 @@ serve(async (req) => {
           totalRecordsCreated += recordsCreated;
           console.log(`Created ${recordsCreated} employee records for ${type.name}`);
         }
+      } else if (shouldGenerate && !autoGenerateRecords) {
+        console.log(`Skipping record generation for ${type.name} - auto_generate_records is disabled`);
       }
     }
 
@@ -153,7 +168,7 @@ serve(async (req) => {
           continue;
       }
 
-      if (shouldGenerate) {
+      if (shouldGenerate && autoGenerateRecords) {
         console.log(`Generating client records for ${type.name} - ${periodIdentifier}`);
         
         // Call the database function to generate client records
@@ -170,6 +185,8 @@ serve(async (req) => {
           clientRecordsCreated += recordsCreated;
           console.log(`Created ${recordsCreated} client records for ${type.name}`);
         }
+      } else if (shouldGenerate && !autoGenerateRecords) {
+        console.log(`Skipping client record generation for ${type.name} - auto_generate_records is disabled`);
       }
     }
 
