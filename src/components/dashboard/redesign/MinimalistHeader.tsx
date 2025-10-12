@@ -20,19 +20,19 @@ export function MinimalistHeader({ isConnected }: MinimalistHeaderProps) {
   }, []);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-8 py-8 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 rounded-2xl shadow-lg">
       {/* Left: Greeting */}
-      <div className="text-lg font-medium text-muted-foreground">
+      <div className="text-2xl font-semibold text-white">
         {greeting}
       </div>
 
       {/* Center: Date & Time */}
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-foreground font-medium">
+      <div className="flex items-center gap-3 text-base">
+        <span className="text-white/90 font-medium">
           {currentTime.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
         </span>
-        <span className="text-muted-foreground">•</span>
-        <span className="text-foreground font-medium">
+        <span className="text-white/60">•</span>
+        <span className="text-white/90 font-medium">
           {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
@@ -40,8 +40,8 @@ export function MinimalistHeader({ isConnected }: MinimalistHeaderProps) {
       {/* Right: Status */}
       <div className="flex items-center gap-2">
         {isConnected && (
-          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-            <div className="w-1.5 h-1.5 rounded-full bg-success mr-1.5 animate-pulse" />
+          <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+            <div className="w-2 h-2 rounded-full bg-white mr-2 animate-pulse" />
             Live
           </Badge>
         )}
