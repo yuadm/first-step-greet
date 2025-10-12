@@ -88,7 +88,19 @@ export function Dashboard() {
     try {
       setLoading(true);
 
-      // Phase 1: Parallel Query Execution - Group independent queries
+      // Get accessible branches for current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
+
+      const { data: accessibleBranchData } = await supabase
+        .rpc('get_user_accessible_branches', { user_id: user.id });
+      
+      // Extract branch_id values from the returned objects
+      const branchIds = (accessibleBranchData || []).map((b: any) => b.branch_id);
+
+      // Phase 1: Parallel Query Execution - Group independent queries with branch filtering
       const [
         employeesResult,
         clientsResult,
@@ -97,27 +109,34 @@ export function Dashboard() {
         branchesResult,
         documentsResult
       ] = await Promise.all([
-        // Employees
-        supabase.from('employees').select('*', { count: 'exact' }),
+        // Employees - filter by accessible branches
+        supabase.from('employees')
+          .select('*', { count: 'exact' })
+          .in('branch_id', branchIds),
         
-        // Clients with branch info
-        supabase.from('clients').select('*', { count: 'exact' }).eq('is_active', true),
+        // Clients - filter by accessible branches
+        supabase.from('clients')
+          .select('*', { count: 'exact' })
+          .eq('is_active', true)
+          .in('branch_id', branchIds),
         
-        // Leaves with details
+        // Leaves - filter by accessible branches via employees
         supabase.from('leave_requests').select(`
           *,
           employees!leave_requests_employee_id_fkey(name, branch, branch_id),
           leave_types!leave_requests_leave_type_id_fkey(name)
         `),
         
-        // Compliance
+        // Compliance - filter by accessible branches via employees
         supabase.from('compliance_period_records')
           .select('status, employee_id, employees!compliance_period_records_employee_id_fkey(branch, branch_id)'),
         
-        // Branches
-        supabase.from('branches').select('id, name'),
+        // Branches - only accessible branches
+        supabase.from('branches')
+          .select('id, name')
+          .in('id', branchIds),
         
-        // Documents
+        // Documents - filter by accessible branches via employees
         supabase.from('document_tracker')
           .select('*, employees(name, branch_id), document_types(name)')
           .order('expiry_date', { ascending: true })
@@ -132,9 +151,27 @@ export function Dashboard() {
       const branchesData = branchesResult.data;
       const documents = documentsResult.data;
 
+      // Filter leaves to only include those from accessible branches
+      const filteredLeaves = leavesData?.filter(l => {
+        const employeeBranchId = l.employees?.branch_id;
+        return branchIds.includes(employeeBranchId);
+      }) || [];
+
+      // Filter compliance to only include those from accessible branches
+      const filteredCompliance = allCompliance?.filter(c => {
+        const employeeBranchId = (c.employees as any)?.branch_id;
+        return branchIds.includes(employeeBranchId);
+      }) || [];
+
+      // Filter documents to only include those from accessible branches
+      const filteredDocuments = documents?.filter(d => {
+        const employeeBranchId = d.employees?.branch_id;
+        return branchIds.includes(employeeBranchId);
+      }) || [];
+
       // Process leaves
-      const pendingLeaves = leavesData?.filter(l => l.status === 'pending') || [];
-      const leavesToday = leavesData
+      const pendingLeaves = filteredLeaves?.filter(l => l.status === 'pending') || [];
+      const leavesToday = filteredLeaves
         ?.filter(l => l.status === 'approved')
         .map(leave => ({
           employee_name: leave.employees?.name || 'Unknown',
@@ -149,8 +186,8 @@ export function Dashboard() {
         return acc;
       }, {} as Record<string, number>);
 
-      // Calculate compliance rates
-      const complianceByBranch = allCompliance?.reduce((acc, record) => {
+      // Calculate compliance rates using filtered data
+      const complianceByBranch = filteredCompliance?.reduce((acc, record) => {
         const branch = (record.employees as any)?.branch || 'Unknown';
         if (!acc[branch]) {
           acc[branch] = { total: 0, completed: 0 };
@@ -167,8 +204,8 @@ export function Dashboard() {
         return acc;
       }, {} as Record<string, number>);
 
-      const overallCompletionRate = allCompliance && allCompliance.length > 0
-        ? Math.round((allCompliance.filter(r => r.status === 'completed').length / allCompliance.length) * 100)
+      const overallCompletionRate = filteredCompliance && filteredCompliance.length > 0
+        ? Math.round((filteredCompliance.filter(r => r.status === 'completed').length / filteredCompliance.length) * 100)
         : 0;
 
       // Optimized branch counts - Calculate from already fetched data
@@ -186,11 +223,11 @@ export function Dashboard() {
         };
       });
 
-      // Process documents
+      // Process documents using filtered data
       const now = new Date();
       const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
       
-      const documentsExpiring = documents
+      const documentsExpiring = filteredDocuments
         ?.filter(doc => {
           if (!doc.expiry_date || !/^\d{4}-\d{2}-\d{2}$/.test(doc.expiry_date)) return false;
           const expiryDate = new Date(doc.expiry_date);
@@ -205,10 +242,10 @@ export function Dashboard() {
         .slice(0, 10) || [];
 
       const documentStats = {
-        total: documents?.length || 0,
-        valid: documents?.filter(d => d.status === 'valid').length || 0,
-        expiring: documents?.filter(d => d.status === 'expiring').length || 0,
-        expired: documents?.filter(d => d.status === 'expired').length || 0,
+        total: filteredDocuments?.length || 0,
+        valid: filteredDocuments?.filter(d => d.status === 'valid').length || 0,
+        expiring: filteredDocuments?.filter(d => d.status === 'expiring').length || 0,
+        expired: filteredDocuments?.filter(d => d.status === 'expired').length || 0,
       };
 
       // Phase 2: Parallel activity queries
@@ -337,11 +374,11 @@ export function Dashboard() {
         .filter(ref => ref.references_pending > 0)
         .slice(0, 10) || [];
 
-      // Calculate branch health scores (using already fetched data)
+      // Calculate branch health scores (using filtered data)
       const branchHealth = (branchesData || []).map((branch) => {
         const branchEmployees = employeesData?.filter(e => e.branch_id === branch.id) || [];
-        const branchDocuments = documents?.filter(d => d.employees?.branch_id === branch.id) || [];
-        const branchCompliance = allCompliance?.filter(c => {
+        const branchDocuments = filteredDocuments?.filter(d => d.employees?.branch_id === branch.id) || [];
+        const branchCompliance = filteredCompliance?.filter(c => {
           const employee = employeesData?.find(e => e.id === c.employee_id);
           return employee?.branch_id === branch.id;
         }) || [];
@@ -357,7 +394,7 @@ export function Dashboard() {
           ? Math.round((completedCompliance / branchCompliance.length) * 100)
           : 100;
         
-        const pendingLeaveRequests = leavesData?.filter(l => {
+        const pendingLeaveRequests = filteredLeaves?.filter(l => {
           const employee = employeesData?.find(e => e.id === l.employee_id);
           return employee?.branch_id === branch.id && l.status === 'pending';
         }).length || 0;
