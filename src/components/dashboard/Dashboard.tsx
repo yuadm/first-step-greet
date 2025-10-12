@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRealTimeAnalytics } from "@/hooks/useRealTimeAnalytics";
-import { CommandHero } from "./redesign/CommandHero";
+import { MinimalistHeader } from "./redesign/MinimalistHeader";
 import { MetricsOverview } from "./redesign/MetricsOverview";
 import { BranchBreakdown } from "./redesign/BranchBreakdown";
 import { ActivityTimeline } from "./redesign/ActivityTimeline";
@@ -463,8 +463,8 @@ export function Dashboard() {
 
   return (
     <div className="space-y-8 pb-8">
-      {/* Command Hero */}
-      <CommandHero isConnected={isConnected} />
+      {/* Header */}
+      <MinimalistHeader isConnected={isConnected} />
 
       {/* Metrics Overview */}
       <MetricsOverview
