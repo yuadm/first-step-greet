@@ -37,9 +37,7 @@ export function MetricsOverview({
       icon: Users,
       color: "from-blue-500 to-cyan-500",
       bgColor: "bg-blue-500/10",
-      textColor: "text-blue-600",
-      change: "+12%",
-      changePositive: true
+      textColor: "text-blue-600"
     },
     {
       label: "Total Clients",
@@ -47,9 +45,7 @@ export function MetricsOverview({
       icon: Briefcase,
       color: "from-purple-500 to-pink-500",
       bgColor: "bg-purple-500/10",
-      textColor: "text-purple-600",
-      change: "+8%",
-      changePositive: true
+      textColor: "text-purple-600"
     },
     {
       label: "Pending Leaves",
@@ -58,8 +54,6 @@ export function MetricsOverview({
       color: "from-orange-500 to-red-500",
       bgColor: "bg-orange-500/10",
       textColor: "text-orange-600",
-      change: "-23%",
-      changePositive: true,
       breakdown: leaveBreakdown
     },
     {
@@ -70,8 +64,6 @@ export function MetricsOverview({
       color: "from-green-500 to-emerald-500",
       bgColor: "bg-green-500/10",
       textColor: "text-green-600",
-      change: "+5%",
-      changePositive: true,
       breakdown: complianceBreakdown
     },
   ];
@@ -93,8 +85,6 @@ interface MetricCardProps {
   color: string;
   bgColor: string;
   textColor: string;
-  change: string;
-  changePositive: boolean;
   index: number;
   breakdown?: string;
 }
@@ -107,8 +97,6 @@ function MetricCard({
   color,
   bgColor,
   textColor,
-  change,
-  changePositive,
   index,
   breakdown
 }: MetricCardProps) {
@@ -160,9 +148,6 @@ function MetricCard({
         <div className="flex items-start justify-between">
           <div className={`w-12 h-12 rounded-xl ${bgColor} flex items-center justify-center`}>
             <Icon className={`w-6 h-6 ${textColor}`} />
-          </div>
-          <div className={`text-sm font-semibold ${changePositive ? 'text-success' : 'text-destructive'}`}>
-            {change}
           </div>
         </div>
 
