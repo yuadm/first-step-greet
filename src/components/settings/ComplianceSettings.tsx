@@ -1,21 +1,15 @@
 
 import { useState, useEffect } from "react";
-import { Shield, Save, Play, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Shield, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ComplianceTypeManagement } from "./ComplianceTypeManagement";
-import { 
-  useAutomationSettings, 
-  useAutomationCronJobs, 
-  useTriggerAutomation,
-  useTriggerNotifications 
-} from "@/hooks/queries/useComplianceAutomation";
+
 
 import { DataRetentionManagement } from "./DataRetentionManagement";
 
@@ -52,12 +46,6 @@ export function ComplianceSettings() {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  
-  // Automation hooks
-  const { data: automationStatus } = useAutomationSettings();
-  const { data: cronJobs } = useAutomationCronJobs();
-  const triggerAutomation = useTriggerAutomation();
-  const triggerNotifications = useTriggerNotifications();
 
   useEffect(() => {
     fetchSettings();
@@ -298,129 +286,6 @@ export function ComplianceSettings() {
 
         <ComplianceTypeManagement />
         <DataRetentionManagement />
-
-        {/* Automation Controls */}
-        <Card className="card-premium border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <Play className="w-5 h-5 text-primary" />
-              Automation Controls
-            </CardTitle>
-            <CardDescription>
-              Manually trigger compliance automation tasks or view scheduled job status
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Cron Job Status */}
-            {cronJobs && cronJobs.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Scheduled Jobs Status
-                </h4>
-                <div className="space-y-2">
-                  {cronJobs.map((job: any) => (
-                    <div key={job.job_name} className="flex items-center justify-between p-3 border rounded-lg bg-card">
-                      <div>
-                        <p className="font-medium text-sm">{job.job_name}</p>
-                        <p className="text-xs text-muted-foreground">Schedule: {job.schedule}</p>
-                      </div>
-                      <Badge variant={job.active ? "default" : "secondary"}>
-                        {job.active ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Manual Triggers */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Run Automation Now</Label>
-                <Button
-                  onClick={() => triggerAutomation.mutate()}
-                  disabled={triggerAutomation.isPending}
-                  className="w-full"
-                  variant="outline"
-                >
-                  {triggerAutomation.isPending ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Running...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 mr-2" />
-                      Trigger Automation
-                    </>
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Generate new period records and update overdue statuses
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Send Notifications</Label>
-                <Button
-                  onClick={() => triggerNotifications.mutate()}
-                  disabled={triggerNotifications.isPending}
-                  className="w-full"
-                  variant="outline"
-                >
-                  {triggerNotifications.isPending ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Send Notifications
-                    </>
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Send compliance notifications to employees
-                </p>
-              </div>
-            </div>
-
-            {/* Setup Instructions */}
-            {(!cronJobs || cronJobs.length === 0) && (
-              <div className="p-4 border border-warning/20 bg-warning/5 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-                  <div className="space-y-2 flex-1">
-                    <p className="text-sm font-medium">Automation Not Scheduled</p>
-                    <p className="text-xs text-muted-foreground">
-                      To enable automatic compliance automation, run this SQL in your database:
-                    </p>
-                    <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto">
-{`-- Enable extensions
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
-
--- Schedule daily automation (runs at 2 AM)
-SELECT cron.schedule(
-  'daily-compliance-automation',
-  '0 2 * * *',
-  $$
-  SELECT net.http_post(
-    url:='https://YOUR_PROJECT_REF.supabase.co/functions/v1/compliance-automation',
-    headers:='{"Content-Type": "application/json", "Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
-    body:='{}'::jsonb
-  ) as request_id;
-  $$
-);`}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         <div className="flex justify-end">
           <Button onClick={handleSave} className="bg-gradient-primary hover:opacity-90">

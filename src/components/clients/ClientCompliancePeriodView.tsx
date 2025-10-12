@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { Calendar, Download, AlertTriangle, Plus, Eye, Edit, Trash2, Filter, Users, Search, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, Clock, Shield, Loader2 } from "lucide-react";
-import { getPeriodEndDate, isPeriodOverdue, parseDateSafe } from "@/lib/compliance-periods";
 import { ClientCompliancePeriodDialog } from "./ClientCompliancePeriodDialog";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/ui/download-button";
@@ -125,8 +124,7 @@ export function ClientCompliancePeriodView({
           branches (
             name
           )
-        `)
-        .eq('is_active', true);
+        `);
       
       // Apply branch filtering for non-admin users
       if (!isAdmin && accessibleBranches.length > 0) {
@@ -346,50 +344,30 @@ export function ClientCompliancePeriodView({
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
-      // Create or update the compliance period record
-      const { data: updated, error: updateError } = await supabase
+      // Create or update the compliance period record using upsert
+      const { data: upserted, error: upsertError } = await supabase
         .from('client_compliance_period_records')
-        .update({
+        .upsert({
+          client_compliance_type_id: complianceTypeId,
+          client_id: selectedClient.id,
+          period_identifier: selectedPeriod,
           status: 'completed',
           completion_date: data.date,
           completion_method: 'spotcheck',
           completed_by: userId,
+          created_by: userId,
           updated_by: userId
+        }, {
+          onConflict: 'client_compliance_type_id,client_id,period_identifier'
         })
-        .eq('client_compliance_type_id', complianceTypeId)
-        .eq('client_id', selectedClient.id)
-        .eq('period_identifier', selectedPeriod)
-        .select('id');
+        .select('id')
+        .single();
 
-      if (updateError) throw updateError;
-
-      let complianceRecordId: string;
-
-      if (updated && updated.length > 0) {
-        complianceRecordId = updated[0].id;
-        console.log('✅ Updated compliance record:', complianceRecordId);
-      } else {
-        const { data: inserted, error: insertError } = await supabase
-          .from('client_compliance_period_records')
-          .insert({
-            client_compliance_type_id: complianceTypeId,
-            client_id: selectedClient.id,
-            period_identifier: selectedPeriod,
-            status: 'completed',
-            completion_date: data.date,
-            completion_method: 'spotcheck',
-            completed_by: userId,
-            created_by: userId,
-            updated_by: userId
-          })
-          .select('id')
-          .maybeSingle();
-
-        if (insertError) throw insertError;
-        if (!inserted) throw new Error('Failed to create compliance record');
-        complianceRecordId = inserted.id;
-        console.log('✅ Created compliance record:', complianceRecordId);
-      }
+      if (upsertError) throw upsertError;
+      if (!upserted) throw new Error('Failed to create/update compliance record');
+      
+      const complianceRecordId = upserted.id;
+      console.log('✅ Upserted compliance record:', complianceRecordId);
 
       // Check if we're editing an existing spot check
       if (editingSpotCheckData) {
@@ -1177,7 +1155,7 @@ export function ClientCompliancePeriodView({
         return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
       }
     });
-  }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, sortField, sortDirection, frequency]);
+  }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, sortField, sortDirection]);
 
   // Calculate completed records count for download all button
   const completedRecordsCount = useMemo(() => {
