@@ -26,7 +26,7 @@ export function MinimalistHeader({ isConnected }: MinimalistHeaderProps) {
         {greeting}
       </div>
 
-      {/* Center: Date & Time */}
+      {/* Right: Date & Time */}
       <div className="flex items-center gap-3 text-base">
         <span className="text-white/90 font-medium">
           {currentTime.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -35,16 +35,6 @@ export function MinimalistHeader({ isConnected }: MinimalistHeaderProps) {
         <span className="text-white/90 font-medium">
           {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
-      </div>
-
-      {/* Right: Status */}
-      <div className="flex items-center gap-2">
-        {isConnected && (
-          <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
-            <div className="w-2 h-2 rounded-full bg-white mr-2 animate-pulse" />
-            Live
-          </Badge>
-        )}
       </div>
     </div>
   );
