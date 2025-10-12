@@ -188,6 +188,17 @@ export function AddClientComplianceRecordModal({
     setIsLoading(true);
 
     try {
+      // First, check if a compliance record already exists
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('client_compliance_period_records')
+        .select('id')
+        .eq('client_compliance_type_id', complianceTypeId)
+        .eq('client_id', selectedClientId)
+        .eq('period_identifier', selectedPeriod)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
       // Save spot check form
       const observationsPayload: any = spotCheckData.observations
         ? JSON.parse(JSON.stringify(spotCheckData.observations))
@@ -197,24 +208,43 @@ export function AddClientComplianceRecordModal({
         service_user_name: spotCheckData.serviceUserName,
         care_workers: spotCheckData.completedBy,
         date: spotCheckData.date,
-        time: new Date().toTimeString().slice(0, 5), // Default time
+        time: new Date().toTimeString().slice(0, 5),
         performed_by: spotCheckData.completedBy,
         observations: observationsPayload,
         client_id: selectedClientId,
-        compliance_record_id: null, // Will be updated after compliance record is created
+        compliance_record_id: existingRecord?.id || null,
       });
 
-      // Create the compliance record
-      const { error: recordError } = await supabase.from('client_compliance_period_records').insert({
-        client_compliance_type_id: complianceTypeId,
-        client_id: selectedClientId,
-        period_identifier: selectedPeriod,
-        status: 'completed',
-        completion_date: spotCheckData.date,
-        completion_method: 'spotcheck',
-      });
+      if (existingRecord) {
+        // UPDATE existing record
+        const { error: updateError } = await supabase
+          .from('client_compliance_period_records')
+          .update({
+            status: 'completed',
+            completion_date: spotCheckData.date,
+            completion_method: 'spotcheck',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingRecord.id);
 
-      if (recordError) throw recordError;
+        if (updateError) throw updateError;
+      } else {
+        // INSERT new record (for backwards compatibility if automation didn't run)
+        const { error: insertError } = await supabase
+          .from('client_compliance_period_records')
+          .insert({
+            client_compliance_type_id: complianceTypeId,
+            client_id: selectedClientId,
+            period_identifier: selectedPeriod,
+            status: 'completed',
+            completion_date: spotCheckData.date,
+            completion_method: 'spotcheck',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+
+        if (insertError) throw insertError;
+      }
 
       toast({
         title: "Success",
@@ -223,7 +253,6 @@ export function AddClientComplianceRecordModal({
 
       onRecordAdded();
       setIsOpen(false);
-      // Reset form state
       setCompletionDate(new Date());
       setNotes('');
       setRecordType('date');
@@ -244,7 +273,6 @@ export function AddClientComplianceRecordModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!selectedClientId || !selectedPeriod) {
       toast({
         title: "Missing information",
@@ -275,7 +303,6 @@ export function AddClientComplianceRecordModal({
         return;
       }
     } else if (recordType === 'spotcheck') {
-      // For spot check, this validation should not run since we handle it directly
       toast({
         title: "Spot check form required",
         description: "Please complete the spot check form first.",
@@ -287,29 +314,47 @@ export function AddClientComplianceRecordModal({
     setIsLoading(true);
 
     try {
-      // Spot check is handled separately, this should not be reached for spot checks
+      // Check if a compliance record already exists
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('client_compliance_period_records')
+        .select('id')
+        .eq('client_compliance_type_id', complianceTypeId)
+        .eq('client_id', selectedClientId)
+        .eq('period_identifier', selectedPeriod)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
 
       const recordData = {
-        client_id: selectedClientId,
-        client_compliance_type_id: complianceTypeId,
-        period_identifier: selectedPeriod,
-        completion_date:
-          recordType === 'date'
-            ? format(completionDate, 'yyyy-MM-dd')
-            : newText,
-        completion_method:
-          recordType === 'date' ? 'date_entry' : 'text_entry',
-        notes: notes.trim() || null,
         status: 'completed',
-        created_at: new Date().toISOString(),
+        completion_date: recordType === 'date' ? format(completionDate, 'yyyy-MM-dd') : newText,
+        completion_method: recordType === 'date' ? 'date_entry' : 'text_entry',
+        notes: notes.trim() || null,
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('client_compliance_period_records')
-        .insert(recordData);
+      if (existingRecord) {
+        // UPDATE existing record
+        const { error: updateError } = await supabase
+          .from('client_compliance_period_records')
+          .update(recordData)
+          .eq('id', existingRecord.id);
 
-      if (error) throw error;
+        if (updateError) throw updateError;
+      } else {
+        // INSERT new record
+        const { error: insertError } = await supabase
+          .from('client_compliance_period_records')
+          .insert({
+            ...recordData,
+            client_compliance_type_id: complianceTypeId,
+            client_id: selectedClientId,
+            period_identifier: selectedPeriod,
+            created_at: new Date().toISOString(),
+          });
+
+        if (insertError) throw insertError;
+      }
 
       toast({
         title: "Record added successfully",
