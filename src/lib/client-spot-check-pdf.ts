@@ -362,6 +362,7 @@ export async function generateClientSpotCheckPdf(data: ClientSpotCheckFormData, 
   a.download = filename
   document.body.appendChild(a)
   a.click()
+  await new Promise(resolve => setTimeout(resolve, 150))
   a.remove()
   URL.revokeObjectURL(url)
 }
