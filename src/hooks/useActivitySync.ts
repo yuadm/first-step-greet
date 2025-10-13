@@ -4,6 +4,7 @@ import { leaveQueryKeys } from './queries/useLeaveQueries';
 import { employeeQueryKeys } from './queries/useEmployeeQueries';
 import { complianceQueryKeys } from './queries/useComplianceQueries';
 import { compliancePeriodQueryKeys } from './queries/useCompliancePeriodQueries';
+import { documentQueryKeys } from './queries/useDocumentQueries';
 import { usePrefetching, useBackgroundSync } from './usePrefetching';
 
 /**
@@ -34,6 +35,11 @@ export function useActivitySync() {
 
     queryClient.invalidateQueries({
       queryKey: compliancePeriodQueryKeys.statements(),
+      refetchType: 'active'
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: documentQueryKeys.list(),
       refetchType: 'active'
     });
   }, [queryClient]);
@@ -118,6 +124,11 @@ export function useRoutePrefetching(currentRoute: string) {
         case '/employee-care-worker-statements':
           // Prefetch related compliance data
           smartPrefetch('/compliance');
+          break;
+
+        case '/documents':
+          // Prefetch employee data for documents
+          smartPrefetch('/employees');
           break;
       }
     };

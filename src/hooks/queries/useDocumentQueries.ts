@@ -105,7 +105,7 @@ export function useDocuments() {
   return useQuery({
     queryKey: documentQueryKeys.list(),
     queryFn: fetchDocuments,
-    ...cacheConfig.dynamic,
+    ...cacheConfig.realtime, // Real-time updates for documents
   });
 }
 
