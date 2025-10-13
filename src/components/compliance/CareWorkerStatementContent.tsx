@@ -33,6 +33,7 @@ import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { generateCareWorkerStatementPDF } from "@/lib/care-worker-statement-pdf";
 import { useCareWorkerStatements, useStatementBranches, useCompliancePeriodActions } from "@/hooks/queries/useCompliancePeriodQueries";
 import { supabase } from "@/integrations/supabase/client";
+import { StatementRejectionDialog } from "./StatementRejectionDialog";
 
 interface CareWorkerStatement {
   id: string;
@@ -82,6 +83,8 @@ export function CareWorkerStatementContent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statementToDelete, setStatementToDelete] = useState<CareWorkerStatement | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
+  const [statementToReject, setStatementToReject] = useState<string | null>(null);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -475,10 +478,8 @@ export function CareWorkerStatementContent() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              const reason = prompt('Enter rejection reason:');
-                              if (reason) {
-                                handleStatusUpdate(statement.id, 'rejected', reason);
-                              }
+                              setStatementToReject(statement.id);
+                              setRejectionDialogOpen(true);
                             }}
                           >
                             <X className="h-4 w-4 text-red-600" />
@@ -565,6 +566,17 @@ export function CareWorkerStatementContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <StatementRejectionDialog
+        open={rejectionDialogOpen}
+        onOpenChange={setRejectionDialogOpen}
+        onConfirm={(reason) => {
+          if (statementToReject) {
+            handleStatusUpdate(statementToReject, 'rejected', reason);
+            setStatementToReject(null);
+          }
+        }}
+      />
     </div>
   );
 }
