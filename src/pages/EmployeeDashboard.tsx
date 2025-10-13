@@ -492,7 +492,7 @@ function EmployeeDashboardContent() {
                             } 
                             className={cn(
                               "text-xs sm:text-sm px-3 py-1.5 w-fit font-medium shadow-sm",
-                              (statement.status === 'draft' || statement.status === 'submitted') && "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-transparent hover:from-blue-600 hover:to-blue-700",
+                              statement.status === 'draft' && "bg-gradient-to-r from-red-500 to-red-600 text-white border-transparent hover:from-red-600 hover:to-red-700",
                               statement.status === 'approved' && "bg-gradient-to-r from-green-500 to-emerald-600 text-white border-transparent hover:from-green-600 hover:to-emerald-700"
                             )}
                           >
