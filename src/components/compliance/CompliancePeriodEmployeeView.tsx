@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Search, Edit, Trash2 } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Search, Edit, Trash2, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/ui/download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +28,10 @@ import { ComplianceRecordViewDialog } from "./ComplianceRecordViewDialog";
 import { AddComplianceRecordModal } from "./AddComplianceRecordModal";
 import { EditComplianceRecordModal } from "./EditComplianceRecordModal";
 import { supabase } from "@/integrations/supabase/client";
+import { generateSpotCheckPdf } from "@/lib/spot-check-pdf";
+import { generateSupervisionPdf } from "@/lib/supervision-pdf";
+import { generateAnnualAppraisalPDF } from "@/lib/annual-appraisal-pdf";
+import { generateMedicationCompetencyPdf } from "@/lib/medication-competency-pdf";
 
 interface Employee {
   id: string;
@@ -78,6 +82,8 @@ export function CompliancePeriodEmployeeView({
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const { toast } = useToast();
   const { companySettings } = useCompany();
 
@@ -178,16 +184,18 @@ export function CompliancePeriodEmployeeView({
       let status: 'compliant' | 'overdue' | 'due' | 'pending' = 'pending';
 
       if (record) {
-        // A record is compliant if it has a completion_date or status is completed
+        // Use the database status field directly (like client compliance does)
         if (record.status === 'completed' || record.completion_date) {
           status = 'compliant';
-        } else if (record.status === 'overdue') {
+        } else if (record.status === 'overdue' || record.is_overdue) {
           status = 'overdue';
+        } else if (record.status === 'pending') {
+          status = 'pending';
         } else {
           status = 'due';
         }
       } else {
-        // Check if we're past the period (this would be overdue)
+        // No record exists - check if we're past the period
         const now = new Date();
         const isOverdue = isPeriodOverdue(periodIdentifier, frequency, now);
         status = isOverdue ? 'overdue' : 'due';
@@ -239,7 +247,13 @@ export function CompliancePeriodEmployeeView({
   const compliantCount = filteredEmployeeStatusList.filter(item => item.status === 'compliant').length;
   const overdueCount = filteredEmployeeStatusList.filter(item => item.status === 'overdue').length;
   const dueCount = filteredEmployeeStatusList.filter(item => item.status === 'due').length;
-  const pendingCount = 0; // Remove pending status as it's not part of the compliance status enum
+  const pendingCount = filteredEmployeeStatusList.filter(item => item.status === 'pending').length;
+  const completedRecordsCount = employeeStatusList.filter(item => 
+    item.record && 
+    (item.record.status === 'completed' || item.record.completion_date) &&
+    item.record.completion_method &&
+    ['spotcheck', 'supervision', 'annual_appraisal', 'medication_competency', 'questionnaire'].includes(item.record.completion_method)
+  ).length;
 
   // Pagination calculations
   const totalItems = filteredEmployeeStatusList.length;
@@ -260,6 +274,135 @@ export function CompliancePeriodEmployeeView({
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(parseInt(value));
     setCurrentPage(1);
+  };
+
+  // Handle download all PDFs
+  const handleDownloadAllPDFs = async () => {
+    setIsDownloadingAll(true);
+    setDownloadProgress(0);
+    
+    const eligibleEmployees = employeeStatusList.filter(item => 
+      item.record && 
+      (item.record.status === 'completed' || item.record.completion_date) &&
+      item.record.completion_method &&
+      ['spotcheck', 'supervision', 'annual_appraisal', 'medication_competency', 'questionnaire'].includes(item.record.completion_method)
+    );
+
+    toast({
+      title: "Starting Bulk Download",
+      description: `Preparing to download ${eligibleEmployees.length} PDFs...`,
+    });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < eligibleEmployees.length; i++) {
+      const item = eligibleEmployees[i];
+      setDownloadProgress(i + 1);
+
+      try {
+        const method = item.record!.completion_method;
+        
+        // Add small delay between downloads to prevent overwhelming the browser
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        switch (method) {
+          case 'spotcheck':
+            const { data: spotCheckData } = await supabase
+              .from('spot_check_records')
+              .select('*')
+              .eq('employee_id', item.employee.id)
+              .eq('compliance_type_id', complianceTypeId)
+              .eq('period_identifier', item.record!.period_identifier)
+              .single();
+            
+            if (spotCheckData) {
+              const formData = {
+                serviceUserName: spotCheckData.service_user_name,
+                careWorker1: spotCheckData.care_worker1,
+                careWorker2: spotCheckData.care_worker2,
+                date: spotCheckData.check_date,
+                timeFrom: spotCheckData.time_from,
+                timeTo: spotCheckData.time_to,
+                carriedBy: spotCheckData.carried_by,
+                observations: spotCheckData.observations as any
+              };
+              await generateSpotCheckPdf(formData, {
+                name: companySettings?.name || 'Company',
+                logo: companySettings?.logo
+              });
+            }
+            break;
+
+          case 'supervision':
+            if (item.record?.notes) {
+              const parsedData = JSON.parse(item.record.notes);
+              await generateSupervisionPdf(parsedData, {
+                name: companySettings?.name || 'Company',
+                logo: companySettings?.logo
+              });
+            }
+            break;
+
+          case 'annual_appraisal':
+            if (item.record?.notes) {
+              const parsedData = JSON.parse(item.record.notes);
+              await generateAnnualAppraisalPDF(parsedData, item.employee.name, {
+                name: companySettings?.name || 'Company',
+                logo: companySettings?.logo
+              });
+            }
+            break;
+
+          case 'medication_competency':
+          case 'questionnaire':
+            const parsedData = item.record!.form_data || (item.record?.notes ? JSON.parse(item.record.notes) : null);
+            if (parsedData && parsedData.competencyItems) {
+              const responses = parsedData.competencyItems.map((item: any) => ({
+                category: item.category || 'General',
+                question: item.question,
+                response: item.response,
+                comments: item.comments || ''
+              }));
+
+              const competencyData = {
+                employeeId: item.record!.employee_id,
+                employeeName: item.employee.name,
+                periodIdentifier: item.record!.period_identifier,
+                assessmentDate: item.record!.completion_date,
+                responses: responses,
+                signature: parsedData.acknowledgement?.signature || '',
+                completedAt: item.record!.created_at,
+                questionnaireName: 'Medication Competency Assessment',
+                assessorName: parsedData.signatures?.assessorName || '',
+                assessorSignatureData: parsedData.signatures?.assessorSignatureData || '',
+                employeeSignatureData: parsedData.signatures?.employeeSignatureData || ''
+              };
+
+              await generateMedicationCompetencyPdf(competencyData, {
+                name: companySettings?.name,
+                logo: companySettings?.logo
+              });
+            }
+            break;
+        }
+        
+        successCount++;
+      } catch (error) {
+        console.error(`Error downloading PDF for ${item.employee.name}:`, error);
+        errorCount++;
+      }
+    }
+
+    setIsDownloadingAll(false);
+    setDownloadProgress(0);
+
+    toast({
+      title: "Bulk Download Complete",
+      description: `Successfully downloaded ${successCount} PDFs${errorCount > 0 ? `, ${errorCount} failed` : ''}.`,
+    });
   };
 
   // Show error if data fetching failed
@@ -349,21 +492,44 @@ export function CompliancePeriodEmployeeView({
             {/* Employee Table */}
             <Card className="card-premium">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <CardTitle className="flex items-center gap-3">
                     <Users className="w-6 h-6" />
                     Employee Status ({totalItems} of {employees.length} employees)
                   </CardTitle>
                   
-                  {/* Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search employees..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
-                    />
+                  <div className="flex items-center gap-3">
+                    {/* Download All PDFs Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadAllPDFs}
+                      disabled={isDownloadingAll || completedRecordsCount === 0}
+                      className="flex items-center gap-2"
+                    >
+                      {isDownloadingAll ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Downloading... ({downloadProgress}/{completedRecordsCount})
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          Download All PDFs
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search employees..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
+                      />
+                    </div>
                   </div>
                 </div>
               </CardHeader>
