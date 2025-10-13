@@ -221,6 +221,93 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
           </div>
         )}
 
+        {/* Completed Items */}
+        {completedItems.length > 0 && (
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full" />
+              <h4 className="font-semibold text-sm sm:text-base text-gray-900">
+                Completed
+              </h4>
+              <Badge className="bg-green-500 text-white border-0 text-xs ml-auto flex-shrink-0">
+                {completedItems.length}
+              </Badge>
+            </div>
+            
+            <div className="grid gap-3 sm:gap-4">
+              {completedItems.map((item, index) => (
+                <div 
+                  key={`${item.id}-${item.period}`} 
+                  className="group relative overflow-hidden rounded-xl sm:rounded-2xl border-2 border-green-100 bg-gradient-to-br from-green-50/80 via-white to-emerald-50/40 hover:border-green-200 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
+                  
+                  <div className="p-3 sm:p-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200 shadow-md flex-shrink-0">
+                        <CheckCircle className="w-4 h-4 text-white" />
+                        <div className="absolute inset-0 bg-white/20 rounded-lg sm:rounded-xl" />
+                      </div>
+                      
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-start sm:items-center justify-between gap-2 flex-wrap">
+                          <span className="font-bold text-sm sm:text-base text-gray-900 break-words">{item.name}</span>
+                          <Badge className="bg-green-500 text-white border-0 text-xs flex-shrink-0">
+                            Completed
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                          <FileCheck className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span className="truncate">{formatPeriod(item.period)} • {formatFrequency(item.frequency)}</span>
+                        </div>
+
+                        {item.frequency === 'quarterly' && item.quarterlyTimeline && (
+                          <div className="space-y-2 pt-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              {item.quarterlyTimeline.map((quarter) => (
+                                <div 
+                                  key={quarter.quarter}
+                                  className={`p-2 rounded-lg border transition-all duration-200 ${
+                                    quarter.status === 'completed' 
+                                      ? 'border-green-200 bg-green-50/80' 
+                                      : quarter.status === 'due'
+                                      ? 'border-orange-200 bg-orange-50/80'
+                                      : 'border-gray-200 bg-gray-50/80'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                      quarter.status === 'completed' 
+                                        ? 'bg-green-500 text-white' 
+                                        : quarter.status === 'due'
+                                        ? 'bg-orange-500 text-white'
+                                        : 'bg-gray-400 text-white'
+                                    }`}>
+                                      {quarter.quarter}
+                                    </div>
+                                    <span className="font-semibold text-xs truncate">{quarter.label}</span>
+                                  </div>
+                                  <Badge 
+                                    variant={quarter.status === 'completed' ? 'default' : 'outline'}
+                                    className="text-[10px] px-1.5 py-0.5 h-auto w-full justify-center"
+                                  >
+                                    {quarter.status === 'completed' ? 'Completed' : quarter.status === 'due' ? 'Due' : 'Soon'}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* All Up to Date */}
         {dueItems.length === 0 && completedItems.length === 0 && (
           <div className="text-center py-8 sm:py-12">
