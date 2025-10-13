@@ -10,7 +10,11 @@ interface CompanyInfo {
   logo?: string
 }
 
-export async function generateSupervisionPdf(data: SupervisionFormData, company?: CompanyInfo) {
+export async function generateSupervisionPdf(
+  data: SupervisionFormData, 
+  company?: CompanyInfo,
+  returnBytes?: boolean
+): Promise<{ bytes: Uint8Array; filename: string } | void> {
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit)
 
@@ -474,11 +478,16 @@ export async function generateSupervisionPdf(data: SupervisionFormData, company?
 
   // Save & download
   const bytes = await doc.save()
-  const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
-  const url = URL.createObjectURL(blob)
   const supervisionDate = data.dateOfSupervision ? new Date(data.dateOfSupervision) : new Date()
   const quarter = Math.floor(supervisionDate.getMonth() / 3) + 1
   const filename = `${data.signatureEmployee || 'Employee'} Q${quarter} ${supervisionDate.getFullYear()} Supervision.pdf`
+  
+  if (returnBytes) {
+    return { bytes, filename }
+  }
+  
+  const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   a.download = filename

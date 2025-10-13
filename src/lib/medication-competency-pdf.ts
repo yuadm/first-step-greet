@@ -38,8 +38,9 @@ interface CompanyInfo {
 
 export async function generateMedicationCompetencyPdf(
   data: MedicationCompetencyData,
-  company?: CompanyInfo
-): Promise<void> {
+  company?: CompanyInfo,
+  returnBytes?: boolean
+): Promise<{ bytes: Uint8Array; filename: string } | void> {
   try {
     // Create a new PDF document
     const pdfDoc = await PDFDocument.create();
@@ -575,12 +576,18 @@ export async function generateMedicationCompetencyPdf(
 
     // Save and download the PDF
     const pdfBytes = await pdfDoc.save();
+    const filename = `medication-competency-${data.employeeName.replace(/\s+/g, '-')}-${data.periodIdentifier}.pdf`;
+    
+    if (returnBytes) {
+      return { bytes: pdfBytes, filename };
+    }
+    
     const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `medication-competency-${data.employeeName.replace(/\s+/g, '-')}-${data.periodIdentifier}.pdf`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

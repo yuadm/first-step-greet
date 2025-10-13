@@ -18,6 +18,7 @@ import { ClientSpotCheckViewDialog } from "./ClientSpotCheckViewDialog";
 import { ClientComplianceRecordViewDialog } from "./ClientComplianceRecordViewDialog";
 import { ClientDeleteConfirmDialog } from "./ClientDeleteConfirmDialog";
 import { generateClientSpotCheckPdf } from "@/lib/client-spot-check-pdf";
+import JSZip from "jszip";
 
 import { AddClientComplianceRecordModal } from "./AddClientComplianceRecordModal";
 
@@ -888,7 +889,10 @@ export function ClientCompliancePeriodView({
                 await generateClientSpotCheckPdf(pdfData, {
                   name: companySettings?.name,
                   logo: companySettings?.logo
-                });
+                }, true);
+                if (result) {
+                  zip.file(result.filename, result.bytes);
+                }
               }
             }
             break;
@@ -897,18 +901,43 @@ export function ClientCompliancePeriodView({
           case 'annual_appraisal':
           case 'medication_competency':
           case 'questionnaire':
-            // Future client compliance methods can be implemented here
-            // For now, these are not supported for clients
             console.warn(`Completion method "${method}" not yet implemented for client compliance`);
             break;
         }
         
         successCount++;
       } catch (error) {
-        console.error(`Error downloading PDF for ${client.name}:`, error);
+        console.error(`Error adding PDF for ${client.name}:`, error);
         errorCount++;
       }
     }
+
+    setIsDownloadingAll(false);
+    setDownloadProgress(0);
+
+    if (successCount > 0) {
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${complianceTypeName || 'client-compliance'}-${selectedPeriod}-pdfs.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download Complete",
+        description: `Successfully downloaded ${successCount} PDFs as a ZIP file${errorCount > 0 ? `. ${errorCount} failed.` : '.'}`,
+      });
+    } else {
+      toast({
+        title: "Download Failed",
+        description: "No PDFs were successfully generated.",
+        variant: "destructive",
+      });
+    }
+  };
 
     setIsDownloadingAll(false);
     setDownloadProgress(0);

@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, Users, CheckCircle, AlertTriangle, Clock, Shield, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Filter, Download, Search, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, Users, CheckCircle, AlertTriangle, Clock, Shield, Eye, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Filter, Download, Search, Loader2, FileArchive } from "lucide-react";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import JSZip from "jszip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -719,9 +720,10 @@ const handleDownloadAllPDFs = async () => {
 
   toast({
     title: "Starting Bulk Download",
-    description: `Preparing to download ${eligibleEmployees.length} PDFs...`,
+    description: `Preparing to download ${eligibleEmployees.length} PDFs as a ZIP file...`,
   });
 
+  const zip = new JSZip();
   let successCount = 0;
   let errorCount = 0;
 
@@ -731,11 +733,6 @@ const handleDownloadAllPDFs = async () => {
 
     try {
       const method = item.record!.completion_method;
-      
-      // Add small delay between downloads to prevent overwhelming the browser
-      if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
 
       switch (method) {
         case 'spotcheck':
@@ -758,20 +755,26 @@ const handleDownloadAllPDFs = async () => {
               carriedBy: spotCheckData.carried_by,
               observations: spotCheckData.observations as any
             };
-            await generateSpotCheckPdf(formData, {
+            const result = await generateSpotCheckPdf(formData, {
               name: companySettings?.name || 'Company',
               logo: companySettings?.logo
-            });
+            }, true);
+            if (result) {
+              zip.file(result.filename, result.bytes);
+            }
           }
           break;
 
         case 'supervision':
           if (item.record?.notes) {
             const parsedData = JSON.parse(item.record.notes);
-            await generateSupervisionPdf(parsedData, {
+            const result = await generateSupervisionPdf(parsedData, {
               name: companySettings?.name || 'Company',
               logo: companySettings?.logo
-            });
+            }, true);
+            if (result) {
+              zip.file(result.filename, result.bytes);
+            }
           }
           break;
 
@@ -779,10 +782,13 @@ const handleDownloadAllPDFs = async () => {
           if (item.record?.notes) {
             const parsedData = JSON.parse(item.record.notes);
             const { generateAnnualAppraisalPDF } = await import('@/lib/annual-appraisal-pdf');
-            await generateAnnualAppraisalPDF(parsedData, item.employee.name, {
+            const result = await generateAnnualAppraisalPDF(parsedData, item.employee.name, {
               name: companySettings?.name || 'Company',
               logo: companySettings?.logo
-            });
+            }, true);
+            if (result) {
+              zip.file(result.filename, result.bytes);
+            }
           }
           break;
 
@@ -812,17 +818,20 @@ const handleDownloadAllPDFs = async () => {
             };
 
             const { generateMedicationCompetencyPdf } = await import('@/lib/medication-competency-pdf');
-            await generateMedicationCompetencyPdf(competencyData, {
+            const result = await generateMedicationCompetencyPdf(competencyData, {
               name: companySettings?.name,
               logo: companySettings?.logo
-            });
+            }, true);
+            if (result) {
+              zip.file(result.filename, result.bytes);
+            }
           }
           break;
       }
       
       successCount++;
     } catch (error) {
-      console.error(`Error downloading PDF for ${item.employee.name}:`, error);
+      console.error(`Error adding PDF for ${item.employee.name}:`, error);
       errorCount++;
     }
   }
@@ -830,10 +839,29 @@ const handleDownloadAllPDFs = async () => {
   setIsDownloadingAll(false);
   setDownloadProgress(0);
 
-  toast({
-    title: "Bulk Download Complete",
-    description: `Successfully downloaded ${successCount} PDFs${errorCount > 0 ? `, ${errorCount} failed` : ''}.`,
-  });
+  if (successCount > 0) {
+    // Generate and download the ZIP file
+    const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${complianceType?.name || 'compliance'}-${viewMode === 'period' ? periodIdentifier : 'all'}-pdfs.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download Complete",
+      description: `Successfully downloaded ${successCount} PDFs as a ZIP file${errorCount > 0 ? `. ${errorCount} failed.` : '.'}`,
+    });
+  } else {
+    toast({
+      title: "Download Failed",
+      description: "No PDFs were successfully generated.",
+      variant: "destructive",
+    });
+  }
 };
 
 const handleOpenSupervisionEdit = (record: ComplianceRecord) => {
