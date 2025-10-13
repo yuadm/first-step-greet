@@ -5,6 +5,8 @@ import { employeeQueryKeys } from './queries/useEmployeeQueries';
 import { complianceQueryKeys } from './queries/useComplianceQueries';
 import { compliancePeriodQueryKeys } from './queries/useCompliancePeriodQueries';
 import { documentQueryKeys } from './queries/useDocumentQueries';
+import { clientQueryKeys } from './queries/useClientQueries';
+import { jobApplicationQueryKeys } from './queries/useJobApplicationQueries';
 import { usePrefetching, useBackgroundSync } from './usePrefetching';
 
 /**
@@ -40,6 +42,16 @@ export function useActivitySync() {
 
     queryClient.invalidateQueries({
       queryKey: documentQueryKeys.list(),
+      refetchType: 'active'
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: clientQueryKeys.lists(),
+      refetchType: 'active'
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: jobApplicationQueryKeys.all,
       refetchType: 'active'
     });
   }, [queryClient]);
@@ -128,6 +140,16 @@ export function useRoutePrefetching(currentRoute: string) {
 
         case '/documents':
           // Prefetch employee data for documents
+          smartPrefetch('/employees');
+          break;
+
+        case '/clients':
+          // Prefetch branch data for clients
+          smartPrefetch('/employees');
+          break;
+
+        case '/job-applications':
+          // Prefetch related data for job applications
           smartPrefetch('/employees');
           break;
       }

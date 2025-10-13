@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { useEmployeeData } from "@/hooks/useEmployeeData";
+import { useActivitySync } from "@/hooks/useActivitySync";
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
@@ -68,6 +69,7 @@ export type EmployeeSortDirection = 'asc' | 'desc';
 
 export function EmployeesContent() {
   const { employees, branches, loading, refetchData } = useEmployeeData();
+  const { syncNow } = useActivitySync();
   const { getAccessibleBranches, isAdmin } = usePermissions();
   const { canViewEmployees, canCreateEmployees, canEditEmployees, canDeleteEmployees } = usePagePermissions();
   const [searchTerm, setSearchTerm] = useState("");
@@ -316,6 +318,7 @@ export function EmployeesContent() {
         });
       }
 
+      syncNow();
       setDialogOpen(false);
       setNewEmployee({
         name: "",
@@ -482,6 +485,7 @@ export function EmployeesContent() {
         description: "The employee has been updated successfully.",
       });
 
+      syncNow();
       setEditMode(false);
       setViewDialogOpen(false);
       refetchData();
@@ -518,6 +522,7 @@ export function EmployeesContent() {
         description: "The employee has been deleted successfully.",
       });
 
+      syncNow();
       setDeleteDialogOpen(false);
       setSelectedEmployee(null);
       refetchData();
@@ -554,6 +559,7 @@ export function EmployeesContent() {
         description: `Successfully deleted ${selectedEmployees.length} employees.`,
       });
 
+      syncNow();
       setBatchDeleteDialogOpen(false);
       setSelectedEmployees([]);
       refetchData();

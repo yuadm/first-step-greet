@@ -63,7 +63,7 @@ export function useClients() {
   return useQuery({
     queryKey: clientQueryKeys.lists(),
     queryFn: fetchClients,
-    ...cacheConfig.dynamic, // Dynamic user data gets medium cache
+    ...cacheConfig.realtime, // Real-time updates for clients
   });
 }
 

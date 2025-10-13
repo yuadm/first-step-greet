@@ -18,6 +18,7 @@ import { ReviewSummary } from "@/components/job-application/ReviewSummary";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActivitySync } from "@/hooks/useActivitySync";
 import { DatePickerWithRange, DatePicker } from "@/components/ui/date-picker";
 import { DateRange } from "react-day-picker";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -67,6 +68,7 @@ export type JobApplicationSortDirection = 'asc' | 'desc';
 export function JobApplicationsContent() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const { syncNow } = useActivitySync();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortField, setSortField] = useState<JobApplicationSortField>('created_at');
@@ -275,6 +277,7 @@ export function JobApplicationsContent() {
       if (error) throw error;
 
       setApplications(prev => prev.filter(app => app.id !== id));
+      syncNow();
 
       toast({
         title: "Application Deleted",
@@ -664,10 +667,11 @@ Please complete and return this reference as soon as possible.`;
                             </DialogHeader>
                             <ScrollArea className="max-h-[75vh]">
                               {selectedApplication && (
-                                <ApplicationDetails 
+                               <ApplicationDetails 
                                   application={selectedApplication} 
                                   onUpdate={fetchApplications}
                                   onSendReferenceEmail={sendReferenceEmail}
+                                  syncNow={syncNow}
                                 />
                               )}
                             </ScrollArea>
@@ -798,11 +802,13 @@ Please complete and return this reference as soon as possible.`;
 function ApplicationDetails({ 
   application, 
   onUpdate, 
-  onSendReferenceEmail 
+  onSendReferenceEmail,
+  syncNow
 }: { 
   application: JobApplication; 
   onUpdate?: () => void;
   onSendReferenceEmail: (app: JobApplication, refIndex: number) => void;
+  syncNow?: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(application);
@@ -972,6 +978,7 @@ try {
         description: "The job application has been updated successfully.",
       });
 
+      syncNow?.();
       setIsEditing(false);
       onUpdate?.();
     } catch (error) {

@@ -65,7 +65,7 @@ export function useEmployees() {
   return useQuery({
     queryKey: employeeQueryKeys.lists(),
     queryFn: fetchEmployees,
-    ...cacheConfig.dynamic, // Dynamic user data gets medium cache
+    ...cacheConfig.realtime, // Real-time updates for employees
   });
 }
 

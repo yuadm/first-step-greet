@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { useClientData } from "@/hooks/useClientData";
 import { useClientActions } from "@/hooks/queries/useClientQueries";
+import { useActivitySync } from "@/hooks/useActivitySync";
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
@@ -46,6 +47,7 @@ export type ClientSortDirection = 'asc' | 'desc';
 
 export function ClientsContent() {
   const { clients, branches, loading, refetchData } = useClientData();
+  const { syncNow } = useActivitySync();
   const [searchTerm, setSearchTerm] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [sortField, setSortField] = useState<ClientSortField>('name');
@@ -108,6 +110,7 @@ export function ClientsContent() {
       created_at: newClient.created_at.toISOString()
     }, {
       onSuccess: () => {
+        syncNow();
         setDialogOpen(false);
         setNewClient({
           name: "",
@@ -148,6 +151,7 @@ export function ClientsContent() {
       created_at: editedClient.created_at.toISOString()
     }, {
       onSuccess: () => {
+        syncNow();
         setEditMode(false);
         setViewDialogOpen(false);
       }
@@ -166,6 +170,7 @@ export function ClientsContent() {
     
     deleteClient.mutate(clientId, {
       onSuccess: () => {
+        syncNow();
         setDeleteDialogOpen(false);
         setSelectedClient(null);
       }
@@ -194,6 +199,7 @@ export function ClientsContent() {
         description: `Successfully deleted ${selectedClients.length} clients.`,
       });
 
+      syncNow();
       setBatchDeleteDialogOpen(false);
       setSelectedClients([]);
     } catch (error) {

@@ -103,7 +103,7 @@ export function useJobApplications(filters?: {
   return useQuery({
     queryKey: jobApplicationQueryKeys.list(filters),
     queryFn: () => fetchJobApplications(filters),
-    ...cacheConfig.dynamic,
+    ...cacheConfig.realtime, // Real-time updates for job applications
   });
 }
 
