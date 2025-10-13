@@ -111,3 +111,18 @@ export const transformStatusSettings = (settings: UnifiedJobApplicationSetting[]
     .map(setting => setting.setting_value.status_name)
     .filter(Boolean);
 };
+
+export const transformPositionSettings = (settings: UnifiedJobApplicationSetting[]) => {
+  return settings
+    .filter(s => s.category === 'position')
+    .map(setting => ({
+      id: setting.id,
+      title: setting.setting_value.title,
+      description: setting.setting_value.description || null,
+      department: setting.setting_value.department || null,
+      location: setting.setting_value.location || null,
+      is_active: setting.is_active,
+      display_order: setting.display_order
+    }))
+    .sort((a, b) => a.display_order - b.display_order);
+};

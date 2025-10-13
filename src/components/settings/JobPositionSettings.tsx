@@ -56,12 +56,26 @@ export function JobPositionSettings() {
   const fetchPositions = async () => {
     try {
       const { data, error } = await supabase
-        .from('job_positions')
+        .from('job_application_settings')
         .select('*')
-        .order('title');
+        .eq('category', 'position')
+        .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setPositions(data || []);
+      
+      // Transform unified settings to position format
+      const transformedPositions = (data || []).map(setting => ({
+        id: setting.id,
+        title: setting.setting_value?.title || setting.setting_key,
+        description: setting.setting_value?.description || null,
+        department: setting.setting_value?.department || null,
+        location: setting.setting_value?.location || null,
+        is_active: setting.is_active,
+        created_at: setting.created_at,
+        updated_at: setting.updated_at
+      }));
+      
+      setPositions(transformedPositions);
     } catch (error) {
       console.error('Error fetching positions:', error);
       toast({
@@ -86,14 +100,34 @@ export function JobPositionSettings() {
 
     setSubmitting(true);
     try {
+      // Get the current max display_order for new positions
+      let displayOrder = 0;
+      if (!editingId) {
+        const { data: existingPositions } = await supabase
+          .from('job_application_settings')
+          .select('display_order')
+          .eq('category', 'position')
+          .order('display_order', { ascending: false })
+          .limit(1);
+        
+        displayOrder = (existingPositions?.[0]?.display_order || 0) + 1;
+      }
+
+      const settingValue = {
+        title: formData.title,
+        description: formData.description || null,
+        department: formData.department || null,
+        location: formData.location || null,
+        is_active: formData.is_active,
+        display_order: displayOrder
+      };
+
       if (editingId) {
         const { error } = await supabase
-          .from('job_positions')
+          .from('job_application_settings')
           .update({
-            title: formData.title,
-            description: formData.description || null,
-            department: formData.department || null,
-            location: formData.location || null,
+            setting_key: `position_${formData.title}`,
+            setting_value: settingValue,
             is_active: formData.is_active,
             updated_at: new Date().toISOString(),
           })
@@ -106,12 +140,13 @@ export function JobPositionSettings() {
         });
       } else {
         const { error } = await supabase
-          .from('job_positions')
+          .from('job_application_settings')
           .insert([{
-            title: formData.title,
-            description: formData.description || null,
-            department: formData.department || null,
-            location: formData.location || null,
+            category: 'position',
+            setting_type: 'position',
+            setting_key: `position_${formData.title}`,
+            setting_value: settingValue,
+            display_order: displayOrder,
             is_active: formData.is_active,
           }]);
 
@@ -153,7 +188,7 @@ export function JobPositionSettings() {
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('job_positions')
+        .from('job_application_settings')
         .delete()
         .eq('id', id);
 
