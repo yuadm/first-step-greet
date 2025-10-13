@@ -11,12 +11,7 @@ interface CompanyInfo {
   logo?: string
 }
 
-export async function generateAnnualAppraisalPDF(
-  data: AnnualAppraisalFormData, 
-  employeeName: string = '', 
-  company?: CompanyInfo,
-  returnBytes?: boolean
-): Promise<{ bytes: Uint8Array; filename: string } | void> {
+export async function generateAnnualAppraisalPDF(data: AnnualAppraisalFormData, employeeName: string = '', company?: CompanyInfo) {
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit)
 
@@ -290,15 +285,10 @@ export async function generateAnnualAppraisalPDF(
 
   // Save & download
   const bytes = await doc.save()
-  const appraisalDate = data.appraisal_date ? new Date(data.appraisal_date) : new Date()
-  const filename = `${employeeName || 'Employee'} ${appraisalDate.getFullYear()} annual appraisal.pdf`
-  
-  if (returnBytes) {
-    return { bytes, filename }
-  }
-  
   const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
   const url = URL.createObjectURL(blob)
+  const appraisalDate = data.appraisal_date ? new Date(data.appraisal_date) : new Date()
+  const filename = `${employeeName || 'Employee'} ${appraisalDate.getFullYear()} annual appraisal.pdf`
   const a = document.createElement('a')
   a.href = url
   a.download = filename

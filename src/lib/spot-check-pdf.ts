@@ -11,11 +11,7 @@ interface CompanyInfo {
   logo?: string
 }
 
-export async function generateSpotCheckPdf(
-  data: SpotCheckFormData, 
-  company?: CompanyInfo,
-  returnBytes?: boolean
-): Promise<{ bytes: Uint8Array; filename: string } | void> {
+export async function generateSpotCheckPdf(data: SpotCheckFormData, company?: CompanyInfo) {
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit)
   let page = doc.addPage()
@@ -298,16 +294,11 @@ export async function generateSpotCheckPdf(
   })
 
   const bytes = await doc.save()
+  const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
   const checkDate = data.date ? new Date(data.date) : new Date()
   const quarter = Math.floor(checkDate.getMonth() / 3) + 1
   const filename = `${data.serviceUserName || 'Employee'} Q${quarter} ${checkDate.getFullYear()} spot check.pdf`
-  
-  if (returnBytes) {
-    return { bytes, filename }
-  }
-  
-  const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
-  const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   a.download = filename
