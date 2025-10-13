@@ -184,6 +184,8 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                                   className={`p-2 rounded-lg border transition-all duration-200 ${
                                     quarter.status === 'completed' 
                                       ? 'border-green-200 bg-green-50/80' 
+                                      : quarter.status === 'overdue'
+                                      ? 'border-red-200 bg-red-50/80'
                                       : quarter.status === 'due'
                                       ? 'border-orange-200 bg-orange-50/80'
                                       : 'border-gray-200 bg-gray-50/80'
@@ -193,6 +195,8 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                                     <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                                       quarter.status === 'completed' 
                                         ? 'bg-green-500 text-white' 
+                                        : quarter.status === 'overdue'
+                                        ? 'bg-red-500 text-white'
                                         : quarter.status === 'due'
                                         ? 'bg-orange-500 text-white'
                                         : 'bg-gray-400 text-white'
@@ -203,9 +207,11 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                                   </div>
                                   <Badge 
                                     variant={quarter.status === 'completed' ? 'default' : 'outline'}
-                                    className="text-[10px] px-1.5 py-0.5 h-auto w-full justify-center"
+                                    className={`text-[10px] px-1.5 py-0.5 h-auto w-full justify-center ${
+                                      quarter.status === 'overdue' ? 'border-red-500 text-red-600' : ''
+                                    }`}
                                   >
-                                    {quarter.status === 'completed' ? 'Completed' : quarter.status === 'due' ? 'Due' : 'Soon'}
+                                    {quarter.status === 'completed' ? 'Completed' : quarter.status === 'overdue' ? 'Overdue' : quarter.status === 'due' ? 'Due' : 'Not Yet'}
                                   </Badge>
                                 </div>
                               ))}
@@ -271,6 +277,8 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                                   className={`p-2 rounded-lg border transition-all duration-200 ${
                                     quarter.status === 'completed' 
                                       ? 'border-green-200 bg-green-50/80' 
+                                      : quarter.status === 'overdue'
+                                      ? 'border-red-200 bg-red-50/80'
                                       : quarter.status === 'due'
                                       ? 'border-orange-200 bg-orange-50/80'
                                       : 'border-gray-200 bg-gray-50/80'
@@ -280,6 +288,8 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                                     <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                                       quarter.status === 'completed' 
                                         ? 'bg-green-500 text-white' 
+                                        : quarter.status === 'overdue'
+                                        ? 'bg-red-500 text-white'
                                         : quarter.status === 'due'
                                         ? 'bg-orange-500 text-white'
                                         : 'bg-gray-400 text-white'
@@ -290,9 +300,11 @@ export function ComplianceOverview({ employeeId }: ComplianceOverviewProps) {
                                   </div>
                                   <Badge 
                                     variant={quarter.status === 'completed' ? 'default' : 'outline'}
-                                    className="text-[10px] px-1.5 py-0.5 h-auto w-full justify-center"
+                                    className={`text-[10px] px-1.5 py-0.5 h-auto w-full justify-center ${
+                                      quarter.status === 'overdue' ? 'border-red-500 text-red-600' : ''
+                                    }`}
                                   >
-                                    {quarter.status === 'completed' ? 'Completed' : quarter.status === 'due' ? 'Due' : 'Soon'}
+                                    {quarter.status === 'completed' ? 'Completed' : quarter.status === 'overdue' ? 'Overdue' : quarter.status === 'due' ? 'Due' : 'Not Yet'}
                                   </Badge>
                                 </div>
                               ))}

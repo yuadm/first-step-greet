@@ -16,7 +16,7 @@ interface QuarterlyPeriod {
   quarter: number;
   period: string;
   label: string;
-  status: 'completed' | 'due' | 'upcoming';
+  status: 'completed' | 'due' | 'overdue' | 'upcoming';
   completedDate?: string;
 }
 
@@ -85,12 +85,15 @@ export function useEmployeeCompliance(employeeId: string | undefined): Complianc
                 4: 'Q4 Oct to Dec'
               };
 
-              let status: 'completed' | 'due' | 'upcoming';
+              let status: 'completed' | 'due' | 'overdue' | 'upcoming';
               if (q < currentQuarter) {
-                status = (record?.status === 'completed' || record?.status === 'compliant') ? 'completed' : 'due';
+                // Past quarters: completed or overdue
+                status = (record?.status === 'completed' || record?.status === 'compliant') ? 'completed' : 'overdue';
               } else if (q === currentQuarter) {
+                // Current quarter: completed or due
                 status = (record?.status === 'completed' || record?.status === 'compliant') ? 'completed' : 'due';
               } else {
+                // Future quarters: upcoming
                 status = 'upcoming';
               }
 
@@ -103,6 +106,9 @@ export function useEmployeeCompliance(employeeId: string | undefined): Complianc
               });
             }
 
+            // Check if any quarter is overdue
+            const hasOverdueQuarter = quarterlyTimeline.some(q => q.status === 'overdue');
+            
             // Find the current quarter's status
             const currentQuarterRecord = complianceRecords?.find(
               record => record.compliance_type_id === type.id && 
@@ -114,13 +120,18 @@ export function useEmployeeCompliance(employeeId: string | undefined): Complianc
               name: type.name,
               frequency: type.frequency,
               period: `${currentYear}-Q${currentQuarter}`,
-              status: (currentQuarterRecord?.status === 'completed' || currentQuarterRecord?.status === 'compliant') ? 'completed' : 'due',
-              isOverdue: currentQuarterRecord?.is_overdue || false,
+              status: hasOverdueQuarter ? 'overdue' : ((currentQuarterRecord?.status === 'completed' || currentQuarterRecord?.status === 'compliant') ? 'completed' : 'due'),
+              isOverdue: hasOverdueQuarter || currentQuarterRecord?.is_overdue || false,
               completedDate: currentQuarterRecord?.updated_at,
               quarterlyTimeline
             };
 
-            if (currentQuarterRecord?.status === 'completed' || currentQuarterRecord?.status === 'compliant') {
+            // Only mark as completed if ALL past and current quarters are completed
+            const allCurrentAndPastCompleted = quarterlyTimeline
+              .filter(q => q.quarter <= currentQuarter)
+              .every(q => q.status === 'completed');
+
+            if (allCurrentAndPastCompleted && (currentQuarterRecord?.status === 'completed' || currentQuarterRecord?.status === 'compliant')) {
               completedItems.push(complianceItem);
             } else {
               dueItems.push(complianceItem);
