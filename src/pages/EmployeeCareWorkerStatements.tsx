@@ -83,7 +83,13 @@ export default function EmployeeCareWorkerStatements() {
     switch (status) {
       case 'approved': return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'submitted': return <Clock className="h-4 w-4 text-blue-600" />;
-      case 'rejected': return <XCircle className="h-4 w-4 text-red-600" />;
+      case 'rejected': 
+        return (
+          <div className="flex items-center gap-0.5 bg-red-600 rounded-md px-1.5 py-0.5">
+            <CheckCircle className="h-3 w-3 text-white" />
+            <XCircle className="h-3 w-3 text-white" />
+          </div>
+        );
       case 'draft': return <AlertCircle className="h-4 w-4 text-orange-600" />;
       default: return <FileText className="h-4 w-4" />;
     }
