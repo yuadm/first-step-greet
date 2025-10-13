@@ -70,9 +70,6 @@ export function PersonalInfoStep({ data, updateData, onEmailValidationChange }: 
         if (count >= 2) {
           setEmailCheckMessage('This email has already been used for 2 applications. Please use a different email or contact support.');
           onEmailValidationChange?.(false, count);
-        } else if (count === 1) {
-          setEmailCheckMessage('This email has been used once before. You can still submit this application.');
-          onEmailValidationChange?.(true, count);
         } else {
           setEmailCheckMessage('');
           onEmailValidationChange?.(true, count);
@@ -238,21 +235,16 @@ export function PersonalInfoStep({ data, updateData, onEmailValidationChange }: 
                 <AlertCircle className="h-4 w-4 text-destructive" />
               </div>
             )}
-            {!isCheckingEmail && data.email && emailUsageCount === 1 && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <AlertCircle className="h-4 w-4 text-amber-500" />
-              </div>
-            )}
-            {!isCheckingEmail && data.email && emailUsageCount === 0 && data.email.includes('@') && (
+            {!isCheckingEmail && data.email && emailUsageCount < 2 && data.email.includes('@') && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
               </div>
             )}
           </div>
           {emailCheckMessage && (
-            <Alert className={`mt-2 ${emailUsageCount >= 2 ? 'border-destructive bg-destructive/10' : 'border-amber-500 bg-amber-500/10'}`}>
-              <AlertCircle className={`h-4 w-4 ${emailUsageCount >= 2 ? 'text-destructive' : 'text-amber-500'}`} />
-              <AlertDescription className={emailUsageCount >= 2 ? 'text-destructive' : 'text-amber-700'}>
+            <Alert className="mt-2 border-destructive bg-destructive/10">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <AlertDescription className="text-destructive">
                 {emailCheckMessage}
               </AlertDescription>
             </Alert>
