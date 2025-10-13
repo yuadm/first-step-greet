@@ -24,6 +24,15 @@ interface JobPosition {
   updated_at: string;
 }
 
+interface PositionSettingValue {
+  title?: string;
+  description?: string;
+  department?: string;
+  location?: string;
+  is_active?: boolean;
+  display_order?: number;
+}
+
 interface JobPositionForm {
   title: string;
   description: string;
@@ -64,16 +73,19 @@ export function JobPositionSettings() {
       if (error) throw error;
       
       // Transform unified settings to position format
-      const transformedPositions = (data || []).map(setting => ({
-        id: setting.id,
-        title: setting.setting_value?.title || setting.setting_key,
-        description: setting.setting_value?.description || null,
-        department: setting.setting_value?.department || null,
-        location: setting.setting_value?.location || null,
-        is_active: setting.is_active,
-        created_at: setting.created_at,
-        updated_at: setting.updated_at
-      }));
+      const transformedPositions = (data || []).map(setting => {
+        const value = setting.setting_value as PositionSettingValue;
+        return {
+          id: setting.id,
+          title: value?.title || setting.setting_key,
+          description: value?.description || null,
+          department: value?.department || null,
+          location: value?.location || null,
+          is_active: setting.is_active,
+          created_at: setting.created_at,
+          updated_at: setting.updated_at
+        };
+      });
       
       setPositions(transformedPositions);
     } catch (error) {
