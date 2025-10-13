@@ -4,13 +4,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface PersonalInfoStepProps {
   data: PersonalInfo;
   updateData: (field: keyof PersonalInfo, value: string | string[]) => void;
+  onEmailValidationChange?: (isValid: boolean, usageCount?: number) => void;
 }
 
 interface JobPosition {
@@ -27,17 +29,65 @@ interface PersonalSetting {
   display_order: number;
 }
 
-export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
+export function PersonalInfoStep({ data, updateData, onEmailValidationChange }: PersonalInfoStepProps) {
   const [positions, setPositions] = useState<JobPosition[]>([]);
   const [loadingPositions, setLoadingPositions] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [personalSettings, setPersonalSettings] = useState<PersonalSetting[]>([]);
   const [loadingSettings, setLoadingSettings] = useState(true);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [emailUsageCount, setEmailUsageCount] = useState(0);
+  const [emailCheckMessage, setEmailCheckMessage] = useState('');
 
   useEffect(() => {
     fetchJobPositions();
     fetchPersonalSettings();
   }, []);
+
+  // Real-time email validation with debouncing
+  useEffect(() => {
+    const checkEmailUsage = async () => {
+      if (!data.email || data.email.length < 5) {
+        setEmailUsageCount(0);
+        setEmailCheckMessage('');
+        onEmailValidationChange?.(true, 0);
+        return;
+      }
+
+      setIsCheckingEmail(true);
+      
+      try {
+        const { data: applications, error } = await supabase
+          .from('job_applications')
+          .select('id')
+          .filter('personal_info->>email', 'eq', data.email);
+
+        if (error) throw error;
+
+        const count = applications?.length || 0;
+        setEmailUsageCount(count);
+
+        if (count >= 2) {
+          setEmailCheckMessage('This email has already been used for 2 applications. Please use a different email or contact support.');
+          onEmailValidationChange?.(false, count);
+        } else if (count === 1) {
+          setEmailCheckMessage('This email has been used once before. You can still submit this application.');
+          onEmailValidationChange?.(true, count);
+        } else {
+          setEmailCheckMessage('');
+          onEmailValidationChange?.(true, count);
+        }
+      } catch (error) {
+        console.error('Error checking email:', error);
+        onEmailValidationChange?.(true, 0); // Allow on error
+      } finally {
+        setIsCheckingEmail(false);
+      }
+    };
+
+    const timer = setTimeout(checkEmailUsage, 1500);
+    return () => clearTimeout(timer);
+  }, [data.email, onEmailValidationChange]);
 
   const fetchJobPositions = async () => {
     try {
@@ -169,13 +219,44 @@ export function PersonalInfoStep({ data, updateData }: PersonalInfoStepProps) {
 
         <div>
           <Label htmlFor="email">Email *</Label>
-          <Input
-            id="email"
-            type="email"
-            value={data.email}
-            onChange={(e) => updateData('email', e.target.value)}
-            required
-          />
+          <div className="relative">
+            <Input
+              id="email"
+              type="email"
+              value={data.email}
+              onChange={(e) => updateData('email', e.target.value)}
+              required
+              className={emailUsageCount >= 2 ? "border-destructive" : ""}
+            />
+            {isCheckingEmail && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!isCheckingEmail && data.email && emailUsageCount >= 2 && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              </div>
+            )}
+            {!isCheckingEmail && data.email && emailUsageCount === 1 && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+              </div>
+            )}
+            {!isCheckingEmail && data.email && emailUsageCount === 0 && data.email.includes('@') && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              </div>
+            )}
+          </div>
+          {emailCheckMessage && (
+            <Alert className={`mt-2 ${emailUsageCount >= 2 ? 'border-destructive bg-destructive/10' : 'border-amber-500 bg-amber-500/10'}`}>
+              <AlertCircle className={`h-4 w-4 ${emailUsageCount >= 2 ? 'text-destructive' : 'text-amber-500'}`} />
+              <AlertDescription className={emailUsageCount >= 2 ? 'text-destructive' : 'text-amber-700'}>
+                {emailCheckMessage}
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         <div>

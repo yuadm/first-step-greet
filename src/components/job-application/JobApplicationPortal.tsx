@@ -75,6 +75,8 @@ const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [honeypotField, setHoneypotField] = useState('');
   const [startTime] = useState(Date.now());
+  const [isEmailValid, setIsEmailValid] = useState(true);
+  const [emailUsageCount, setEmailUsageCount] = useState(0);
   const { companySettings } = useCompany();
   const { toast } = useToast();
 
@@ -298,7 +300,16 @@ const handleDownloadPdf = async () => {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <PersonalInfoStep data={formData.personalInfo} updateData={updatePersonalInfo} />;
+        return (
+          <PersonalInfoStep
+            data={formData.personalInfo}
+            updateData={updatePersonalInfo}
+            onEmailValidationChange={(isValid, usageCount) => {
+              setIsEmailValid(isValid);
+              setEmailUsageCount(usageCount || 0);
+            }}
+          />
+        );
       case 2:
         return <AvailabilityStep data={formData.availability} updateData={updateAvailability} />;
       case 3:
@@ -332,7 +343,12 @@ const handleDownloadPdf = async () => {
     return titles[currentStep - 1];
   };
 
-  const canProceed = () => validateStep(currentStep, formData);
+  const canProceed = () => {
+    if (currentStep === 1) {
+      return validateStep(currentStep, formData, emailUsageCount) && isEmailValid;
+    }
+    return validateStep(currentStep, formData);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-3 sm:p-6">

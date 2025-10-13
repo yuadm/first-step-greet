@@ -1,16 +1,23 @@
 import { JobApplicationData, Declaration } from './types';
 
-export const validateStep = (currentStep: number, formData: JobApplicationData): boolean => {
+export const validateStep = (currentStep: number, formData: JobApplicationData, emailUsageCount?: number): boolean => {
   switch (currentStep) {
     case 1: {
       // Personal Info: All required except Street Address Second Line and languages
       const pi = formData.personalInfo;
-      return !!(pi.title && pi.fullName && pi.email && pi.confirmEmail && 
+      const basicValidation = !!(pi.title && pi.fullName && pi.email && pi.confirmEmail && 
                pi.email === pi.confirmEmail && pi.telephone && pi.dateOfBirth && 
                pi.streetAddress && pi.town && pi.borough && pi.postcode && 
                pi.englishProficiency && pi.positionAppliedFor && 
                pi.personalCareWillingness && pi.hasDBS && pi.hasCarAndLicense && 
                pi.nationalInsuranceNumber);
+      
+      // If emailUsageCount is provided, ensure it's less than 2
+      if (emailUsageCount !== undefined && emailUsageCount >= 2) {
+        return false;
+      }
+      
+      return basicValidation;
     }
     case 2: {
       return !!(formData.availability.hoursPerWeek && formData.availability.hasRightToWork);
