@@ -784,7 +784,8 @@ export function ClientCompliancePeriodView({
     setIsDownloadingAll(true);
     setDownloadProgress(0);
     
-    const eligibleClients = filteredAndSortedClients.filter(client => {
+    // Use ALL clients (not filtered), only filter by completion status
+    const eligibleClients = clients.filter(client => {
       const record = getClientRecordForPeriod(client.id, selectedPeriod);
       return record && 
         (record.status === 'completed' || record.completion_date) &&
@@ -1177,15 +1178,15 @@ export function ClientCompliancePeriodView({
     });
   }, [clients, searchTerm, selectedBranch, selectedFilter, selectedPeriod, sortField, sortDirection]);
 
-  // Calculate completed records count for download all button
+  // Calculate completed records count for download all button (ALL clients, not just filtered)
   const completedRecordsCount = useMemo(() => {
-    return filteredAndSortedClients.filter(client => {
+    return clients.filter(client => {
       const record = getClientRecordForPeriod(client.id, selectedPeriod);
       return record && 
         (record.status === 'completed' || record.completion_date) &&
         record.completion_method === 'spotcheck';
     }).length;
-  }, [filteredAndSortedClients, selectedPeriod]);
+  }, [clients, selectedPeriod]);
 
   // Pagination calculations
   const totalItems = filteredAndSortedClients.length;
