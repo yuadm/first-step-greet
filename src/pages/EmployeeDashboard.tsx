@@ -451,12 +451,33 @@ function EmployeeDashboardContent() {
                 {statements.map((statement, index) => (
                   <div 
                     key={statement.id} 
-                    className="relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-gradient-to-br from-white to-purple-50/30 border-2 border-purple-100 rounded-2xl hover:border-purple-300 hover:shadow-lg transition-all duration-300 group"
+                    className={cn(
+                      "relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl hover:shadow-lg transition-all duration-300 group",
+                      statement.status === 'draft' 
+                        ? "bg-gradient-to-br from-white to-red-50/30 border-2 border-transparent bg-origin-border [background-clip:padding-box,border-box] [background-image:linear-gradient(white,white),linear-gradient(135deg,hsl(0_84%_60%),hsl(0_84%_75%))] hover:shadow-red-200"
+                        : statement.status === 'approved'
+                        ? "bg-gradient-to-br from-white to-green-50/30 border-2 border-transparent bg-origin-border [background-clip:padding-box,border-box] [background-image:linear-gradient(white,white),linear-gradient(135deg,hsl(142_76%_45%),hsl(142_76%_60%))] hover:shadow-green-200"
+                        : "bg-gradient-to-br from-white to-purple-50/30 border-2 border-purple-100 hover:border-purple-300"
+                    )}
                     style={{ animationDelay: `${0.1 * index}s` }}
                   >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/5 to-transparent rounded-full blur-2xl group-hover:from-purple-500/10 transition-all duration-300" />
+                    <div className={cn(
+                      "absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl transition-all duration-300",
+                      statement.status === 'draft'
+                        ? "bg-gradient-to-br from-red-500/5 to-transparent group-hover:from-red-500/10"
+                        : statement.status === 'approved'
+                        ? "bg-gradient-to-br from-green-500/5 to-transparent group-hover:from-green-500/10"
+                        : "bg-gradient-to-br from-purple-500/5 to-transparent group-hover:from-purple-500/10"
+                    )} />
                     <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0 relative z-10">
-                      <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300">
+                      <div className={cn(
+                        "h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300",
+                        statement.status === 'draft'
+                          ? "bg-gradient-to-br from-red-500 to-red-600"
+                          : statement.status === 'approved'
+                          ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                          : "bg-gradient-to-br from-purple-500 to-pink-600"
+                      )}>
                         <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -469,7 +490,11 @@ function EmployeeDashboardContent() {
                               statement.status === 'rejected' ? 'destructive' : 
                               'outline'
                             } 
-                            className="text-xs sm:text-sm px-3 py-1.5 w-fit font-medium shadow-sm"
+                            className={cn(
+                              "text-xs sm:text-sm px-3 py-1.5 w-fit font-medium shadow-sm",
+                              statement.status === 'draft' && "bg-gradient-to-r from-red-500 to-red-600 text-white border-transparent hover:from-red-600 hover:to-red-700",
+                              statement.status === 'approved' && "bg-gradient-to-r from-green-500 to-emerald-600 text-white border-transparent hover:from-green-600 hover:to-emerald-700"
+                            )}
                           >
                             {statement.status.charAt(0).toUpperCase() + statement.status.slice(1)}
                           </Badge>
