@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Plus, Edit, Trash2, Search } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Plus, Edit, Trash2, Search, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/ui/download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +29,7 @@ import ClientSpotCheckFormDialog from "./ClientSpotCheckFormDialog";
 import { ClientDeleteConfirmDialog } from "./ClientDeleteConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import { generateClientSpotCheckPdf } from "@/lib/client-spot-check-pdf";
 
 interface Client {
   id: string;
@@ -88,6 +89,8 @@ export function ClientCompliancePeriodDialog({
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [editingSpotCheckData, setEditingSpotCheckData] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const { toast } = useToast();
   const { companySettings } = useCompany();
   const { getAccessibleBranches, isAdmin } = usePermissions();
@@ -255,6 +258,15 @@ export function ClientCompliancePeriodDialog({
   const paginatedClients = filteredClients.slice(startIndex, endIndex);
   const totalItems = filteredClients.length;
 
+  // Calculate completed records count for download all button
+  const completedRecordsCount = useMemo(() => {
+    return clientStatusList.filter(item => 
+      item.record && 
+      (item.record.status === 'completed' || item.record.completion_date) &&
+      item.record.completion_method === 'spotcheck'
+    ).length;
+  }, [clientStatusList]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
@@ -368,6 +380,130 @@ export function ClientCompliancePeriodDialog({
       console.error('Error preparing edit form:', e);
       toast({ title: 'Error', description: 'Could not load existing data for edit.', variant: 'destructive' });
     }
+  };
+
+  // Handle download all PDFs
+  const handleDownloadAllPDFs = async () => {
+    setIsDownloadingAll(true);
+    setDownloadProgress(0);
+    
+    const eligibleClients = clientStatusList.filter(item => 
+      item.record && 
+      (item.record.status === 'completed' || item.record.completion_date) &&
+      item.record.completion_method === 'spotcheck'
+    );
+
+    toast({
+      title: "Starting Bulk Download",
+      description: `Preparing to download ${eligibleClients.length} PDFs...`,
+    });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < eligibleClients.length; i++) {
+      const item = eligibleClients[i];
+      setDownloadProgress(i + 1);
+
+      try {
+        // Add small delay between downloads to prevent overwhelming the browser
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        // Fetch spot check record
+        let spotCheckData: any = null;
+        const { data: scData } = await supabase
+          .from('client_spot_check_records')
+          .select('*')
+          .eq('compliance_record_id', item.record!.id)
+          .maybeSingle();
+
+        if (scData) {
+          spotCheckData = scData;
+        } else {
+          // Fallback query by date range
+          const toISO = (d: Date) => d.toISOString().slice(0,10);
+          let start: string; let end: string;
+          const freq = (frequency || '').toLowerCase();
+          
+          if (freq === 'quarterly' && /\d{4}-Q[1-4]/.test(periodIdentifier)) {
+            const [y, qStr] = periodIdentifier.split('-Q');
+            const year = parseInt(y, 10);
+            const q = parseInt(qStr, 10);
+            const mStart = (q - 1) * 3;
+            start = toISO(new Date(year, mStart, 1));
+            end = toISO(new Date(year, mStart + 3, 0));
+          } else if (freq === 'monthly' && /\d{4}-\d{2}/.test(periodIdentifier)) {
+            const [y, m] = periodIdentifier.split('-');
+            const year = parseInt(y, 10);
+            const month = parseInt(m, 10) - 1;
+            start = toISO(new Date(year, month, 1));
+            end = toISO(new Date(year, month + 1, 0));
+          } else {
+            const year = parseInt(periodIdentifier.slice(0,4), 10);
+            start = toISO(new Date(year, 0, 1));
+            end = toISO(new Date(year, 11, 31));
+          }
+          
+          const { data: fallbackData } = await supabase
+            .from('client_spot_check_records')
+            .select('*')
+            .eq('client_id', item.client.id)
+            .gte('date', start)
+            .lte('date', end)
+            .order('date', { ascending: false })
+            .maybeSingle();
+            
+          if (fallbackData) spotCheckData = fallbackData;
+        }
+
+        if (spotCheckData) {
+          // Parse observations
+          let observations: any = spotCheckData.observations;
+          if (typeof observations === 'string') {
+            try { observations = JSON.parse(observations); } catch { observations = []; }
+          }
+          if (observations && !Array.isArray(observations) && typeof observations === 'object') {
+            observations = Object.values(observations);
+          }
+          const transformedObservations = Array.isArray(observations)
+            ? observations.map((o: any) => ({
+                label: o?.label || 'Unknown Question',
+                value: o?.value || 'Not Rated',
+                comments: o?.comments || ''
+              }))
+            : [];
+
+          if (transformedObservations.length > 0) {
+            const pdfData = {
+              serviceUserName: spotCheckData.service_user_name || item.client.name,
+              date: spotCheckData.date || item.record!.completion_date || '',
+              completedBy: spotCheckData.performed_by || 'Not specified',
+              observations: transformedObservations,
+            };
+
+            await generateClientSpotCheckPdf(pdfData, {
+              name: companySettings?.name || 'Company',
+              logo: companySettings?.logo
+            });
+          }
+        }
+        
+        successCount++;
+      } catch (error) {
+        console.error(`Error downloading PDF for ${item.client.name}:`, error);
+        errorCount++;
+      }
+    }
+
+    setIsDownloadingAll(false);
+    setDownloadProgress(0);
+
+    toast({
+      title: "Bulk Download Complete",
+      description: `Successfully downloaded ${successCount} PDFs${errorCount > 0 ? `, ${errorCount} failed` : ''}.`,
+    });
   };
 
   const handleSpotCheckSubmit = async (formData: any) => {
@@ -563,12 +699,34 @@ export function ClientCompliancePeriodDialog({
             {/* Client Table */}
             <Card className="card-premium">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4">
                   <CardTitle className="flex items-center gap-2">
                     <Users className="w-5 h-5" />
                     Clients
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    {/* Download All PDFs Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadAllPDFs}
+                      disabled={isDownloadingAll || completedRecordsCount === 0}
+                      className="flex items-center gap-2"
+                    >
+                      {isDownloadingAll ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Downloading... ({downloadProgress}/{completedRecordsCount})
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          Download All PDFs
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Search */}
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
