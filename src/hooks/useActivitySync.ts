@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { leaveQueryKeys } from './queries/useLeaveQueries';
 import { employeeQueryKeys } from './queries/useEmployeeQueries';
 import { complianceQueryKeys } from './queries/useComplianceQueries';
+import { compliancePeriodQueryKeys } from './queries/useCompliancePeriodQueries';
 import { usePrefetching, useBackgroundSync } from './usePrefetching';
 
 /**
@@ -28,6 +29,11 @@ export function useActivitySync() {
     
     queryClient.invalidateQueries({
       queryKey: employeeQueryKeys.lists(), 
+      refetchType: 'active'
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: compliancePeriodQueryKeys.statements(),
       refetchType: 'active'
     });
   }, [queryClient]);
@@ -107,6 +113,11 @@ export function useRoutePrefetching(currentRoute: string) {
         case '/compliance':
           // Users often check employee details for compliance
           smartPrefetch('/employees');
+          break;
+
+        case '/employee-care-worker-statements':
+          // Prefetch related compliance data
+          smartPrefetch('/compliance');
           break;
       }
     };

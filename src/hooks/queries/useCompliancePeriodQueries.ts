@@ -180,7 +180,7 @@ export function useCareWorkerStatements() {
   return useQuery({
     queryKey: compliancePeriodQueryKeys.statements(),
     queryFn: fetchCareWorkerStatements,
-    ...cacheConfig.dynamic,
+    ...cacheConfig.realtime, // Real-time updates for statements
   });
 }
 

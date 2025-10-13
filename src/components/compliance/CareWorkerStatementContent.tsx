@@ -31,6 +31,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
 import { generateCareWorkerStatementPDF } from "@/lib/care-worker-statement-pdf";
+import { useActivitySync } from "@/hooks/useActivitySync";
 import { useCareWorkerStatements, useStatementBranches, useCompliancePeriodActions } from "@/hooks/queries/useCompliancePeriodQueries";
 import { supabase } from "@/integrations/supabase/client";
 import { StatementRejectionDialog } from "./StatementRejectionDialog";
@@ -100,6 +101,7 @@ export function CareWorkerStatementContent() {
   const { data: statementsData, isLoading: statementsLoading, refetch: refetchStatements } = useCareWorkerStatements();
   const { data: branchesData, isLoading: branchesLoading } = useStatementBranches();
   const { updateStatementStatus } = useCompliancePeriodActions();
+  const { syncNow } = useActivitySync();
 
   // Filter statements based on user permissions
   const statements = useMemo(() => {
@@ -137,6 +139,7 @@ export function CareWorkerStatementContent() {
 
   const handleStatusUpdate = (statementId: string, status: string, rejectionReason?: string) => {
     updateStatementStatus.mutate({ statementId, status, rejectionReason });
+    syncNow(); // Trigger immediate sync after status update
   };
 
   const handleDeleteClick = (statement: CareWorkerStatement) => {
@@ -161,6 +164,7 @@ export function CareWorkerStatementContent() {
         description: "Care worker statement deleted successfully",
       });
 
+      syncNow(); // Trigger immediate sync after deletion
       refetchStatements();
       setDeleteDialogOpen(false);
       setStatementToDelete(null);
