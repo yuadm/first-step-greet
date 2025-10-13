@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Search, Edit, Trash2, Download } from "lucide-react";
+import { Calendar, Users, CheckCircle, AlertTriangle, Clock, Eye, Search, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/ui/download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -355,33 +355,15 @@ export function CompliancePeriodEmployeeView({
                     Employee Status ({totalItems} of {employees.length} employees)
                   </CardTitle>
                   
-                  <div className="flex items-center gap-3">
-                    {/* Search */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search employees..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
-                      />
-                    </div>
-                    
-                    {/* Download All PDFs Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        toast({
-                          title: "Download All PDFs",
-                          description: `Preparing to download all compliance records for ${periodIdentifier}...`,
-                        });
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      Download All PDFs
-                    </Button>
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search employees..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 w-64 bg-background border-border/50 focus:border-primary/50"
+                    />
                   </div>
                 </div>
               </CardHeader>

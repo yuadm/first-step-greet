@@ -648,15 +648,6 @@ export function ClientCompliancePeriodView({
     }
   };
 
-  const handleDownloadPeriodPDFs = async () => {
-    if (!selectedPeriod) return;
-    
-    const period = periods.find(p => p.period_identifier === selectedPeriod);
-    if (!period) return;
-    
-    await handleDownloadPeriod(period);
-  };
-
   const handleDownloadPeriod = async (period: PeriodData) => {
     try {
       // Fetch all client compliance records for this period (don't filter by status - include all records that have data)
@@ -1348,12 +1339,21 @@ export function ClientCompliancePeriodView({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={handleDownloadPeriodPDFs}
-                          disabled={completedRecordsCount === 0 || !selectedPeriod}
+                          onClick={handleDownloadAllPDFs}
+                          disabled={isDownloadingAll || completedRecordsCount === 0 || !selectedPeriod}
                           className="flex items-center gap-2"
                         >
-                          <Download className="w-4 h-4" />
-                          Download All PDFs ({completedRecordsCount})
+                          {isDownloadingAll ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Downloading... ({downloadProgress}/{completedRecordsCount})
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4" />
+                              Download All PDFs ({completedRecordsCount})
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
