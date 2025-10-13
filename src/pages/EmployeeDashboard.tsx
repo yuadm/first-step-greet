@@ -118,7 +118,7 @@ function EmployeeDashboardContent() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-        return <CheckCircle className="w-4 h-4" />;
+        return <CheckCircle className="w-4 h-4 text-white" />;
       case 'pending':
         return <Clock className="w-4 h-4" />;
       case 'rejected':
@@ -366,12 +366,27 @@ function EmployeeDashboardContent() {
                 {leaveRequests.map((leave, index) => (
                   <div 
                     key={leave.id} 
-                    className="relative flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 bg-gradient-to-br from-white to-blue-50/30 border-2 border-blue-100 rounded-2xl hover:border-blue-300 hover:shadow-lg transition-all duration-300 group"
+                    className={cn(
+                      "relative flex flex-col gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl hover:shadow-lg transition-all duration-300 group",
+                      leave.status === 'approved' 
+                        ? "bg-gradient-to-br from-white to-green-50/30 border-2 border-transparent bg-origin-border [background-clip:padding-box,border-box] [background-image:linear-gradient(white,white),linear-gradient(135deg,hsl(142_76%_45%),hsl(142_76%_60%))] hover:shadow-green-200"
+                        : "bg-gradient-to-br from-white to-blue-50/30 border-2 border-blue-100 hover:border-blue-300"
+                    )}
                     style={{ animationDelay: `${0.1 * index}s` }}
                   >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full blur-2xl group-hover:from-blue-500/10 transition-all duration-300" />
+                    <div className={cn(
+                      "absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl transition-all duration-300",
+                      leave.status === 'approved'
+                        ? "bg-gradient-to-br from-green-500/5 to-transparent group-hover:from-green-500/10"
+                        : "bg-gradient-to-br from-blue-500/5 to-transparent group-hover:from-blue-500/10"
+                    )} />
                     <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0 relative z-10">
-                      <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300">
+                      <div className={cn(
+                        "h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300",
+                        leave.status === 'approved'
+                          ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                          : "bg-gradient-to-br from-blue-500 to-indigo-600"
+                      )}>
                         {getStatusIcon(leave.status)}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -384,7 +399,10 @@ function EmployeeDashboardContent() {
                           </div>
                           <Badge 
                             variant={getStatusColor(leave.status)} 
-                            className="text-xs sm:text-sm px-3 py-1.5 min-h-[28px] w-fit font-medium shadow-sm"
+                            className={cn(
+                              "text-xs sm:text-sm px-3 py-1.5 min-h-[28px] w-fit font-medium shadow-sm",
+                              leave.status === 'approved' && "bg-gradient-to-r from-green-500 to-emerald-600 text-white border-transparent hover:from-green-600 hover:to-emerald-700"
+                            )}
                           >
                             {leave.status}
                           </Badge>
