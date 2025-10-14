@@ -474,7 +474,7 @@ export function UserManagementContent() {
                       disabled={isCurrentUser(user.id)}
                     />
                   )}
-                  {canEditUsers() && (
+                  {canEditUsers() && user.role !== 'admin' && (
                     <UserPermissionsDialog
                       user={user}
                       onSuccess={fetchUsers}
