@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     session,
-    loading: loading || !initialAuthCheckComplete,
+    loading: loading && !initialAuthCheckComplete,
     userRole,
     signOut
   };
