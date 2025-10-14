@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/contexts/PermissionsContext';
@@ -20,9 +20,21 @@ export function ProtectedRoute({
   const { user, loading: authLoading } = useAuth();
   const { hasPageAccess, loading: permissionsLoading, error, isAdmin } = usePermissions();
   const location = useLocation();
+  const [minLoadingComplete, setMinLoadingComplete] = useState(false);
+
+  // Enforce minimum loading duration to prevent flash
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinLoadingComplete(true);
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isLoading = authLoading || permissionsLoading || !minLoadingComplete;
 
   // Show loading state while auth or permissions are loading
-  if (authLoading || permissionsLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-subtle">
         <Card className="w-80">
