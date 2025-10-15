@@ -46,7 +46,7 @@ const getNotificationRoute = (referenceTable: string | null, referenceId: string
 };
 
 export function NotificationPopover() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, loading } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAll, loading } = useNotifications();
   const navigate = useNavigate();
 
   const handleNotificationClick = (notification: any) => {
@@ -83,17 +83,30 @@ export function NotificationPopover() {
               <p className="text-sm text-muted-foreground">{unreadCount} unread</p>
             )}
           </div>
-          {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={markAllAsRead}
-              className="text-xs"
-            >
-              <CheckCheck className="w-4 h-4 mr-1" />
-              Mark all read
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={markAllAsRead}
+                className="text-xs"
+              >
+                <CheckCheck className="w-4 h-4 mr-1" />
+                Mark all read
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={clearAll}
+                className="text-xs text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Clear all
+              </Button>
+            )}
+          </div>
         </div>
 
         <ScrollArea className="h-[400px]">
