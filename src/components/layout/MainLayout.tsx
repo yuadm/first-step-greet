@@ -1,22 +1,14 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { ProfileDropdown } from "./ProfileDropdown";
 import { NotificationPopover } from "./NotificationPopover";
-import { useNotifications } from "@/hooks/useNotifications";
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const { requestNotificationPermission } = useNotifications();
-
-  useEffect(() => {
-    // Request notification permission on mount
-    requestNotificationPermission();
-  }, []);
-
   return (
     <SidebarProvider defaultOpen>
       <div className="min-h-screen flex w-full bg-gradient-subtle">
