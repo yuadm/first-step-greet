@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus } from 'lucide-react';
-
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface EmploymentHistoryStepProps {
   data: EmploymentHistory;
@@ -159,34 +159,57 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
                   />
                 </div>
                 <div>
-                  <Label htmlFor="recentFrom">From *</Label>
-                  <Input
-                    id="recentFrom"
-                    type="date"
-                    value={data.recentEmployer?.from || ''}
-                    onChange={(e) => updateRecentEmployer('from', e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
-                    required
+                  <Label>From *</Label>
+                  <DatePicker
+                    selected={data.recentEmployer?.from ? new Date(data.recentEmployer.from) : undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        // Use local date string to avoid timezone issues
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        updateRecentEmployer('from', `${year}-${month}-${day}`);
+                      } else {
+                        updateRecentEmployer('from', '');
+                      }
+                    }}
+                    placeholder="Select start date"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="recentTo">To *</Label>
-                  <Input
-                    id="recentTo"
-                    type="date"
-                    value={data.recentEmployer?.to || ''}
-                    onChange={(e) => updateRecentEmployer('to', e.target.value)}
-                    max={new Date().toISOString().split('T')[0]}
-                    required
+                  <Label>To *</Label>
+                  <DatePicker
+                    selected={data.recentEmployer?.to ? new Date(data.recentEmployer.to) : undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        // Use local date string to avoid timezone issues
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        updateRecentEmployer('to', `${year}-${month}-${day}`);
+                      } else {
+                        updateRecentEmployer('to', '');
+                      }
+                    }}
+                    placeholder="Select end date"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="recentLeavingDate">Leaving date or notice (if relevant)</Label>
-                  <Input
-                    id="recentLeavingDate"
-                    type="date"
-                    value={data.recentEmployer?.leavingDate || ''}
-                    onChange={(e) => updateRecentEmployer('leavingDate', e.target.value)}
+                  <Label>Leaving date or notice (if relevant)</Label>
+                  <DatePicker
+                    selected={data.recentEmployer?.leavingDate ? new Date(data.recentEmployer.leavingDate) : undefined}
+                    onChange={(date) => {
+                      if (date) {
+                        // Use local date string to avoid timezone issues
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        updateRecentEmployer('leavingDate', `${year}-${month}-${day}`);
+                      } else {
+                        updateRecentEmployer('leavingDate', '');
+                      }
+                    }}
+                    placeholder="Select leaving date"
                   />
                 </div>
               </div>
@@ -313,34 +336,57 @@ export function EmploymentHistoryStep({ data, updateData }: EmploymentHistorySte
                       />
                     </div>
                     <div>
-                      <Label htmlFor={`prevFrom${index}`}>From *</Label>
-                      <Input
-                        id={`prevFrom${index}`}
-                        type="date"
-                        value={employer.from || ''}
-                        onChange={(e) => updatePreviousEmployer(index, 'from', e.target.value)}
-                        max={new Date().toISOString().split('T')[0]}
-                        required
+                      <Label>From *</Label>
+                      <DatePicker
+                        selected={employer.from ? new Date(employer.from) : undefined}
+                        onChange={(date) => {
+                          if (date) {
+                            // Use local date string to avoid timezone issues
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            updatePreviousEmployer(index, 'from', `${year}-${month}-${day}`);
+                          } else {
+                            updatePreviousEmployer(index, 'from', '');
+                          }
+                        }}
+                        placeholder="Select start date"
                       />
                     </div>
                     <div>
-                      <Label htmlFor={`prevTo${index}`}>To *</Label>
-                      <Input
-                        id={`prevTo${index}`}
-                        type="date"
-                        value={employer.to || ''}
-                        onChange={(e) => updatePreviousEmployer(index, 'to', e.target.value)}
-                        max={new Date().toISOString().split('T')[0]}
-                        required
+                      <Label>To *</Label>
+                      <DatePicker
+                        selected={employer.to ? new Date(employer.to) : undefined}
+                        onChange={(date) => {
+                          if (date) {
+                            // Use local date string to avoid timezone issues
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            updatePreviousEmployer(index, 'to', `${year}-${month}-${day}`);
+                          } else {
+                            updatePreviousEmployer(index, 'to', '');
+                          }
+                        }}
+                        placeholder="Select end date"
                       />
                     </div>
                     <div>
-                      <Label htmlFor={`prevLeavingDate${index}`}>Leaving date or notice (if relevant)</Label>
-                      <Input
-                        id={`prevLeavingDate${index}`}
-                        type="date"
-                        value={employer.leavingDate || ''}
-                        onChange={(e) => updatePreviousEmployer(index, 'leavingDate', e.target.value)}
+                      <Label>Leaving date or notice (if relevant)</Label>
+                      <DatePicker
+                        selected={employer.leavingDate ? new Date(employer.leavingDate) : undefined}
+                        onChange={(date) => {
+                          if (date) {
+                            // Use local date string to avoid timezone issues
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            updatePreviousEmployer(index, 'leavingDate', `${year}-${month}-${day}`);
+                          } else {
+                            updatePreviousEmployer(index, 'leavingDate', '');
+                          }
+                        }}
+                        placeholder="Select leaving date"
                       />
                     </div>
                   </div>

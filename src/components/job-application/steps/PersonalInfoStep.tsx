@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Plus, X, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
+import { DatePicker } from '@/components/ui/date-picker';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface PersonalInfoStepProps {
@@ -283,13 +283,12 @@ export function PersonalInfoStep({ data, updateData, onEmailValidationChange }: 
 
         <div>
           <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-          <Input
-            id="dateOfBirth"
-            type="date"
-            value={data.dateOfBirth || ''}
-            onChange={(e) => updateData('dateOfBirth', e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
-            required
+          <DatePicker
+            selected={data.dateOfBirth ? new Date(data.dateOfBirth) : undefined}
+            onChange={(date) => {
+              updateData('dateOfBirth', date ? date.toISOString().split('T')[0] : '');
+            }}
+            placeholder="Select date of birth"
           />
         </div>
 
