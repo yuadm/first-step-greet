@@ -480,7 +480,7 @@ export function UserManagementContent() {
                       onSuccess={fetchUsers}
                     />
                   )}
-                  {((canEditUsers() && userRole === 'admin') || isCurrentUser(user.id)) && (
+                  {canEditUsers() && userRole === 'admin' && (
                     <Button 
                       variant="outline" 
                       size="sm"
