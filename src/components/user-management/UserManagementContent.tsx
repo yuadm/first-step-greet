@@ -467,7 +467,7 @@ export function UserManagementContent() {
 
                 {/* Actions */}
                 <div className="flex flex-col gap-2">
-                  {canEditUsers() && (
+                  {canEditUsers() && userRole === 'admin' && (
                     <UserRoleSelect
                       value={user.role}
                       onValueChange={(newRole) => updateUserRole(user.id, newRole)}
@@ -480,7 +480,7 @@ export function UserManagementContent() {
                       onSuccess={fetchUsers}
                     />
                   )}
-                  {canEditUsers() && (
+                  {canEditUsers() && userRole === 'admin' && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -491,7 +491,7 @@ export function UserManagementContent() {
                       Reset Password
                     </Button>
                   )}
-                  {canDeleteUsers() && !isCurrentUser(user.id) && (
+                  {canDeleteUsers() && !isCurrentUser(user.id) && userRole === 'admin' && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="sm" className="w-full justify-start text-destructive hover:text-destructive">
