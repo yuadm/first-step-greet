@@ -248,7 +248,7 @@ export function Dashboard() {
         expired: filteredDocuments?.filter(d => d.status === 'expired').length || 0,
       };
 
-      // Phase 2: Parallel activity queries - filtered by accessible branches
+      // Phase 2: Parallel activity queries
       const [
         recentEmployees,
         recentDocs,
@@ -257,38 +257,36 @@ export function Dashboard() {
         recentApps
       ] = await Promise.all([
         supabase.from('employees')
-          .select('id, name, created_at, branch_id')
-          .in('branch_id', branchIds)
+          .select('id, name, created_at')
           .order('created_at', { ascending: false })
-          .limit(10),
+          .limit(3),
         
         supabase.from('document_tracker')
-          .select('id, updated_at, employees(name, branch_id)')
+          .select('id, updated_at, employees(name)')
           .order('updated_at', { ascending: false })
-          .limit(10),
+          .limit(3),
         
         supabase.from('compliance_period_records')
-          .select('id, updated_at, status, employees(name, branch_id), compliance_types(name)')
+          .select('id, updated_at, status, employees(name), compliance_types(name)')
           .eq('status', 'completed')
           .order('updated_at', { ascending: false })
-          .limit(10),
+          .limit(3),
         
         supabase.from('leave_requests')
-          .select('id, created_at, status, employees(name, branch_id)')
+          .select('id, created_at, status, employees(name)')
           .order('created_at', { ascending: false })
-          .limit(10),
+          .limit(3),
         
         supabase.from('job_applications')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(10)
+          .limit(3)
       ]);
 
-      // Build activity feed - filter by accessible branches
+      // Build activity feed
       const recentActivity = [];
 
       recentEmployees.data?.forEach(emp => {
-        // Already filtered by branch in query
         recentActivity.push({
           id: `emp-${emp.id}`,
           type: 'employee',
@@ -299,10 +297,6 @@ export function Dashboard() {
       });
 
       recentDocs.data?.forEach(doc => {
-        const employeeBranchId = (doc.employees as any)?.branch_id;
-        // Only include if from accessible branch
-        if (!branchIds.includes(employeeBranchId)) return;
-        
         const employeeName = (doc.employees as any)?.name || 'Unknown';
         recentActivity.push({
           id: `doc-${doc.id}`,
@@ -314,10 +308,6 @@ export function Dashboard() {
       });
 
       recentCompliance.data?.forEach(comp => {
-        const employeeBranchId = (comp.employees as any)?.branch_id;
-        // Only include if from accessible branch
-        if (!branchIds.includes(employeeBranchId)) return;
-        
         const employeeName = (comp.employees as any)?.name || 'Unknown';
         const complianceType = (comp.compliance_types as any)?.name || 'training';
         recentActivity.push({
@@ -330,10 +320,6 @@ export function Dashboard() {
       });
 
       recentLeaves.data?.forEach(leave => {
-        const employeeBranchId = (leave.employees as any)?.branch_id;
-        // Only include if from accessible branch
-        if (!branchIds.includes(employeeBranchId)) return;
-        
         const employeeName = (leave.employees as any)?.name || 'Unknown';
         recentActivity.push({
           id: `leave-${leave.id}`,

@@ -88,7 +88,7 @@ export function LeavesContent() {
                          leave.leave_type_name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || leave.status === statusFilter;
-    const matchesBranch = branchFilter === 'all' || (leave.employee?.branch_id || leave.employee_branch_id) === branchFilter;
+    const matchesBranch = branchFilter === 'all' || leave.employee_branch_id === branchFilter;
     const matchesLeaveType = leaveTypeFilter === 'all' || leave.leave_type_id === leaveTypeFilter;
     
     // For non-admin users, filter by accessible branches
@@ -96,8 +96,8 @@ export function LeavesContent() {
     
     let hasAccess = true;
     if (!isAdmin) {
-      // Get employee's branch ID - prioritize live employee data
-      let employeeBranchId = leave.employee?.branch_id || leave.employee_branch_id;
+      // Get employee's branch ID - try multiple sources
+      let employeeBranchId = leave.employee_branch_id;
       
       // If employee_branch_id is empty/null, try to map from branch name
       if (!employeeBranchId && leave.employee?.branch) {
