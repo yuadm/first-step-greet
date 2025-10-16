@@ -11,9 +11,8 @@ export async function getTimeSlotMappings(): Promise<Record<string, string>> {
   try {
     const { data, error } = await supabase
       .from('job_application_settings')
-      .select('id, setting_value')
+      .select('id, setting_value, is_active')
       .eq('category', 'shift')
-      .eq('is_active', true)
       .order('display_order', { ascending: true });
 
     if (error) throw error;
@@ -30,7 +29,8 @@ export async function getTimeSlotMappings(): Promise<Record<string, string>> {
         } catch {
           label = (slot.setting_value as any)?.label || (slot.setting_value as any)?.name || slot.id;
         }
-        timeSlotCache[slot.id] = label;
+        // Add "(Archived)" suffix for inactive shifts
+        timeSlotCache[slot.id] = slot.is_active ? label : `${label} (Archived)`;
       }
     });
 
@@ -45,7 +45,7 @@ export function mapTimeSlotIds(timeSlots: Record<string, any>, mappings: Record<
   const mapped: Record<string, any> = {};
   
   Object.entries(timeSlots).forEach(([slotId, days]) => {
-    const label = mappings[slotId] || slotId; // Fallback to UUID if mapping not found
+    const label = mappings[slotId] || '[Unknown Shift]';
     mapped[label] = days;
   });
   
