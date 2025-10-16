@@ -95,39 +95,13 @@ export function LeavesContent() {
     const accessibleBranches = getAccessibleBranches();
     
     let hasAccess = true;
-    if (!isAdmin) {
-      // Get employee's branch ID - try multiple sources
-      let employeeBranchId = leave.employee_branch_id;
+    if (!isAdmin && accessibleBranches.length > 0) {
+      // Get employee's current branch ID from the employee object
+      const employee = employees.find(emp => emp.id === leave.employee_id);
+      const employeeBranchId = employee?.branch_id;
       
-      // If employee_branch_id is empty/null, try to map from branch name
-      if (!employeeBranchId && leave.employee?.branch) {
-        const matchingBranch = branches.find(b => b.name === leave.employee.branch);
-        employeeBranchId = matchingBranch?.id;
-      }
-      
-      console.log('Branch access check:', {
-        isAdmin,
-        employeeName: leave.employee?.name,
-        employeeBranch: leave.employee?.branch,
-        employeeBranchId,
-        accessibleBranches,
-        accessibleBranchesLength: accessibleBranches.length,
-        hasAccess: employeeBranchId ? accessibleBranches.includes(employeeBranchId) : true
-      });
-      
-      // If user has accessible branches, check if employee belongs to one of them
-      if (accessibleBranches.length > 0) {
-        if (employeeBranchId) {
-          hasAccess = accessibleBranches.includes(employeeBranchId);
-        } else {
-          // If no branch ID but has branch name, check by name
-          const branchNames = branches
-            .filter(b => accessibleBranches.includes(b.id))
-            .map(b => b.name);
-          hasAccess = leave.employee?.branch ? branchNames.includes(leave.employee.branch) : false;
-        }
-      }
-      // If user has no accessible branches (empty array), they can see all leaves
+      // Hide leave if employee's current branch is not accessible
+      hasAccess = employeeBranchId ? accessibleBranches.includes(employeeBranchId) : false;
     }
     
     return matchesSearch && matchesStatus && matchesBranch && matchesLeaveType && hasAccess;
@@ -146,21 +120,13 @@ export function LeavesContent() {
     
     // Apply branch access permissions
     let hasAccess = true;
-    if (!isAdmin) {
-      const employeeBranchId = leave.employee?.branch_id || leave.employee_branch_id;
+    if (!isAdmin && accessibleBranches.length > 0) {
+      // Get employee's current branch ID from the employee object
+      const employee = employees.find(emp => emp.id === leave.employee_id);
+      const employeeBranchId = employee?.branch_id;
       
-      // If user has accessible branches, check if employee belongs to one of them
-      if (accessibleBranches.length > 0) {
-        if (employeeBranchId) {
-          hasAccess = accessibleBranches.includes(employeeBranchId);
-        } else {
-          // If no branch ID but has branch name, check by name
-          const branchNames = branches
-            .filter(b => accessibleBranches.includes(b.id))
-            .map(b => b.name);
-          hasAccess = leave.employee?.branch ? branchNames.includes(leave.employee.branch) : false;
-        }
-      }
+      // Hide leave if employee's current branch is not accessible
+      hasAccess = employeeBranchId ? accessibleBranches.includes(employeeBranchId) : false;
     }
     
     return matchesBranch && matchesLeaveType && hasAccess;

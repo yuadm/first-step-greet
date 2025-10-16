@@ -113,6 +113,8 @@ export function CareWorkerStatementModal({
 
   const fetchEmployees = async () => {
     try {
+      const accessibleBranches = getAccessibleBranches();
+      
       const { data, error } = await supabase
         .from('employees')
         .select('id, name, branch_id')
@@ -123,7 +125,6 @@ export function CareWorkerStatementModal({
       
       // Filter employees by accessible branches for non-admin users
       let filteredEmployees = data || [];
-      const accessibleBranches = getAccessibleBranches();
       
       if (!isAdmin && accessibleBranches.length > 0) {
         filteredEmployees = (data || []).filter(employee => 
