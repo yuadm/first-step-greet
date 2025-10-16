@@ -107,6 +107,9 @@ function addSectionTitle(ctx: WriterCtx, title: string) {
 
 
 function addKeyValue(ctx: WriterCtx, label: string, value?: string) {
+  // Ensure space for at least 2 lines before drawing
+  ensureSpace(ctx, ctx.lineHeight * 2)
+  
   const maxWidth = ctx.page.getWidth() - ctx.margin * 2
   const labelText = `${label}: `
   const labelWidth = ctx.boldFont.widthOfTextAtSize(labelText, ctx.fontSize)
@@ -506,6 +509,17 @@ addSpacer(ctx, 10)
   drawText(ctx, 'I confirm that the above information given by me is correct and that I consent to my personal data being held/kept and kept by the receiving client agency in accordance with the Data Protection Act 1998.')
 
   // Terms & Policy
+  // Calculate space needed for the entire Terms & Policy section
+  const termsPolicySectionHeight = 
+    ctx.lineHeight * 2 +  // Section title + underline + spacing
+    ctx.lineHeight * 6 +  // 3 fields (each could wrap to 2 lines)
+    50;                   // Extra buffer for safety
+
+  // If not enough space, start on a new page
+  if (ctx.y - termsPolicySectionHeight < ctx.margin) {
+    addPage(ctx);
+  }
+
   addSectionTitle(ctx, '8. Terms & Policy')
 addKeyValue(ctx, 'Consent to Terms', data.termsPolicy?.consentToTerms ? 'Yes' : 'No')
   addKeyValue(ctx, 'Signature (name)', data.termsPolicy?.signature)
