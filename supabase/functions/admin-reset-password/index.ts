@@ -40,27 +40,30 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check if user is admin using the database
-    const { data: userRole, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
-
-    if (roleError || userRole?.role !== 'admin') {
-      console.error('Role check failed:', roleError, 'User role:', userRole?.role)
-      return new Response(
-        JSON.stringify({ error: 'Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     const { userId, password } = await req.json()
 
     if (!userId || !password) {
       return new Response(
         JSON.stringify({ error: 'Missing userId or password' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Check if user is admin OR resetting their own password
+    const { data: userRole, error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single()
+
+    const isAdmin = !roleError && userRole?.role === 'admin'
+    const isOwnPassword = user.id === userId
+
+    if (!isAdmin && !isOwnPassword) {
+      console.error('Permission denied. Not admin and not own password')
+      return new Response(
+        JSON.stringify({ error: 'You can only reset your own password' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
