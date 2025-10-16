@@ -338,7 +338,7 @@ export function UserManagementContent() {
         </div>
         
         <div className="flex items-center gap-3">
-          {canCreateUsers() && (
+          {canCreateUsers() && userRole === 'admin' && (
             <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-primary hover:opacity-90">
@@ -474,7 +474,7 @@ export function UserManagementContent() {
                       disabled={isCurrentUser(user.id)}
                     />
                   )}
-                  {canEditUsers() && user.role !== 'admin' && (
+                  {canEditUsers() && user.role !== 'admin' && userRole === 'admin' && (
                     <UserPermissionsDialog
                       user={user}
                       onSuccess={fetchUsers}
