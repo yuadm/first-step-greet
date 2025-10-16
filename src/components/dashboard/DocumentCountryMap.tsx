@@ -15,17 +15,33 @@ export function DocumentCountryMap() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Get accessible branches for current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        const { data: accessibleBranchData } = await supabase
+          .rpc('get_user_accessible_branches', { user_id: user.id });
+        
+        const branchIds = (accessibleBranchData || []).map((b: any) => b.branch_id);
+
+        // Fetch documents with employee branch info, filtered by accessible branches
         const { data, error } = await supabase
           .from("document_tracker")
-          .select("country, employee_id");
+          .select("country, employee_id, employees!document_tracker_employee_id_fkey(branch_id)");
         if (error) throw error;
         
-        // Count unique employees per country
+        // Count unique employees per country, filtered by branch access
         const employeesByCountry: Record<string, Set<string>> = {};
         (data || []).forEach((row: any) => {
           const country = (row?.country || "").trim();
           const employeeId = row?.employee_id;
-          if (!country || !employeeId) return;
+          const employeeBranchId = row?.employees?.branch_id;
+          
+          // Only include if employee is in an accessible branch
+          if (!country || !employeeId || !branchIds.includes(employeeBranchId)) return;
           
           const key = country.toLowerCase();
           if (!employeesByCountry[key]) {
