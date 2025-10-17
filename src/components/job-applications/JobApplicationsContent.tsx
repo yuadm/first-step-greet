@@ -996,7 +996,7 @@ try {
   return (
     <div className="space-y-6">
       {/* Header with Edit and Download buttons */}
-      <div className="flex justify-between items-center">
+      <div className="sticky top-0 z-10 bg-background pb-4 border-b mb-4 flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold">
             {displayData.personal_info?.fullName || 
