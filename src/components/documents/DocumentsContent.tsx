@@ -870,18 +870,52 @@ export function DocumentsContent() {
           .eq('id', empUpdate.id);
       }
 
-      // Insert documents
+      // Insert documents using RPC function
+      let successCount = 0;
+      let failCount = 0;
+      
       if (documentsToInsert.length > 0) {
-        const { error } = await supabase
-          .from('document_tracker')
-          .insert(documentsToInsert);
-
-        if (error) throw error;
+        for (const docData of documentsToInsert) {
+          try {
+            // Generate unique ID for the document
+            const documentId = crypto.randomUUID();
+            
+            // Prepare document object for JSONB array
+            const document = {
+              id: documentId,
+              document_type_id: docData.document_type_id,
+              expiry_date: docData.expiry_date,
+              status: docData.status,
+              document_number: '',
+              issue_date: '',
+              notes: ''
+            };
+            
+            // Call RPC function with correct parameters
+            const { error } = await supabase.rpc('upsert_employee_document', {
+              p_employee_id: docData.employee_id,
+              p_document: document,
+              p_country: docData.country,
+              p_nationality_status: docData.nationality_status,
+              p_branch_id: docData.branch_id
+            });
+            
+            if (error) {
+              console.error('Error inserting document:', error);
+              failCount++;
+            } else {
+              successCount++;
+            }
+          } catch (err) {
+            console.error('Exception inserting document:', err);
+            failCount++;
+          }
+        }
       }
 
       toast({
-        title: "Documents imported successfully",
-        description: `${documentsToInsert.length} documents have been imported and ${employeesToUpdate.length} employees updated.`,
+        title: "Import completed",
+        description: `${successCount} documents imported successfully${failCount > 0 ? `, ${failCount} failed` : ''} and ${employeesToUpdate.length} employees updated.`,
       });
 
       setPreviewDialogOpen(false);
