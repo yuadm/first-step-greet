@@ -1131,15 +1131,15 @@ export type Database = {
           country: string | null
           created_at: string | null
           document_number: string | null
-          document_type_id: string
+          document_type_id: string | null
           documents: Json | null
           employee_id: string
-          expiry_date: string
+          expiry_date: string | null
           id: string
           issue_date: string | null
           nationality_status: string | null
           notes: string | null
-          status: string
+          status: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1147,15 +1147,15 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           document_number?: string | null
-          document_type_id: string
+          document_type_id?: string | null
           documents?: Json | null
           employee_id: string
-          expiry_date: string
+          expiry_date?: string | null
           id?: string
           issue_date?: string | null
           nationality_status?: string | null
           notes?: string | null
-          status?: string
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1163,15 +1163,15 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           document_number?: string | null
-          document_type_id?: string
+          document_type_id?: string | null
           documents?: Json | null
           employee_id?: string
-          expiry_date?: string
+          expiry_date?: string | null
           id?: string
           issue_date?: string | null
           nationality_status?: string | null
           notes?: string | null
-          status?: string
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -2219,7 +2219,9 @@ export type Database = {
         Returns: Json
       }
       delete_employee_document: {
-        Args: { p_document_id: string; p_employee_id: string }
+        Args:
+          | { p_document_id: string; p_employee_id: string }
+          | { p_document_id: string; p_employee_id: string }
         Returns: Json
       }
       generate_client_compliance_records_for_period: {
@@ -2382,13 +2384,21 @@ export type Database = {
         Returns: Json
       }
       upsert_employee_document: {
-        Args: {
-          p_branch_id?: string
-          p_country?: string
-          p_document: Json
-          p_employee_id: string
-          p_nationality_status?: string
-        }
+        Args:
+          | {
+              p_branch_id?: string
+              p_country?: string
+              p_document: Json
+              p_employee_id: string
+              p_nationality_status?: string
+            }
+          | {
+              p_branch_id?: string
+              p_country?: string
+              p_document: Json
+              p_employee_id: string
+              p_nationality_status?: string
+            }
         Returns: Json
       }
       user_has_permission: {
