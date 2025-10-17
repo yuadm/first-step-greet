@@ -3,11 +3,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DateTextPicker } from "@/components/ui/date-text-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AlertTriangle, CheckCircle, Clock, Edit2, Save, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePagePermissions } from "@/hooks/usePagePermissions";
+import countries from "world-countries";
+import { determineNationalityStatus } from "@/utils/nationalityStatus";
+
+const COUNTRY_NAMES = countries.map((c) => c.name.common).sort();
 
 interface Document {
   id: string;
@@ -42,6 +48,14 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
   const [loading, setLoading] = useState(false);
   const [editingDocument, setEditingDocument] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
+  const [editingEmployeeInfo, setEditingEmployeeInfo] = useState(false);
+  const [employeeInfoValues, setEmployeeInfoValues] = useState({
+    country: '',
+    nationality_status: '',
+    sponsored: false,
+    twenty_hours: false
+  });
+  const [employeeData, setEmployeeData] = useState<any>(null);
   const { toast } = useToast();
   const { canEditDocuments } = usePagePermissions();
 
@@ -62,6 +76,23 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
         .single();
 
       if (error) throw error;
+
+      // Fetch employee data for sponsored and twenty_hours
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('sponsored, twenty_hours')
+        .eq('id', employeeId)
+        .single();
+
+      if (empData) {
+        setEmployeeData(empData);
+        setEmployeeInfoValues({
+          country: trackerData?.country || '',
+          nationality_status: trackerData?.nationality_status || '',
+          sponsored: empData.sponsored || false,
+          twenty_hours: empData.twenty_hours || false
+        });
+      }
 
       if (trackerData && trackerData.documents) {
         // Extract documents from JSONB array
@@ -182,6 +213,77 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
     }
   };
 
+  const startEditingEmployeeInfo = () => {
+    setEditingEmployeeInfo(true);
+    setEmployeeInfoValues({
+      country: document?.country || '',
+      nationality_status: document?.nationality_status || '',
+      sponsored: employeeData?.sponsored || false,
+      twenty_hours: employeeData?.twenty_hours || false
+    });
+  };
+
+  const cancelEmployeeInfoEdit = () => {
+    setEditingEmployeeInfo(false);
+  };
+
+  const saveEmployeeInfo = async () => {
+    try {
+      if (!document) return;
+
+      // Update document_tracker for country and nationality_status
+      const { error: trackerError } = await supabase.rpc('upsert_employee_document', {
+        p_employee_id: document.employee_id,
+        p_document: null,
+        p_country: employeeInfoValues.country || null,
+        p_nationality_status: employeeInfoValues.nationality_status || null,
+        p_branch_id: document.branch_id
+      });
+
+      if (trackerError) throw trackerError;
+
+      // Update employees table for sponsored and twenty_hours
+      const { error: employeeError } = await supabase
+        .from('employees')
+        .update({
+          sponsored: employeeInfoValues.sponsored,
+          twenty_hours: employeeInfoValues.twenty_hours
+        })
+        .eq('id', document.employee_id);
+
+      if (employeeError) throw employeeError;
+
+      toast({
+        title: "Employee info updated",
+        description: "Employee document information updated successfully.",
+      });
+
+      setEditingEmployeeInfo(false);
+      
+      // Refresh the documents in the modal
+      await fetchEmployeeDocuments(document.employee_id);
+      
+      // Trigger a page refresh to update the main table
+      window.dispatchEvent(new Event('document-updated'));
+    } catch (error) {
+      console.error('Error updating employee info:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update employee information. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCountryChange = (country: string) => {
+    const status = determineNationalityStatus(country);
+    setEmployeeInfoValues({
+      ...employeeInfoValues,
+      country,
+      nationality_status: status
+    });
+  };
+
   if (!document) return null;
 
   const getStatusBadge = (document: Document) => {
@@ -238,19 +340,129 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
             </div>
           </div>
 
-          {/* Country - Read Only from Employee */}
+          {/* Employee Document Information */}
           <div className="border rounded-lg p-4">
-            <h3 className="text-sm font-medium mb-3">Document Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Country</label>
-                <p className="text-sm">{document.country || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Nationality Status</label>
-                <p className="text-sm">{document.nationality_status || 'N/A'}</p>
-              </div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium">Employee Document Information</h3>
+              {!editingEmployeeInfo && canEditDocuments() && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={startEditingEmployeeInfo}
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              )}
             </div>
+
+            {editingEmployeeInfo ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Country</label>
+                    <Select
+                      value={employeeInfoValues.country}
+                      onValueChange={handleCountryChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {COUNTRY_NAMES.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Nationality Status</label>
+                    <Select
+                      value={employeeInfoValues.nationality_status}
+                      onValueChange={(value) => setEmployeeInfoValues({...employeeInfoValues, nationality_status: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="British">British</SelectItem>
+                        <SelectItem value="EU">EU</SelectItem>
+                        <SelectItem value="Non-EU">Non-EU</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="sponsored"
+                      checked={employeeInfoValues.sponsored}
+                      onCheckedChange={(checked) => setEmployeeInfoValues({...employeeInfoValues, sponsored: checked as boolean})}
+                    />
+                    <label
+                      htmlFor="sponsored"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Sponsored
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="twenty_hours"
+                      checked={employeeInfoValues.twenty_hours}
+                      onCheckedChange={(checked) => setEmployeeInfoValues({...employeeInfoValues, twenty_hours: checked as boolean})}
+                    />
+                    <label
+                      htmlFor="twenty_hours"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      20 Hours Restriction
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={saveEmployeeInfo}
+                    className="bg-gradient-primary hover:opacity-90"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={cancelEmployeeInfoEdit}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Country</label>
+                  <p className="text-sm">{document.country || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Nationality Status</label>
+                  <p className="text-sm">{document.nationality_status || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Sponsored</label>
+                  <p className="text-sm">{employeeData?.sponsored ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">20 Hours Restriction</label>
+                  <p className="text-sm">{employeeData?.twenty_hours ? 'Yes' : 'No'}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* All Document Types for Employee */}
