@@ -201,7 +201,7 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
     return (
       <Card className="card-premium">
         <CardContent className="flex flex-col items-center justify-center min-h-64 py-12">
-          <div className="w-16 h-16 bg-primary-soft rounded-full flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
           <p className="text-muted-foreground">Loading your reference form...</p>
@@ -226,7 +226,7 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
 
   if (referenceRequest.status === 'completed') {
     return (
-      <Card className="card-premium text-center py-12">
+      <Card className="card-premium text-center py-12 transition-opacity duration-300">
         <CardContent>
           <div className="w-16 h-16 bg-success-soft rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">✅</span>
@@ -245,7 +245,6 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
     <div className="space-y-6">
       {/* Company Header */}
       <Card className="card-premium border-none bg-gradient-card overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-primary opacity-5" />
         <CardContent className="relative text-center py-4">
           {companySettings.logo && (
             <div className="flex justify-center mb-2">
@@ -266,7 +265,7 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
         <Card className="card-premium">
           <CardHeader className="bg-gradient-surface border-b border-border">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-soft rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-muted rounded-xl flex items-center justify-center flex-shrink-0">
                 <span className="text-xl sm:text-2xl">📝</span>
               </div>
               <div className="flex-1 min-w-0">
@@ -323,7 +322,7 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
             {/* Reference Type Specific Questions */}
             {isEmployerReference ? (
               <div className="space-y-6">
-                <div className="bg-primary-soft p-4 sm:p-6 rounded-xl">
+                <div className="bg-muted p-4 sm:p-6 rounded-xl">
                   <Label className="text-base font-semibold flex items-center gap-2 mb-3">
                     <span>💼</span>
                     Are you this person's current or previous employer? *
