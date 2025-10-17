@@ -312,7 +312,14 @@ export function DocumentsContent() {
         if (updateError) throw updateError;
       }
 
-      // Prepare document data for the RPC function
+      // Check if a document of this type already exists for this employee
+      const { data: existingDocument } = await supabase
+        .from('document_tracker')
+        .select('id')
+        .eq('employee_id', newDocument.employee_id)
+        .eq('document_type_id', newDocument.document_type_id)
+        .maybeSingle();
+
       const documentData = {
         employee_id: newDocument.employee_id,
         document_type_id: newDocument.document_type_id,
@@ -326,13 +333,26 @@ export function DocumentsContent() {
         status
       };
 
-      // The RPC function handles both create and update
-      await createDocument.mutateAsync(documentData);
+      if (existingDocument) {
+        // Update existing document instead of creating a new one
+        await updateDocument.mutateAsync({
+          id: existingDocument.id,
+          ...documentData
+        });
 
-      toast({
-        title: "Document saved",
-        description: "The document has been saved successfully.",
-      });
+        toast({
+          title: "Document updated",
+          description: "The existing document has been updated with the new information.",
+        });
+      } else {
+        // Create new document
+        await createDocument.mutateAsync(documentData);
+
+        toast({
+          title: "Document created",
+          description: "A new document has been added successfully.",
+        });
+      }
 
       setDialogOpen(false);
       setNewDocument({
