@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { DatePicker } from '@/components/ui/date-picker';
 import { useToast } from '@/hooks/use-toast';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Loader2 } from 'lucide-react';
@@ -46,8 +47,8 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
     employmentStatus: '', // current, previous, or neither
     relationshipDescription: '',
     jobTitle: '',
-    startDate: '',
-    endDate: '',
+    startDate: null as Date | null,
+    endDate: null as Date | null,
     attendance: '',
     leavingReason: '',
     
@@ -71,7 +72,7 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
     
     // Final comments and signature
     additionalComments: '',
-    signatureDate: new Date().toISOString().split('T')[0]
+    signatureDate: new Date() as Date
   });
 
   useEffect(() => {
@@ -165,13 +166,21 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
     try {
       if (!referenceRequest) return;
 
+      // Convert dates to ISO strings for database storage
+      const submissionData = {
+        ...formData,
+        startDate: formData.startDate ? formData.startDate.toISOString() : null,
+        endDate: formData.endDate ? formData.endDate.toISOString() : null,
+        signatureDate: formData.signatureDate.toISOString()
+      };
+
       // Update the reference request with the form data and mark as completed
       const { error: updateError } = await supabase
         .from('reference_requests')
         .update({
           status: 'completed',
           completed_at: new Date().toISOString(),
-          form_data: formData
+          form_data: submissionData
         })
         .eq('id', referenceRequest.id);
 
@@ -373,24 +382,18 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="startDate" className="text-sm font-medium">Employment Start Date *</Label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                      className="border-input-border focus:border-primary"
-                      required
+                    <DatePicker
+                      selected={formData.startDate || undefined}
+                      onChange={(date) => setFormData(prev => ({ ...prev, startDate: date || null }))}
+                      placeholder="Select start date"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="endDate" className="text-sm font-medium">Employment End Date *</Label>
-                    <Input
-                      id="endDate"
-                      type="date"
-                      value={formData.endDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                      className="border-input-border focus:border-primary"
-                      required
+                    <DatePicker
+                      selected={formData.endDate || undefined}
+                      onChange={(date) => setFormData(prev => ({ ...prev, endDate: date || null }))}
+                      placeholder="Select end date"
                     />
                   </div>
                 </div>
@@ -599,13 +602,11 @@ export function ReferenceForm({ token }: ReferenceFormProps) {
               
               <div className="space-y-2">
                 <Label htmlFor="signatureDate" className="text-sm font-medium">Date of completion *</Label>
-                <Input
-                  id="signatureDate"
-                  type="date"
-                  value={formData.signatureDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, signatureDate: e.target.value }))}
-                  className="border-input-border focus:border-primary max-w-xs"
-                  required
+                <DatePicker
+                  selected={formData.signatureDate}
+                  onChange={(date) => setFormData(prev => ({ ...prev, signatureDate: date || new Date() }))}
+                  placeholder="Select date"
+                  className="max-w-xs"
                 />
               </div>
             </div>
