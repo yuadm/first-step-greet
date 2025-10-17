@@ -87,13 +87,46 @@ export const fetchDocuments = async () => {
     .from('document_tracker')
     .select(`
       *,
-      employees (name, email, branch),
-      document_types (name)
+      employees (name, email, branch)
     `)
-    .order('expiry_date', { ascending: true });
+    .order('created_at', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  
+  // Flatten JSONB documents array to Document[] for UI compatibility
+  const flattened: Document[] = [];
+  
+  if (data) {
+    for (const tracker of data) {
+      const documents = (tracker.documents as any[]) || [];
+      
+      for (const doc of documents) {
+        flattened.push({
+          id: doc.id,
+          employee_id: tracker.employee_id,
+          document_type_id: doc.document_type_id,
+          branch_id: tracker.branch_id,
+          document_number: doc.document_number,
+          issue_date: doc.issue_date,
+          expiry_date: doc.expiry_date,
+          status: doc.status,
+          notes: doc.notes,
+          country: tracker.country,
+          nationality_status: tracker.nationality_status,
+          employees: tracker.employees,
+        });
+      }
+    }
+  }
+  
+  // Sort by expiry date
+  flattened.sort((a, b) => {
+    if (!a.expiry_date) return 1;
+    if (!b.expiry_date) return -1;
+    return a.expiry_date.localeCompare(b.expiry_date);
+  });
+  
+  return flattened;
 };
 
 export const fetchDocumentEmployees = async () => {
@@ -166,13 +199,38 @@ export function useDocumentActions() {
 
   const createDocument = useMutation({
     mutationFn: async (documentData: any) => {
-      const { data, error } = await supabase
-        .from('document_tracker')
-        .insert(documentData)
-        .select();
+      // Extract employee-level data and document data
+      const { employee_id, country, nationality_status, branch_id, ...docFields } = documentData;
+      
+      // Fetch document type name for the flattened response
+      const { data: docTypeData } = await supabase
+        .from('document_types')
+        .select('name')
+        .eq('id', docFields.document_type_id)
+        .single();
+      
+      // Call upsert function
+      const { data, error } = await supabase.rpc('upsert_employee_document', {
+        p_employee_id: employee_id,
+        p_document: docFields,
+        p_country: country,
+        p_nationality_status: nationality_status,
+        p_branch_id: branch_id
+      });
 
       if (error) throw error;
-      return data;
+      
+      // Return flattened format for optimistic update
+      const responseData = data as any;
+      return [{
+        id: responseData.document.id,
+        employee_id,
+        branch_id,
+        country,
+        nationality_status,
+        ...docFields,
+        document_types: docTypeData ? { name: docTypeData.name } : undefined
+      }];
     },
     // Optimistic update for immediate UI feedback
     onMutate: async (newDocument) => {
@@ -217,14 +275,31 @@ export function useDocumentActions() {
 
   const updateDocument = useMutation({
     mutationFn: async ({ id, ...updateData }: { id: string; [key: string]: any }) => {
-      const { data, error } = await supabase
-        .from('document_tracker')
-        .update(updateData)
-        .eq('id', id)
-        .select();
+      // Extract employee-level and document-level data
+      const { employee_id, country, nationality_status, branch_id, ...docFields } = updateData;
+      
+      // Include the document ID in the document object
+      const documentWithId = { id, ...docFields };
+      
+      // Call upsert function (which handles updates)
+      const { data, error } = await supabase.rpc('upsert_employee_document', {
+        p_employee_id: employee_id,
+        p_document: documentWithId,
+        p_country: country,
+        p_nationality_status: nationality_status,
+        p_branch_id: branch_id
+      });
 
       if (error) throw error;
-      return data;
+      
+      return [{
+        id,
+        employee_id,
+        branch_id,
+        country,
+        nationality_status,
+        ...docFields
+      }];
     },
     // Optimistic update for immediate UI feedback
     onMutate: async ({ id, ...updateData }) => {
@@ -265,12 +340,35 @@ export function useDocumentActions() {
 
   const deleteDocuments = useMutation({
     mutationFn: async (documentIds: string[]) => {
-      const { error } = await supabase
+      // Get all documents to find their employee_ids
+      const { data: allDocs } = await supabase
         .from('document_tracker')
-        .delete()
-        .in('id', documentIds);
-
-      if (error) throw error;
+        .select('employee_id, documents');
+      
+      if (!allDocs) return;
+      
+      // Delete each document using the helper function
+      for (const docId of documentIds) {
+        // Find which employee this document belongs to
+        let employeeId: string | null = null;
+        
+        for (const tracker of allDocs) {
+          const docs = (tracker.documents as any[]) || [];
+          if (docs.some((d: any) => d.id === docId)) {
+            employeeId = tracker.employee_id;
+            break;
+          }
+        }
+        
+        if (employeeId) {
+          const { error } = await supabase.rpc('delete_employee_document', {
+            p_employee_id: employeeId,
+            p_document_id: docId
+          });
+          
+          if (error) throw error;
+        }
+      }
     },
     // Optimistic update for immediate UI feedback
     onMutate: async (documentIds) => {

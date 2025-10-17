@@ -1132,6 +1132,7 @@ export type Database = {
           created_at: string | null
           document_number: string | null
           document_type_id: string
+          documents: Json | null
           employee_id: string
           expiry_date: string
           id: string
@@ -1147,6 +1148,7 @@ export type Database = {
           created_at?: string | null
           document_number?: string | null
           document_type_id: string
+          documents?: Json | null
           employee_id: string
           expiry_date: string
           id?: string
@@ -1162,6 +1164,7 @@ export type Database = {
           created_at?: string | null
           document_number?: string | null
           document_type_id?: string
+          documents?: Json | null
           employee_id?: string
           expiry_date?: string
           id?: string
@@ -1189,7 +1192,7 @@ export type Database = {
           {
             foreignKeyName: "document_tracker_employee_id_fkey"
             columns: ["employee_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -1382,47 +1385,6 @@ export type Database = {
           reference_info?: Json | null
           skills_experience?: Json | null
           status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "job_applications_position_id_fkey"
-            columns: ["position_id"]
-            isOneToOne: false
-            referencedRelation: "job_positions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      job_positions: {
-        Row: {
-          created_at: string
-          department: string | null
-          description: string | null
-          id: string
-          is_active: boolean
-          location: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          department?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          location?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          department?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean
-          location?: string | null
-          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -2256,6 +2218,10 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_employee_document: {
+        Args: { p_document_id: string; p_employee_id: string }
+        Returns: Json
+      }
       generate_client_compliance_records_for_period: {
         Args: { p_compliance_type_id: string; p_period_identifier: string }
         Returns: number
@@ -2361,6 +2327,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      migrate_documents_to_jsonb: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       notify_admins: {
         Args: {
           p_message: string
@@ -2408,6 +2378,16 @@ export type Database = {
           p_manager_notes?: string
           p_new_status: string
           p_user_id?: string
+        }
+        Returns: Json
+      }
+      upsert_employee_document: {
+        Args: {
+          p_branch_id?: string
+          p_country?: string
+          p_document: Json
+          p_employee_id: string
+          p_nationality_status?: string
         }
         Returns: Json
       }

@@ -296,23 +296,23 @@ export function ReportsContent() {
   };
 
   const generateDocumentRow = (employee: any) => {
+    // Get documents array from the tracker
+    const tracker = employee.document_tracker;
+    const documents = (tracker?.documents || []) as any[];
+    
     const baseData = {
       'Employee Name': employee.name,
       'Branch': employee.branch,
-      'Status': employee.document_tracker?.find((doc: any) => 
-        doc.document_types?.name?.toLowerCase().includes('passport')
-      )?.nationality_status || '',
-      'Country': employee.document_tracker?.find((doc: any) => 
-        doc.document_types?.name?.toLowerCase().includes('passport')
-      )?.country || '',
+      'Status': tracker?.nationality_status || '',
+      'Country': tracker?.country || '',
       'Sponsored': employee.sponsored ? 'Yes' : 'No',
       '20 Hours Restriction': employee.twenty_hours ? 'Yes' : 'No'
     };
 
     const documentData: any = {};
     documentTypes.forEach(docType => {
-      const doc = employee.document_tracker?.find((d: any) => 
-        d.document_types?.name === docType.name
+      const doc = documents.find((d: any) => 
+        d.document_type_id === docType.id
       );
       
       documentData[docType.name] = doc ? formatDate(doc.expiry_date) : '';
@@ -347,11 +347,9 @@ export function ReportsContent() {
               sponsored,
               twenty_hours,
               document_tracker (
-                document_number,
-                expiry_date,
+                documents,
                 country,
-                nationality_status,
-                document_types (name)
+                nationality_status
               )
             `)
             .not('document_tracker', 'is', null)
@@ -359,9 +357,12 @@ export function ReportsContent() {
           
           if (docsError) throw docsError;
 
-          // Only include employees who actually have document_tracker entries
+          // Only include employees who actually have documents in their tracker
           const filteredEmployees = (employeesWithDocs || [])
-            .filter(emp => emp.document_tracker && emp.document_tracker.length > 0);
+            .filter(emp => {
+              const docs = (emp.document_tracker as any)?.documents;
+              return docs && Array.isArray(docs) && docs.length > 0;
+            });
 
           const allEmployees = filteredEmployees
             .filter(emp => !emp.sponsored && !emp.twenty_hours)
