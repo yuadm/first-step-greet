@@ -32,7 +32,7 @@ export function ReviewSummary({ data }: Props) {
       const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
+      return `${day}/${month}/${year}`;
     } catch (error) {
       return dateString; // Return original if conversion fails
     }
@@ -51,7 +51,7 @@ export function ReviewSummary({ data }: Props) {
           <Field label="Email" value={pi.email} />
           <Field label="Confirm Email" value={pi.confirmEmail} />
           <Field label="Telephone/Mobile" value={pi.telephone} />
-          <Field label="Date of Birth" value={pi.dateOfBirth} />
+          <Field label="Date of Birth" value={formatDateToDDMMYYYY(pi.dateOfBirth)} />
           <Field label="Street Address" value={pi.streetAddress} />
           <Field label="Street Address 2" value={pi.streetAddress2} />
           <Field label="Town" value={pi.town} />
@@ -114,8 +114,8 @@ export function ReviewSummary({ data }: Props) {
                 <Field label="Town" value={eh.recentEmployer.town} />
                 <Field label="Postcode" value={eh.recentEmployer.postcode} />
                 <Field label="Telephone" value={eh.recentEmployer.telephone} />
-                <Field label="From" value={eh.recentEmployer.from} />
-                <Field label="To" value={eh.recentEmployer.to} />
+                <Field label="From" value={formatDateToDDMMYYYY(eh.recentEmployer.from)} />
+                <Field label="To" value={formatDateToDDMMYYYY(eh.recentEmployer.to)} />
                 <Field label="Leaving Date/Notice" value={eh.recentEmployer.leavingDate} />
                 <Field label="Reason for Leaving" value={eh.recentEmployer.reasonForLeaving} />
               </div>
@@ -142,8 +142,8 @@ export function ReviewSummary({ data }: Props) {
                     <Field label="Town" value={emp.town} />
                     <Field label="Postcode" value={emp.postcode} />
                     <Field label="Telephone" value={emp.telephone} />
-                    <Field label="From" value={emp.from} />
-                    <Field label="To" value={emp.to} />
+                    <Field label="From" value={formatDateToDDMMYYYY(emp.from)} />
+                    <Field label="To" value={formatDateToDDMMYYYY(emp.to)} />
                     <Field label="Leaving Date/Notice" value={emp.leavingDate} />
                     <Field label="Reason for Leaving" value={emp.reasonForLeaving} />
                     {emp.keyTasks && (
