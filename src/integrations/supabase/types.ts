@@ -2219,10 +2219,8 @@ export type Database = {
         Returns: Json
       }
       delete_employee_document: {
-        Args:
-          | { p_document_id: string; p_employee_id: string }
-          | { p_document_id: string; p_employee_id: string }
-        Returns: Json
+        Args: { p_document_id: string; p_employee_id: string }
+        Returns: undefined
       }
       generate_client_compliance_records_for_period: {
         Args: { p_compliance_type_id: string; p_period_identifier: string }
