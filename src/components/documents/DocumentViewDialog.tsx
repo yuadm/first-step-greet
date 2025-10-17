@@ -54,19 +54,46 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
   const fetchEmployeeDocuments = async (employeeId: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch the single tracker row for this employee
+      const { data: trackerData, error } = await supabase
         .from('document_tracker')
-        .select(`
-          *,
-          employees (name, email, branch),
-          document_types (name)
-        `)
-        .eq('employee_id', employeeId);
+        .select('*')
+        .eq('employee_id', employeeId)
+        .single();
 
       if (error) throw error;
-      setEmployeeDocuments(data || []);
+
+      if (trackerData && trackerData.documents) {
+        // Extract documents from JSONB array
+        const docsArray = trackerData.documents as any[];
+        
+        // Fetch document type names for each document
+        const documentsWithTypes = await Promise.all(
+          docsArray.map(async (doc: any) => {
+            const { data: docType } = await supabase
+              .from('document_types')
+              .select('name')
+              .eq('id', doc.document_type_id)
+              .single();
+            
+            return {
+              ...doc,
+              employee_id: trackerData.employee_id,
+              branch_id: trackerData.branch_id,
+              country: trackerData.country,
+              nationality_status: trackerData.nationality_status,
+              document_types: docType ? { name: docType.name } : null
+            };
+          })
+        );
+        
+        setEmployeeDocuments(documentsWithTypes);
+      } else {
+        setEmployeeDocuments([]);
+      }
     } catch (error) {
       console.error('Error fetching employee documents:', error);
+      setEmployeeDocuments([]);
     } finally {
       setLoading(false);
     }
@@ -88,6 +115,12 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
 
   const saveEdit = async (docId: string) => {
     try {
+      if (!document) return;
+
+      // Find the document being edited to get its document_type_id
+      const docToEdit = employeeDocuments.find(d => d.id === docId);
+      if (!docToEdit) return;
+
       // Handle both Date and string values for dates
       let expiryDateValue = '';
       let issueDateValue = '';
@@ -106,14 +139,23 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
         issueDateValue = editValues.issue_date as string;
       }
 
-      const { error } = await supabase
-        .from('document_tracker')
-        .update({
-          document_number: editValues.document_number || null,
-          issue_date: issueDateValue || null,
-          expiry_date: expiryDateValue || null
-        })
-        .eq('id', docId);
+      // Build the document object for upsert
+      const documentData = {
+        id: docId,
+        document_type_id: docToEdit.document_type_id,
+        document_number: editValues.document_number || null,
+        issue_date: issueDateValue || null,
+        expiry_date: expiryDateValue
+      };
+
+      // Use the RPC function to update the document in the JSONB array
+      const { error } = await supabase.rpc('upsert_employee_document', {
+        p_employee_id: document.employee_id,
+        p_document: documentData,
+        p_country: document.country || null,
+        p_nationality_status: document.nationality_status || null,
+        p_branch_id: document.branch_id
+      });
 
       if (error) throw error;
 
@@ -124,10 +166,12 @@ export function DocumentViewDialog({ document, open, onClose }: DocumentViewDial
 
       setEditingDocument(null);
       setEditValues({});
-      // Refresh the documents
-      if (document) {
-        fetchEmployeeDocuments(document.employee_id);
-      }
+      
+      // Refresh the documents in the modal
+      await fetchEmployeeDocuments(document.employee_id);
+      
+      // Trigger a page refresh to update the main table
+      window.dispatchEvent(new Event('document-updated'));
     } catch (error) {
       console.error('Error updating document:', error);
       toast({

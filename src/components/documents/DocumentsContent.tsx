@@ -147,6 +147,18 @@ export function DocumentsContent() {
     }
   }, [newDocument.employee_id, newDocument.document_type_id]);
 
+  // Listen for document updates from the view dialog
+  useEffect(() => {
+    const handleDocumentUpdate = () => {
+      refetchData();
+    };
+    
+    window.addEventListener('document-updated', handleDocumentUpdate);
+    return () => {
+      window.removeEventListener('document-updated', handleDocumentUpdate);
+    };
+  }, [refetchData]);
+
   // Helper function to check if a string is a valid date
   const isValidDate = (dateStr: string) => {
     if (!dateStr) return false;
@@ -489,30 +501,21 @@ export function DocumentsContent() {
     }
     
     try {
-      const { error } = await supabase
-        .from('document_tracker')
-        .delete()
-        .in('id', selectedDocuments);
-
-      if (error) throw error;
-
-      toast({
-        title: "Documents deleted",
-        description: `Successfully deleted ${selectedDocuments.length} documents.`,
-      });
-
-      setBatchDeleteDialogOpen(false);
+      // Use the mutation hook which handles the RPC calls correctly
+      await deleteDocuments.mutateAsync(selectedDocuments);
+      
+      // Clear selection and close dialog after successful deletion
       setSelectedDocuments([]);
-      refetchData();
+      setBatchDeleteDialogOpen(false);
+      
+      // Trigger manual sync
+      syncNow();
     } catch (error) {
-      console.error('Error deleting documents:', error);
-      toast({
-        title: "Error deleting documents",
-        description: "Could not delete documents. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error batch deleting documents:', error);
+      // Error handling is done by the mutation hook
     }
   };
+
 
   const toggleSelectDocument = (documentId: string) => {
     setSelectedDocuments(prev => 
