@@ -83,6 +83,7 @@ export const documentQueryKeys = {
 
 // Data fetching functions
 export const fetchDocuments = async () => {
+  // Fetch document tracker data
   const { data, error } = await supabase
     .from('document_tracker')
     .select(`
@@ -92,6 +93,16 @@ export const fetchDocuments = async () => {
     .order('created_at', { ascending: true });
 
   if (error) throw error;
+  
+  // Fetch all document types to map names
+  const { data: docTypes, error: docTypesError } = await supabase
+    .from('document_types')
+    .select('id, name');
+  
+  if (docTypesError) throw docTypesError;
+  
+  // Create a map of document_type_id -> name for quick lookup
+  const docTypeMap = new Map(docTypes?.map(dt => [dt.id, dt.name]) || []);
   
   // Flatten JSONB documents array to Document[] for UI compatibility
   const flattened: Document[] = [];
@@ -114,6 +125,9 @@ export const fetchDocuments = async () => {
           country: tracker.country,
           nationality_status: tracker.nationality_status,
           employees: tracker.employees,
+          document_types: {
+            name: docTypeMap.get(doc.document_type_id) || 'Unknown'
+          }
         });
       }
     }
