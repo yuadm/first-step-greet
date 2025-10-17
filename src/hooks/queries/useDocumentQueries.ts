@@ -3,6 +3,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cacheConfig } from '@/lib/query-client';
 
+// Individual document within JSONB array
+export interface DocumentRecord {
+  id: string;
+  document_type_id: string;
+  document_number?: string;
+  issue_date?: string;
+  expiry_date: string;
+  status: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Employee document tracker with JSONB documents
+export interface EmployeeDocumentTracker {
+  id: string;
+  employee_id: string;
+  country?: string;
+  nationality_status?: string;
+  branch_id: string;
+  documents: DocumentRecord[];
+  created_at: string;
+  updated_at: string;
+}
+
+// Flattened document (for UI compatibility)
 export interface Document {
   id: string;
   employee_id: string;
