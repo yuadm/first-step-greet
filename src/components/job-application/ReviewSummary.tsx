@@ -211,7 +211,6 @@ export function ReviewSummary({ data }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-3">
           <Field label="Consent to Terms" value={tp.consentToTerms ? 'Yes' : 'No'} />
           <Field label="Signature (name)" value={tp.signature} />
-          <Field label="Full Name" value={tp.fullName} />
           <Field label="Date" value={formatDateToDDMMYYYY(tp.date)} />
         </div>
       </section>
