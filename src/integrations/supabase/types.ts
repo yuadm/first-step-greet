@@ -1384,6 +1384,47 @@ export type Database = {
           status?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "job_positions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_positions: {
+        Row: {
+          created_at: string
+          department: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          location: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          title?: string
+          updated_at?: string
+        }
         Relationships: []
       }
       leave_requests: {
