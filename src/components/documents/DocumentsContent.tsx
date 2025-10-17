@@ -1034,7 +1034,7 @@ export function DocumentsContent() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Documents</p>
-                <p className="text-2xl font-bold">{documents.length}</p>
+                <p className="text-2xl font-bold">{filteredDocuments.length}</p>
               </div>
               <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <FileText className="w-5 h-5 text-white" />
@@ -1052,7 +1052,7 @@ export function DocumentsContent() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Valid</p>
                 <p className="text-2xl font-bold">
-                  {documents.filter(doc => {
+                  {filteredDocuments.filter(doc => {
                     const daysUntilExpiry = Math.ceil((new Date(doc.expiry_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
                     return daysUntilExpiry > 30;
                   }).length}
@@ -1074,7 +1074,7 @@ export function DocumentsContent() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Expiring Soon</p>
                 <p className="text-2xl font-bold">
-                  {documents.filter(doc => {
+                  {filteredDocuments.filter(doc => {
                     const daysUntilExpiry = Math.ceil((new Date(doc.expiry_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
                     return daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
                   }).length}
@@ -1096,7 +1096,7 @@ export function DocumentsContent() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Expired</p>
                 <p className="text-2xl font-bold">
-                  {documents.filter(doc => {
+                  {filteredDocuments.filter(doc => {
                     const daysUntilExpiry = Math.ceil((new Date(doc.expiry_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
                     return daysUntilExpiry < 0;
                   }).length}
