@@ -2384,21 +2384,13 @@ export type Database = {
         Returns: Json
       }
       upsert_employee_document: {
-        Args:
-          | {
-              p_branch_id?: string
-              p_country?: string
-              p_document: Json
-              p_employee_id: string
-              p_nationality_status?: string
-            }
-          | {
-              p_branch_id?: string
-              p_country?: string
-              p_document: Json
-              p_employee_id: string
-              p_nationality_status?: string
-            }
+        Args: {
+          p_branch_id?: string
+          p_country?: string
+          p_document: Json
+          p_employee_id: string
+          p_nationality_status?: string
+        }
         Returns: Json
       }
       user_has_permission: {
