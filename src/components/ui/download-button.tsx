@@ -57,6 +57,17 @@ export const DownloadButton = React.forwardRef<HTMLButtonElement, DownloadButton
       }
     };
 
+    const getText = () => {
+      switch (state) {
+        case 'downloading':
+          return downloadingText || "Downloading...";
+        case 'completed':
+          return completedText || "Downloaded";
+        default:
+          return children;
+      }
+    };
+
     return (
       <Button
         ref={ref}
@@ -64,21 +75,15 @@ export const DownloadButton = React.forwardRef<HTMLButtonElement, DownloadButton
         size="sm"
         onClick={handleClick}
         disabled={disabled || isDownloading}
-        title={
-          state === 'downloading' 
-            ? (downloadingText || "Downloading...") 
-            : state === 'completed' 
-            ? (completedText || "Downloaded") 
-            : "Download"
-        }
         className={cn(
-          "h-6 w-6 p-0 transition-all duration-200",
+          "transition-all duration-200",
           getButtonClass(),
           className
         )}
         {...props}
       >
         {getIcon()}
+        {getText() && <span className="ml-2">{getText()}</span>}
       </Button>
     );
   }

@@ -1023,7 +1023,6 @@ try {
               downloadingText="Generating PDF..."
               completedText="Downloaded"
             >
-              <FileText className="w-4 h-4 mr-2" />
               Download PDF
             </DownloadButton>
           )}
